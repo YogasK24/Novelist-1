@@ -30,9 +30,25 @@ import { AddCharacterModalComponent } from '../add-character-modal/add-character
               @for (char of characters; track char.id) {
                 <div class="bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start">
                   <!-- Info Karakter -->
-                  <div class="mr-4">
+                  <div class="mr-4 flex-grow">
                      <h3 class="text-lg font-semibold text-white">{{ char.name }}</h3>
                      <p class="text-sm text-gray-400 mt-1 whitespace-pre-wrap">{{ char.description || 'Tidak ada deskripsi.' }}</p>
+                  
+                      <!-- Tampilan Relasi -->
+                      @if (char.relationships && char.relationships.length > 0) {
+                        <div class="mt-3 border-t border-gray-700 pt-2">
+                          <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hubungan</h4>
+                          <div class="flex flex-wrap gap-2">
+                            @for (rel of char.relationships; track rel.targetId) {
+                              @if (bookState.characterMap().get(rel.targetId); as targetChar) {
+                                <span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">
+                                  {{ rel.type }}: <span class="font-medium text-white">{{ targetChar.name }}</span>
+                                </span>
+                              }
+                            }
+                          </div>
+                        </div>
+                      }
                   </div>
                   <!-- Tombol Aksi (Edit/Hapus) -->
                   <div class="flex-shrink-0 space-x-2">

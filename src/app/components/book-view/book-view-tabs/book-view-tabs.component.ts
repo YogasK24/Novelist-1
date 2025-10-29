@@ -8,6 +8,7 @@ import { PlotEventListComponent } from '../plot-event-list/plot-event-list.compo
 import { ChapterListComponent } from '../chapter-list/chapter-list.component';
 import { ThemeListComponent } from '../theme-list/theme-list.component';
 import { PropListComponent } from '../prop-list/prop-list.component';
+import { CharacterMapComponent } from '../character-map/character-map.component'; // <-- Impor baru
 
 @Component({
   selector: 'app-book-view-tabs',
@@ -20,6 +21,7 @@ import { PropListComponent } from '../prop-list/prop-list.component';
     ChapterListComponent,
     ThemeListComponent,
     PropListComponent,
+    CharacterMapComponent, // <-- Daftarkan komponen Map
   ],
   template: `
     <div>
@@ -43,6 +45,7 @@ import { PropListComponent } from '../prop-list/prop-list.component';
 
       <!-- Konten Tab -->
       @switch (activeTab) {
+         @case ('connections') { <app-character-map></app-character-map> }
          @case ('characters') { <app-character-list></app-character-list> }
          @case ('locations') { <app-location-list></app-location-list> }
          @case ('chapters') { <app-chapter-list-tab></app-chapter-list-tab> }
@@ -56,6 +59,7 @@ import { PropListComponent } from '../prop-list/prop-list.component';
 })
 export class BookViewTabsComponent {
   tabs = [
+    { key: 'connections', label: 'Connections' },
     { key: 'characters', label: 'Characters' },
     { key: 'locations', label: 'Locations' },
     { key: 'chapters', label: 'Chapters' },
@@ -64,5 +68,5 @@ export class BookViewTabsComponent {
     { key: 'props', label: 'Props' },
   ];
   // Default tab aktif
-  activeTab: string = 'characters'; 
+  activeTab: string = 'connections'; 
 }

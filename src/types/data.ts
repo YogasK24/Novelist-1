@@ -8,11 +8,17 @@ export interface IBook {
   lastModified: Date;
 }
 
+export interface IRelationship { // <-- BARU: Interface Relasi
+  targetId: number; // ID Karakter lain
+  type: string;     // Jenis hubungan, misal: 'Rival', 'Ally', 'Family'
+}
+
 export interface ICharacter {
   id?: number; 
   bookId: number; 
   name: string;
   description: string;
+  relationships: IRelationship[]; // <-- BARU: Daftar hubungan
 }
 
 export interface ILocation {

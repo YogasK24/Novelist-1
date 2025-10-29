@@ -4,7 +4,7 @@
 import { Injectable } from '@angular/core'; // Import Injectable decorator
 import Dexie, { type Table } from 'dexie';
 // Pastikan path impor ini benar
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp } from '../../types/data';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship } from '../../types/data';
 
 // --- DEFINE DATABASE SHAPE WITH AN INTERFACE ---
 // This avoids subclassing issues with TypeScript's type inference for Dexie.
@@ -36,12 +36,12 @@ export class DatabaseService {
     // This resolves TypeScript errors where methods like `version()` and `transaction()` were not found.
     // The cast is updated to match the new intersection type.
     this.db = new Dexie('NovelistDB_Angular') as Dexie & INovelistDB;
-    this.db.version(4).stores({
+    this.db.version(5).stores({
       books: '++id, title, lastModified',
-      characters: '++id, bookId, name',
+      characters: '++id, bookId, name, *relationships.targetId',
       locations: '++id, bookId, name',
-      plotEvents: '++id, bookId, order, locationId, *characterIds', // <-- UPDATE INDEX
-      chapters: '++id, bookId, order, *characterIds', // <-- UPDATE INDEX
+      plotEvents: '++id, bookId, order, locationId, *characterIds',
+      chapters: '++id, bookId, order, *characterIds',
       themes: '++id, bookId, name',
       props: '++id, bookId, name'
     });

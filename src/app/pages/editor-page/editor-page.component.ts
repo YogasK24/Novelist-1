@@ -136,7 +136,7 @@ export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
                this.quillInstance.setText(currentChapter.content, 'silent');
             }
         }
-    }, { allowSignalWrites: true });
+    });
   }
 
   ngOnInit(): void {

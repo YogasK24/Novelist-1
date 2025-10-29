@@ -3,7 +3,7 @@
 
 import { Injectable, inject, signal, effect, WritableSignal, computed } from '@angular/core';
 import { DatabaseService } from './database.service';
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp } from '../../types/data';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship } from '../../types/data';
 
 @Injectable({
   providedIn: 'root'
@@ -222,15 +222,15 @@ export class CurrentBookStateService {
   // --- CRUD Actions ---
 
   // Character Actions
-  async addCharacter(name: string, description: string): Promise<void> {
+  async addCharacter(name: string, description: string, relationships: IRelationship[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
     try {
-      await this.dbService.addCharacter({ bookId, name, description });
+      await this.dbService.addCharacter({ bookId, name, description, relationships });
       await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters);
     } catch(error) { console.error("addCharacter error:", error); }
   }
-  async updateCharacter(id: number, data: { name: string, description: string }): Promise<void> {
+  async updateCharacter(id: number, data: { name: string, description: string, relationships: IRelationship[] }): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updateCharacter(id, data);
