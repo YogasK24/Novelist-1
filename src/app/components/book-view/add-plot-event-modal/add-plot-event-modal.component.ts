@@ -1,12 +1,12 @@
 // src/app/components/book-view/add-plot-event-modal/add-plot-event-modal.component.ts
 import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import type { IPlotEvent } from '../../../../types/data'; // Ganti tipe
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormArray, FormControl } from '@angular/forms';
+import type { IPlotEvent } from '../../../../types/data'; // Import tipe relasi
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 
 @Component({
-  selector: 'app-add-plot-event-modal', // Ganti selector
+  selector: 'app-add-plot-event-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
@@ -15,7 +15,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       [class.opacity-100]="show()" [class.opacity-0]="!show()" [class.pointer-events-none]="!show()"
       (click)="close()" aria-modal="true" role="dialog">
       <div 
-        class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300"
+        class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"
         (click)="$event.stopPropagation()">
@@ -28,17 +28,14 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
         </div>
 
         <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
-          <!-- Judul Event -->
           <div class="mb-4">
-            <label for="eventName" class="block text-sm font-medium text-gray-300 mb-1">
-              Judul Event/Scene
-            </label>
+            <label for="eventName" class="block text-sm font-medium text-gray-300 mb-1">Judul Event/Scene</label>
             <input
               type="text"
               id="eventName"
               formControlName="title"
               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Misal: Pertemuan Pertama, Klimaks..." 
+              placeholder="Misal: Pertemuan Pertama, Klimaks..."
               required
             />
             @if (eventForm.controls['title'].invalid && (eventForm.controls['title'].dirty || eventForm.controls['title'].touched)) {
@@ -46,11 +43,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             }
           </div>
 
-          <!-- Ringkasan Event -->
-          <div class="mb-6">
-             <label for="eventSummary" class="block text-sm font-medium text-gray-300 mb-1">
-               Ringkasan (Opsional)
-             </label>
+          <div class="mb-4">
+             <label for="eventSummary" class="block text-sm font-medium text-gray-300 mb-1">Ringkasan (Opsional)</label>
              <textarea
                id="eventSummary"
                formControlName="summary"
@@ -59,13 +53,40 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                placeholder="Apa yang terjadi di event/scene ini?"
              ></textarea>
           </div>
+          
+          <div class="mb-4">
+             <label for="locationId" class="block text-sm font-medium text-gray-300 mb-1">Lokasi Peristiwa</label>
+             <select id="locationId" formControlName="locationId"
+               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+               <option [ngValue]="null">-- Pilih Lokasi (Opsional) --</option>
+               @for (loc of bookState.locations(); track loc.id) {
+                 <option [ngValue]="loc.id">{{ loc.name }}</option>
+               }
+             </select>
+          </div>
 
-          <!-- Tombol Aksi -->
+          <div class="mb-6">
+             <label class="block text-sm font-medium text-gray-300 mb-2">Karakter Terlibat</label>
+             <div class="bg-gray-700 p-3 rounded-md max-h-32 overflow-y-auto">
+               @for (char of bookState.characters(); track char.id) {
+                 <div class="flex items-center mb-1">
+                   <input type="checkbox" 
+                     [id]="'char-' + char.id" 
+                     [checked]="characterIds.value.includes(char.id!)"
+                     (change)="onCharacterCheck(char.id!, $event)"
+                     class="h-4 w-4 text-purple-600 bg-gray-900 border-gray-600 rounded focus:ring-purple-500">
+                   <label [for]="'char-' + char.id" class="ml-2 text-sm text-gray-300">{{ char.name }}</label>
+                 </div>
+               }
+               @if (bookState.characters().length === 0) {
+                  <p class="text-xs text-gray-500">Tambahkan Karakter di tab Karakter terlebih dahulu.</p>
+               }
+             </div>
+          </div>
+
           <div class="flex justify-end space-x-3">
-            <button type="button" (click)="close()"
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white transition duration-150"> Batal </button>
-            <button type="submit" [disabled]="eventForm.invalid" 
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> Simpan </button>
+            <button type="button" (click)="close()" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white transition duration-150"> Batal </button>
+            <button type="submit" [disabled]="eventForm.invalid" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> Simpan </button>
           </div>
         </form>
       </div>
@@ -73,18 +94,24 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AddPlotEventModalComponent { // Ganti nama class
+export class AddPlotEventModalComponent {
   show = input.required<boolean>();
-  eventToEdit = input<IPlotEvent | null>(null); // Ganti tipe Input
+  eventToEdit = input<IPlotEvent | null>(null);
   closeModal = output<void>();
 
   private fb = inject(FormBuilder);
-  private bookState = inject(CurrentBookStateService); 
+  public bookState = inject(CurrentBookStateService);
 
-  eventForm: FormGroup = this.fb.group({ // Ganti nama form
-      title: ['', Validators.required], 
-      summary: [''] 
-  }); 
+  eventForm = this.fb.group({
+    title: ['', Validators.required],
+    summary: [''],
+    locationId: [null as number | null], // Default null
+    characterIds: this.fb.array<FormControl<number>>([])
+  });
+  
+  get characterIds(): FormArray<FormControl<number>> {
+    return this.eventForm.get('characterIds') as FormArray<FormControl<number>>;
+  }
 
   constructor() {
     effect(() => {
@@ -92,36 +119,62 @@ export class AddPlotEventModalComponent { // Ganti nama class
       const isVisible = this.show();
 
       if (event && isVisible) {
-        this.eventForm.patchValue({ // Patch form event
+        this.eventForm.patchValue({
           title: event.title,
-          summary: event.summary
+          summary: event.summary,
+          locationId: event.locationId
         });
-      } else {
-        this.eventForm.reset({ title: '', summary: '' }); 
+        this.setCharacterFormArray(event.characterIds);
+      } else if (!event && isVisible) {
+        this.eventForm.reset({ title: '', summary: '', locationId: null });
+        this.setCharacterFormArray([]);
       }
     });
+  }
+  
+  private setCharacterFormArray(ids: number[]): void {
+      const formArray = this.fb.array((ids || []).map(id => this.fb.control(id)));
+      this.eventForm.setControl('characterIds', formArray);
+  }
+
+  onCharacterCheck(id: number, event: Event): void {
+      const isChecked = (event.target as HTMLInputElement).checked;
+      const formArray = this.characterIds;
+      const index = formArray.value.indexOf(id);
+
+      if (isChecked && index === -1) {
+          formArray.push(this.fb.control(id));
+      } else if (!isChecked && index !== -1) {
+          formArray.removeAt(index);
+      }
   }
 
   async onSubmit(): Promise<void> {
     if (this.eventForm.invalid) {
-      this.eventForm.markAllAsTouched(); 
+      this.eventForm.markAllAsTouched();
       return;
     }
 
-    // Ambil nilai title dan summary, pastikan tidak null
-    const titleValue = this.eventForm.value.title ?? '';
-    const summaryValue = this.eventForm.value.summary ?? '';
+    const { title, summary, locationId } = this.eventForm.value;
+    const characterIds = this.characterIds.value as number[];
     const event = this.eventToEdit();
+    
+    const uniqueCharacterIds = [...new Set(characterIds)].filter(id => id != null) as number[];
 
     try {
-      if (event && event.id) { // Pastikan ID ada untuk update
-        await this.bookState.updatePlotEvent(event.id, { title: titleValue, summary: summaryValue }); // Panggil updatePlotEvent
+      if (event && event.id != null) {
+        await this.bookState.updatePlotEvent(event.id, { 
+            title: title!, 
+            summary: summary!, 
+            locationId: locationId!,
+            characterIds: uniqueCharacterIds
+        }); 
       } else {
-        await this.bookState.addPlotEvent(titleValue, summaryValue); // Panggil addPlotEvent
+        await this.bookState.addPlotEvent(title!, summary!, locationId!, uniqueCharacterIds);
       }
-      this.close(); 
+      this.close();
     } catch (error) {
-      console.error("Gagal menyimpan event plot:", error); // Ganti pesan error
+      console.error("Gagal menyimpan event plot:", error);
     }
   }
 

@@ -102,7 +102,8 @@ export class WritePageComponent implements OnInit, OnDestroy {
   addChapter(): void {
     const title = prompt("Masukkan judul bab baru:", `Bab ${this.bookState.chapters().length + 1}`);
     if (title) {
-      this.bookState.addChapter(title);
+      // FIX: Provide an empty array for characterIds as the second argument.
+      this.bookState.addChapter(title, []);
     }
   }
 
@@ -111,7 +112,9 @@ export class WritePageComponent implements OnInit, OnDestroy {
   }
   
   updateChapterTitle(event: { id: number; title: string }): void {
-    this.bookState.updateChapterTitle(event.id, event.title);
+    // FIX: Provide the existing characterIds to prevent data loss on title update.
+    const chapter = this.bookState.chapters().find(c => c.id === event.id);
+    this.bookState.updateChapterTitle(event.id, event.title, chapter?.characterIds ?? []);
   }
 
   saveChapterContent(event: { id: number; content: string }): void {

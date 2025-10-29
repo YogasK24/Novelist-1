@@ -28,6 +28,8 @@ export interface IPlotEvent {
   title: string;
   summary: string;
   order: number; 
+  locationId: number | null; // <-- BARU: Hubungan Many-to-One ke Lokasi
+  characterIds: number[];    // <-- BARU: Hubungan Many-to-Many ke Karakter
 }
 
 export interface IChapter {
@@ -36,6 +38,7 @@ export interface IChapter {
   title: string;
   content: string; 
   order: number; 
+  characterIds: number[]; // <-- BARU: Hubungan Many-to-Many ke Karakter
 }
 
 export interface ITheme {

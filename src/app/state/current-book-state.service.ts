@@ -154,18 +154,18 @@ export class CurrentBookStateService {
   }
 
   // Plot Event Actions
-  async addPlotEvent(title: string, summary: string): Promise<void> {
+  async addPlotEvent(title: string, summary: string, locationId: number | null, characterIds: number[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
     try {
       const currentEvents = await this.dbService.getPlotEventsByBookId(bookId);
       const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
       const newOrder = maxOrder + 1;
-      await this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder });
+      await this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder, locationId, characterIds });
       await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents);
     } catch(error) { console.error("addPlotEvent error:", error); }
   }
-  async updatePlotEvent(id: number, data: { title: string, summary: string }): Promise<void> {
+  async updatePlotEvent(id: number, data: { title: string, summary: string, locationId: number | null, characterIds: number[] }): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updatePlotEvent(id, data);
@@ -181,21 +181,21 @@ export class CurrentBookStateService {
   }
 
   // Chapter Actions
-  async addChapter(title: string): Promise<void> {
+  async addChapter(title: string, characterIds: number[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
     try {
       const currentChapters = await this.dbService.getChaptersByBookId(bookId);
       const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
       const newOrder = maxOrder + 1;
-      await this.dbService.addChapter({ bookId, title, content: "", order: newOrder });
+      await this.dbService.addChapter({ bookId, title, content: "", order: newOrder, characterIds });
       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
     } catch(error) { console.error("addChapter error:", error); }
   }
-  async updateChapterTitle(id: number, title: string): Promise<void> {
+  async updateChapterTitle(id: number, title: string, characterIds: number[]): Promise<void> {
     if (!this.currentBookId()) return;
     try {
-      await this.dbService.updateChapter(id, { title });
+      await this.dbService.updateChapter(id, { title, characterIds });
       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
     } catch(error) { console.error("updateChapterTitle error:", error); }
   }

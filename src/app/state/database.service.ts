@@ -36,12 +36,12 @@ export class DatabaseService {
     // This resolves TypeScript errors where methods like `version()` and `transaction()` were not found.
     // The cast is updated to match the new intersection type.
     this.db = new Dexie('NovelistDB_Angular') as Dexie & INovelistDB;
-    this.db.version(3).stores({
+    this.db.version(4).stores({
       books: '++id, title, lastModified',
       characters: '++id, bookId, name',
       locations: '++id, bookId, name',
-      plotEvents: '++id, bookId, order',
-      chapters: '++id, bookId, order',
+      plotEvents: '++id, bookId, order, locationId, *characterIds', // <-- UPDATE INDEX
+      chapters: '++id, bookId, order, *characterIds', // <-- UPDATE INDEX
       themes: '++id, bookId, name',
       props: '++id, bookId, name'
     });
@@ -124,7 +124,7 @@ export class DatabaseService {
        return undefined;
      }
   }
-  async updatePlotEvent(id: number, changes: Partial<Omit<IPlotEvent, 'id' | 'bookId' | 'order'>>): Promise<number> {
+  async updatePlotEvent(id: number, changes: Partial<Omit<IPlotEvent, 'id' | 'bookId'>>): Promise<number> {
      return await this.db.plotEvents.update(id, changes);
   }
   async deletePlotEvent(id: number): Promise<void> {

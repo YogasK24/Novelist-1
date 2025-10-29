@@ -26,9 +26,32 @@ import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-eve
             <div class="space-y-3">
               @for (event of plotEvents; track event.id) {
                 <div class="bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start group">
-                  <div class="mr-4 overflow-hidden"> 
+                  <div class="mr-4 overflow-hidden flex-grow"> 
                      <h3 class="text-lg font-semibold text-white truncate">{{ event.order }}. {{ event.title }}</h3> 
-                     <p class="text-sm text-gray-400 mt-1 whitespace-pre-wrap break-words"> 
+                     
+                     <!-- Info Relasi -->
+                     <div class="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-400">
+                       @if (event.locationId) {
+                         <div class="flex items-center gap-1.5" title="Lokasi">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                             <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                           </svg>
+                           <span>{{ getLocationName(event.locationId) }}</span>
+                         </div>
+                       }
+                       @if (getCharacterNames(event.characterIds); as charNames) {
+                         @if (charNames.length > 0) {
+                           <div class="flex items-center gap-1.5" title="Karakter">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                               <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                             </svg>
+                             <span class="truncate">{{ charNames.join(', ') }}</span>
+                           </div>
+                         }
+                       }
+                     </div>
+
+                     <p class="text-sm text-gray-400 mt-2 whitespace-pre-wrap break-words"> 
                         {{ event.summary || 'Tidak ada ringkasan.' }}
                      </p>
                   </div>
@@ -83,5 +106,25 @@ export class PlotEventListComponent {
     if (window.confirm(`Yakin ingin menghapus event "${name}"?`)) {
       this.bookState.deletePlotEvent(id).catch(err => console.error("Gagal menghapus:", err));
     }
+  }
+
+  // --- Helper Functions for Template ---
+
+  getLocationName(locationId: number | null): string {
+    if (locationId === null) {
+      return '';
+    }
+    const location = this.bookState.locations().find(l => l.id === locationId);
+    return location ? location.name : 'Lokasi tidak ditemukan';
+  }
+
+  getCharacterNames(characterIds: number[]): string[] {
+    if (!characterIds || characterIds.length === 0) {
+      return [];
+    }
+    const allCharacters = this.bookState.characters();
+    return characterIds
+      .map(id => allCharacters.find(c => c.id === id)?.name)
+      .filter((name): name is string => !!name);
   }
 }
