@@ -184,6 +184,21 @@ export class DatabaseService {
      await this.db.props.delete(id);
   }
 
+  // <-- FUNGSI BARU UNTUK REORDERING -->
+
+  /** Menyimpan urutan baru untuk Plot Event */
+  async updatePlotEventOrder(events: IPlotEvent[]): Promise<void> {
+    // Gunakan 'bulkPut' untuk update beberapa record dalam satu transaction
+    // Ini lebih cepat dan menjaga integritas data
+    await this.db.plotEvents.bulkPut(events as any); 
+  }
+
+  /** Menyimpan urutan baru untuk Chapters */
+  async updateChapterOrder(chapters: IChapter[]): Promise<void> {
+    // Gunakan 'bulkPut' untuk update beberapa record dalam satu transaction
+    await this.db.chapters.bulkPut(chapters as any);
+  }
+
   // --- Operasi Hapus Buku Beserta Anaknya (Transaction) ---
   async deleteBookAndData(bookId: number): Promise<void> {
     try {

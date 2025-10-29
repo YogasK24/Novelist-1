@@ -23,7 +23,7 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
       <app-book-view-header></app-book-view-header>
 
       <main class="flex-grow container mx-auto px-4 py-6">
-        @if (bookState.isLoading() === 'loading' || bookState.isLoading() === 'initial') {
+        @if (bookState.isLoading()) {
           <div class="flex justify-center items-center py-10">
              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
           </div>

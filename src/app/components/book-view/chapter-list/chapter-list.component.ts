@@ -1,5 +1,5 @@
 // src/app/components/book-view/chapter-list/chapter-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
@@ -22,7 +22,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
       </div>
 
 
-      @if (bookState.isLoading() === 'loading') {
+      @if (bookState.isLoading()) {
         <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
       } @else if (bookState.chapters(); as chapters) {
          @if (chapters.length > 0) {
@@ -36,6 +36,16 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
                      <p class="text-sm text-gray-400 mt-1"> 
                         {{ countWords(chap.content) }} kata
                      </p>
+                     @if (getCharacterNames(chap.characterIds); as charNames) {
+                        @if (charNames.length > 0) {
+                            <div class="flex items-center gap-1.5 mt-2 text-xs text-gray-400" title="Karakter">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                </svg>
+                                <span class="truncate">{{ charNames.join(', ') }}</span>
+                            </div>
+                        }
+                     }
                   </div>
 
                   <div class="flex-shrink-0 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -65,12 +75,19 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChapterListComponent {
+export class ChapterListComponent implements OnInit {
   public bookState = inject(CurrentBookStateService); 
   private router = inject(Router);
   
   showModal: WritableSignal<boolean> = signal(false);
   editingChapter: WritableSignal<IChapter | null> = signal(null);
+
+  ngOnInit(): void {
+    const bookId = this.bookState.currentBookId();
+    if (bookId !== null) {
+        this.bookState.loadChapters(bookId);
+    }
+  }
 
   openAddModal(): void {
     this.editingChapter.set(null); 
@@ -94,15 +111,40 @@ export class ChapterListComponent {
 
   openEditor(chapter: IChapter): void {
      const bookId = this.bookState.currentBookId();
-     if (bookId) {
-       this.router.navigate(['/book', bookId, 'write']);
+     if (bookId && chapter.id) {
+       this.router.navigate(['/book', bookId, 'write', chapter.id]);
      }
   }
   
-  countWords(text: string): number {
-    if (!text || text.trim() === '') {
-      return 0;
+  countWords(content: string): number {
+    if (!content) return 0;
+    try {
+      // Handle Quill JSON content
+      if (content.trim().startsWith('{')) {
+        const delta = JSON.parse(content);
+        if (delta && Array.isArray(delta.ops)) {
+          return delta.ops.reduce((count: number, op: any) => {
+            if (typeof op.insert === 'string') {
+              const words = op.insert.trim().split(/\s+/).filter(Boolean);
+              return count + words.length;
+            }
+            return count;
+          }, 0);
+        }
+      }
+    } catch(e) { /* Fallback to plain text */ }
+
+    // Fallback for plain text
+    return content.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  getCharacterNames(characterIds: number[]): string[] {
+    if (!characterIds || characterIds.length === 0) {
+      return [];
     }
-    return text.trim().split(/\s+/).length;
+    const charMap = this.bookState.characterMap();
+    return characterIds
+      .map(id => charMap.get(id)?.name)
+      .filter((name): name is string => !!name);
   }
 }

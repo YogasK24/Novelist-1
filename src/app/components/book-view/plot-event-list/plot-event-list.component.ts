@@ -1,7 +1,7 @@
 // src/app/components/book-view/plot-event-list/plot-event-list.component.ts
 // GANTI SEMUA ISI FILE INI
 
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
 import type { IPlotEvent } from '../../../../types/data'; // Ganti tipe
@@ -19,7 +19,7 @@ import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-eve
         + Tambah Event Plot
       </button>
 
-      @if (bookState.isLoading() === 'loading') {
+      @if (bookState.isLoading()) {
         <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
       } @else if (bookState.plotEvents(); as plotEvents) {
          @if (plotEvents.length > 0) {
@@ -31,12 +31,12 @@ import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-eve
                      
                      <!-- Info Relasi -->
                      <div class="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-400">
-                       @if (event.locationId) {
+                       @if (getLocationName(event.locationId); as locationName) {
                          <div class="flex items-center gap-1.5" title="Lokasi">
                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                              <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
                            </svg>
-                           <span>{{ getLocationName(event.locationId) }}</span>
+                           <span>{{ locationName }}</span>
                          </div>
                        }
                        @if (getCharacterNames(event.characterIds); as charNames) {
@@ -82,11 +82,18 @@ import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-eve
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlotEventListComponent {
+export class PlotEventListComponent implements OnInit {
   public bookState = inject(CurrentBookStateService); 
   
   showModal: WritableSignal<boolean> = signal(false);
   editingEvent: WritableSignal<IPlotEvent | null> = signal(null);
+
+  ngOnInit(): void {
+    const bookId = this.bookState.currentBookId();
+    if (bookId !== null) {
+        this.bookState.loadPlotEvents(bookId);
+    }
+  }
 
   openAddModal(): void {
     this.editingEvent.set(null); 
@@ -108,23 +115,24 @@ export class PlotEventListComponent {
     }
   }
 
-  // --- Helper Functions for Template ---
+  // --- Helper Functions for Template (Optimized) ---
 
-  getLocationName(locationId: number | null): string {
+  getLocationName(locationId: number | null): string | undefined {
     if (locationId === null) {
-      return '';
+      return undefined;
     }
-    const location = this.bookState.locations().find(l => l.id === locationId);
-    return location ? location.name : 'Lokasi tidak ditemukan';
+    // Akses Map secara langsung (O(1))
+    return this.bookState.locationNameMap().get(locationId);
   }
 
   getCharacterNames(characterIds: number[]): string[] {
     if (!characterIds || characterIds.length === 0) {
       return [];
     }
-    const allCharacters = this.bookState.characters();
+    const charMap = this.bookState.characterMap();
+    // Map ID ke Nama menggunakan Map (O(N) tapi pencarian di dalam loop Map adalah O(1))
     return characterIds
-      .map(id => allCharacters.find(c => c.id === id)?.name)
+      .map(id => charMap.get(id)?.name)
       .filter((name): name is string => !!name);
   }
 }

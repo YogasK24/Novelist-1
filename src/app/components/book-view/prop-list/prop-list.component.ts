@@ -1,5 +1,5 @@
 // src/app/components/book-view/prop-list/prop-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { IProp } from '../../../../types/data';
@@ -19,7 +19,7 @@ import { AddPropModalComponent } from '../add-prop-modal/add-prop-modal.componen
       </button>
 
       <!-- Tampilkan Loading -->
-      @if (bookState.isLoading() === 'loading') {
+      @if (bookState.isLoading()) {
         <div class="flex justify-center items-center py-6">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
         </div>
@@ -64,11 +64,18 @@ import { AddPropModalComponent } from '../add-prop-modal/add-prop-modal.componen
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PropListComponent {
+export class PropListComponent implements OnInit {
   public bookState = inject(CurrentBookStateService); 
   
   showModal: WritableSignal<boolean> = signal(false);
   editingProp: WritableSignal<IProp | null> = signal(null);
+
+  ngOnInit(): void {
+    const bookId = this.bookState.currentBookId();
+    if (bookId !== null) {
+        this.bookState.loadProps(bookId);
+    }
+  }
 
   openAddModal(): void {
     this.editingProp.set(null);
