@@ -22,7 +22,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
     WritePageHeaderComponent 
   ],
   template: `
-   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500"> 
+   <div class="flex flex-col min-h-screen"> 
       
       <app-write-page-header 
           [isFocusMode]="!isChapterPanelOpen() && !isWorldPanelOpen()"
@@ -32,19 +32,19 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
       <main class="flex-grow flex overflow-hidden relative">
         
         <button (click)="isChapterPanelOpen.set(true)" 
-                class="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-200/90 dark:bg-gray-800/90 hover:bg-purple-600 dark:hover:bg-purple-600 text-gray-800 dark:text-white rounded-r-lg shadow-lg transition duration-200"
+                class="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-slate-200/90 dark:bg-slate-800/90 hover:bg-purple-600 dark:hover:bg-purple-600 text-slate-800 dark:text-white rounded-r-lg shadow-lg transition duration-200"
                 aria-label="Buka Chapter List"
                 [class.hidden]="isChapterPanelOpen()">
            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
         </button>
         
-        <div class="border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative transition-all duration-300 ease-in-out overflow-hidden"
+        <div class="border-r border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0 relative transition-all duration-300 ease-in-out overflow-hidden"
              [class.w-80]="isChapterPanelOpen()"
              [class.w-0]="!isChapterPanelOpen()">
           
           @if (isChapterPanelOpen()) {
               <button (click)="isChapterPanelOpen.set(false)" 
-                      class="absolute top-2 right-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition"
+                      class="absolute top-2 right-2 z-40 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition"
                       aria-label="Tutup Chapter List">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 11l-4 4l4 4m-4-4h12a2 2 0 002-2V7a2 2 0 00-2-2H3" /></svg>
               </button>
@@ -64,19 +64,19 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
         </div>
 
         <button (click)="isWorldPanelOpen.set(true)" 
-                class="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-200/90 dark:bg-gray-800/90 hover:bg-purple-600 dark:hover:bg-purple-600 text-gray-800 dark:text-white rounded-l-lg shadow-lg transition duration-200"
+                class="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-slate-200/90 dark:bg-slate-800/90 hover:bg-purple-600 dark:hover:bg-purple-600 text-slate-800 dark:text-white rounded-l-lg shadow-lg transition duration-200"
                 aria-label="Buka World Notes"
                 [class.hidden]="isWorldPanelOpen()">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
         </button>
         
-        <div class="border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative transition-all duration-300 ease-in-out overflow-hidden"
+        <div class="border-l border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0 relative transition-all duration-300 ease-in-out overflow-hidden"
              [class.w-80]="isWorldPanelOpen()"
              [class.w-0]="!isWorldPanelOpen()">
 
           @if (isWorldPanelOpen()) {
               <button (click)="isWorldPanelOpen.set(false)" 
-                      class="absolute top-2 left-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition"
+                      class="absolute top-2 left-2 z-40 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition"
                       aria-label="Tutup World Notes">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
               </button>

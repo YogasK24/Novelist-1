@@ -50,16 +50,16 @@ export class NotificationContainerComponent {
     let dynamicClasses: string;
     switch (type) {
       case 'success':
-        dynamicClasses = 'bg-green-600 border-l-4 border-green-800';
+        dynamicClasses = 'bg-green-500 border-l-4 border-green-700';
         break;
       case 'error':
-        dynamicClasses = 'bg-red-600 border-l-4 border-red-800';
+        dynamicClasses = 'bg-red-500 border-l-4 border-red-700';
         break;
       case 'info':
-        dynamicClasses = 'bg-blue-600 border-l-4 border-blue-800';
+        dynamicClasses = 'bg-blue-500 border-l-4 border-blue-700';
         break;
       default:
-        dynamicClasses = 'bg-gray-600 border-l-4 border-gray-800';
+        dynamicClasses = 'bg-gray-500 border-l-4 border-gray-700';
         break;
     }
     return `${dynamicClasses} ${staticClasses}`;

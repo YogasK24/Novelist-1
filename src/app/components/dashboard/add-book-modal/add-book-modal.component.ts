@@ -10,32 +10,32 @@ import type { IBook } from '../../../../types/data';
   imports: [ReactiveFormsModule],
   template: `
     <div 
-      class="fixed inset-0 bg-black/60 flex justify-center items-center z-50"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50"
       (click)="closeModal.emit()" 
       aria-modal="true"
       role="dialog"
     >
       <div 
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md ring-1 ring-gray-200 dark:ring-white/10"
+        class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl dark:shadow-2xl dark:shadow-black/50 w-full max-w-md ring-1 ring-slate-200 dark:ring-white/10"
         (click)="$event.stopPropagation()" 
       >
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
             {{ isEditing() ? 'Edit Book Title' : 'Create a New Book' }}
           </h2>
-          <button (click)="closeModal.emit()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
+          <button (click)="closeModal.emit()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
         <form [formGroup]="bookForm" (ngSubmit)="onSubmit()">
           <div class="mb-6">
-            <label for="bookTitle" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            <label for="bookTitle" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
               Book Title
             </label>
             <input
               type="text"
               id="bookTitle"
               formControlName="title"
-              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
               placeholder="Enter the novel's title..."
             />
              @if (bookForm.get('title')?.invalid && bookForm.get('title')?.touched) {
@@ -48,14 +48,14 @@ import type { IBook } from '../../../../types/data';
             <button
               type="button"
               (click)="closeModal.emit()"
-              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white font-semibold transition-colors duration-150"
+              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 rounded-md text-slate-800 dark:text-slate-200 font-semibold transition-colors duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               [disabled]="bookForm.invalid || isLoading()"
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
               {{ isLoading() ? 'Menyimpan...' : (isEditing() ? 'Simpan Perubahan' : 'Buat Novel') }}
             </button>

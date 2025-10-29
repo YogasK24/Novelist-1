@@ -10,7 +10,7 @@ import { RouterLink } from '@angular/router';
       <div class="max-w-md">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600"
+          class="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -22,10 +22,10 @@ import { RouterLink } from '@angular/router';
             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
           />
         </svg>
-        <h2 class="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+        <h2 class="mt-4 text-xl font-semibold text-slate-800 dark:text-white">
           Selamat Datang di Mode Tulis
         </h2>
-        <p class="mt-2 text-gray-500 dark:text-gray-400">
+        <p class="mt-2 text-slate-500 dark:text-slate-400">
           Pilih sebuah bab dari daftar di sebelah kiri untuk mulai menulis atau mengedit konten Anda.
         </p>
       </div>

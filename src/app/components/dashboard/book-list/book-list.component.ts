@@ -10,7 +10,7 @@ import { BookCardComponent } from '../book-card/book-card.component';
   imports: [BookCardComponent],
   template: `
     <div class="mb-6 flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Your Books</h1>
+        <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Your Books</h1>
     </div>
 
     @if (bookState.isLoading()) {
@@ -29,9 +29,9 @@ import { BookCardComponent } from '../book-card/book-card.component';
             }
           </div>
         } @else {
-          <div class="text-center py-16 px-6 bg-white dark:bg-gray-800/50 ring-1 ring-gray-200 dark:ring-white/10 rounded-lg">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">No Books Found</h2>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">Click the '+' button to start your first novel.</p>
+          <div class="text-center py-16 px-6 bg-white dark:bg-slate-800/50 ring-1 ring-slate-200 dark:ring-white/10 rounded-lg">
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-white">No Books Found</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-2">Click the '+' button to start your first novel.</p>
           </div>
         }
     }

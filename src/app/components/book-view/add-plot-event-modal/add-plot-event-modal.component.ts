@@ -15,26 +15,26 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       [class.opacity-100]="show()" [class.opacity-0]="!show()" [class.pointer-events-none]="!show()"
       (click)="close()" aria-modal="true" role="dialog">
       <div 
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
+        class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"
         (click)="$event.stopPropagation()">
 
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
             {{ eventToEdit() ? 'Edit Event Plot' : 'Tambah Event Plot Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
+          <button (click)="close()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
         <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
           <div class="mb-4">
-            <label for="eventName" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Judul Event/Scene</label>
+            <label for="eventName" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Judul Event/Scene</label>
             <input
               type="text"
               id="eventName"
               formControlName="title"
-              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Misal: Pertemuan Pertama, Klimaks..."
               required
             />
@@ -44,20 +44,20 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           </div>
 
           <div class="mb-4">
-             <label for="eventSummary" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Ringkasan (Opsional)</label>
+             <label for="eventSummary" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Ringkasan (Opsional)</label>
              <textarea
                id="eventSummary"
                formControlName="summary"
                rows="3"
-               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+               class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                placeholder="Apa yang terjadi di event/scene ini?"
              ></textarea>
           </div>
           
           <div class="mb-4">
-             <label for="locationId" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Lokasi Peristiwa</label>
+             <label for="locationId" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Lokasi Peristiwa</label>
              <select id="locationId" formControlName="locationId"
-               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+               class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
                <option [ngValue]="null">-- Pilih Lokasi (Opsional) --</option>
                @for (loc of bookState.locations(); track loc.id) {
                  <option [ngValue]="loc.id">{{ loc.name }}</option>
@@ -66,26 +66,26 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           </div>
 
           <div class="mb-6">
-             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Karakter Terlibat</label>
-             <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md max-h-32 overflow-y-auto">
+             <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Karakter Terlibat</label>
+             <div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-md max-h-32 overflow-y-auto">
                @for (char of bookState.characters(); track char.id) {
                  <div class="flex items-center mb-1">
                    <input type="checkbox" 
                      [id]="'char-' + char.id" 
                      [checked]="characterIds.value.includes(char.id!)"
                      (change)="onCharacterCheck(char.id!, $event)"
-                     class="h-4 w-4 text-purple-600 bg-gray-200 dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded focus:ring-purple-500">
-                   <label [for]="'char-' + char.id" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ char.name }}</label>
+                     class="h-4 w-4 text-purple-600 bg-slate-200 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded focus:ring-purple-500">
+                   <label [for]="'char-' + char.id" class="ml-2 text-sm text-slate-700 dark:text-slate-300">{{ char.name }}</label>
                  </div>
                }
                @if (bookState.characters().length === 0) {
-                  <p class="text-xs text-gray-500">Tambahkan Karakter di tab Karakter terlebih dahulu.</p>
+                  <p class="text-xs text-slate-500">Tambahkan Karakter di tab Karakter terlebih dahulu.</p>
                }
              </div>
           </div>
 
           <div class="flex justify-end space-x-3">
-            <button type="button" (click)="close()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white transition duration-150"> Batal </button>
+            <button type="button" (click)="close()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 rounded-md text-slate-800 dark:text-white transition duration-150"> Batal </button>
             <button type="submit" [disabled]="eventForm.invalid || isLoading()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> 
               {{ isLoading() ? 'Menyimpan...' : 'Simpan' }} 
             </button>

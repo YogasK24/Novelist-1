@@ -14,7 +14,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
   template: `
     <div>
       <div class="flex justify-between items-center mb-4 gap-4">
-          <p class="text-sm text-gray-600 dark:text-gray-400">Kelola bab Anda di sini, atau klik 'Write' di navigasi bawah untuk masuk ke mode editor.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Kelola bab Anda di sini, atau klik 'Write' di navigasi bawah untuk masuk ke mode editor.</p>
           <button 
             (click)="openAddModal()"
             class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition duration-150 whitespace-nowrap">
@@ -27,7 +27,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
         <div class="flex justify-center items-center py-6"> 
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400 dark:border-purple-600"></div> 
           @if (isReordering()) {
-             <span class="ml-3 text-gray-400 dark:text-gray-500">Menyimpan urutan...</span>
+             <span class="ml-3 text-slate-400 dark:text-slate-500">Menyimpan urutan...</span>
           }
         </div>
       } @else if (bookState.chapters(); as chapters) {
@@ -42,24 +42,24 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
                      [cdkDragData]="chap" 
                      tabindex="0" 
                      (keydown)="onMoveItem(chap, $event)"
-                     class="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-start group hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition cursor-grab focus:outline-none focus:ring-2 focus:ring-purple-500"
+                     class="bg-slate-50 dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex items-start group hover:bg-slate-100 dark:hover:bg-slate-700/80 transition cursor-grab focus:outline-none focus:ring-2 focus:ring-purple-500"
                      [class.opacity-50]="isReordering()"
                      aria-grabbed="false"
                      [attr.aria-label]="'Chapter ' + chap.order + ': ' + chap.title + '. Tekan panah atas/bawah untuk menyusun ulang.'">
                   
-                  <div class="p-4 text-gray-500" cdkDragHandle>
+                  <div class="p-4 text-slate-500" cdkDragHandle>
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /> </svg>
                   </div>
                   
                   <div class="pr-4 py-4 mr-4 overflow-hidden flex-grow cursor-pointer" (click)="openEditor(chap)"> 
-                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">{{ chap.order }}. {{ chap.title }}</h3> 
-                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1"> 
+                     <h3 class="text-lg font-semibold text-slate-800 dark:text-white truncate">{{ chap.order }}. {{ chap.title }}</h3> 
+                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-1"> 
                         {{ countWords(chap.content) }} kata
                      </p>
                      @if (getCharacterNames(chap.characterIds); as charNames) {
                         @if (charNames.length > 0) {
-                            <div class="flex items-center gap-1.5 mt-2 text-xs text-gray-600 dark:text-gray-400" title="Karakter">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                            <div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 dark:text-slate-400" title="Karakter">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 dark:text-slate-500" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                                 </svg>
                                 <span class="truncate">{{ charNames.join(', ') }}</span>
@@ -80,7 +80,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
               }
             </div>
          } @else {
-           <p class="text-center text-gray-500 py-6">Belum ada bab. Klik tombol di atas untuk memulai naskahmu!</p>
+           <p class="text-center text-slate-500 py-6">Belum ada bab. Klik tombol di atas untuk memulai naskahmu!</p>
          }
       }
 

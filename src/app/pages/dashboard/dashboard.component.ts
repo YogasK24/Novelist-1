@@ -18,7 +18,7 @@ import { SetTargetModalComponent } from '../../components/dashboard/set-target-m
     SetTargetModalComponent
   ],
   template: `
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors duration-500">
+    <div>
       <app-navbar></app-navbar>
       <main class="container mx-auto px-4 py-8">
         <app-book-list 

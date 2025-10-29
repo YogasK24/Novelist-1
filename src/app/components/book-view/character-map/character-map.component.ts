@@ -22,14 +22,14 @@ type Link = d3.SimulationLinkDatum<Node> & {
   selector: 'app-character-map',
   imports: [CommonModule, CharacterDetailModalComponent, FormsModule], // <-- Daftarkan Modal & FormsModule
   template: `
-    <div class="p-4 rounded-lg bg-white dark:bg-gray-800/50 min-h-[60vh] relative border border-gray-200 dark:border-transparent">
+    <div class="p-4 rounded-lg bg-white dark:bg-slate-800 min-h-[60vh] relative border border-slate-200 dark:border-slate-700">
       
       <div class="mb-4 flex-shrink-0">
-          <label for="filterChar" class="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Sorot Karakter:</label>
+          <label for="filterChar" class="text-sm font-medium text-slate-700 dark:text-slate-300 mr-2">Sorot Karakter:</label>
           <select id="filterChar" 
                   [ngModel]="selectedNodeId()" 
                   (ngModelChange)="selectNode($event)"
-                  class="px-3 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  class="px-3 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
              <option [ngValue]="null">-- Semua Karakter --</option>
              @for (char of bookState.characters(); track char.id) {
                <option [ngValue]="char.id">{{ char.name }}</option>
@@ -40,12 +40,12 @@ type Link = d3.SimulationLinkDatum<Node> & {
       <div #container class="w-full h-full min-h-[60vh]"></div>
       
       @if (bookState.isLoadingChildren().characters) {
-        <div class="absolute inset-0 flex justify-center items-center bg-white/50 dark:bg-gray-800/50">
+        <div class="absolute inset-0 flex justify-center items-center bg-white/50 dark:bg-slate-800/50">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-400"></div>
         </div>
       } @else if (bookState.characters().length === 0) {
          <div class="absolute inset-0 flex justify-center items-center">
-            <p class="text-center text-gray-500">
+            <p class="text-center text-slate-500">
                 Tambah karakter untuk melihat visualisasi hubungan mereka.
             </p>
          </div>
@@ -77,7 +77,8 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
   
   private resizeObserver!: ResizeObserver;
   private linkedByIndex: { [key: string]: boolean } = {}; // Untuk highlighting
-  private textColor = signal('#d1d5db');
+  private textColor = signal('#334155'); // slate-700
+  private nodeColor = signal('#a855f7'); // purple-500
 
   // State Modal
   showDetailModal = signal(false);
@@ -104,12 +105,24 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
 
     effect(() => {
       const theme = this.themeService.currentTheme();
-      this.textColor.set(theme === 'dark' ? '#d1d5db' : '#1f2937');
+      this.textColor.set(theme === 'dark' ? '#e2e8f0' : '#334155'); // slate-200 : slate-700
+      this.nodeColor.set(theme === 'dark' ? '#c084fc' : '#a855f7'); // purple-400 : purple-500
+
       if (this.svg) {
         this.svg.selectAll('.nodes text')
           .transition()
           .duration(200)
           .attr('fill', this.textColor());
+        
+        this.svg.selectAll('.nodes circle')
+          .transition()
+          .duration(200)
+          .attr('fill', this.nodeColor());
+        
+        this.svg.selectAll('.link')
+          .transition()
+          .duration(200)
+          .attr('stroke', (d: any) => this.getLinkColor(d.type));
       }
     });
   }
@@ -167,7 +180,7 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
         'Kekasih': '#ec4899',
         'Mentor': '#f59e0b', // Amber-500
     };
-    return colorMap[type] || (this.themeService.currentTheme() === 'dark' ? '#9ca3af' : '#9ca3af'); 
+    return colorMap[type] || (this.themeService.currentTheme() === 'dark' ? '#475569' : '#94a3b8'); // slate-600 : slate-400
   }
 
   selectNode(nodeId: number | null): void {
@@ -288,7 +301,7 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
 
     node.append('circle')
       .attr('r', 10)
-      .attr('fill', '#a855f7')
+      .attr('fill', this.nodeColor())
       .append('title')
       .text((d: any) => {
           const char = this.bookState.characters().find(c => c.id === d.id);

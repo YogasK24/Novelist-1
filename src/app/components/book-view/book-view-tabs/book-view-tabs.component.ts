@@ -27,7 +27,7 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
   template: `
     <div>
       <!-- Navigasi Tab -->
-      <div class="border-b border-gray-200 dark:border-gray-700 mb-4">
+      <div class="border-b border-slate-200 dark:border-slate-700 mb-4">
         <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
           @for (tab of tabs; track tab.key) {
             <button 
@@ -36,10 +36,10 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
               [class.dark:text-purple-400]="activeTab === tab.key"
               [class.border-purple-500]="activeTab === tab.key"
               [class.dark:border-purple-400]="activeTab === tab.key"
-              [class.text-gray-500]="activeTab !== tab.key"
-              [class.dark:text-gray-400]="activeTab !== tab.key"
+              [class.text-slate-500]="activeTab !== tab.key"
+              [class.dark:text-slate-400]="activeTab !== tab.key"
               [class.border-transparent]="activeTab !== tab.key"
-              class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm hover:text-gray-700 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition"
+              class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm hover:text-slate-700 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 transition"
             >
               {{ tab.label }}
             </button>
@@ -56,7 +56,7 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
          @case ('events') { <app-plot-event-list></app-plot-event-list> }
          @case ('themes') { <app-theme-list></app-theme-list> }
          @case ('props') { <app-prop-list></app-prop-list> }
-         @default { <div class="p-4 text-gray-500">Pilih tab</div> }
+         @default { <div class="p-4 text-slate-500">Pilih tab</div> }
       }
     </div>
   `

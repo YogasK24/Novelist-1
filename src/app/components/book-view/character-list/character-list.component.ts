@@ -20,26 +20,26 @@ import { CharacterDetailModalComponent } from '../character-detail-modal/charact
 
       @if (bookState.isLoadingChildren().characters) {
         <div class="flex justify-center items-center py-6">
-          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 dark:border-gray-400"></div>
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-500 dark:border-slate-400"></div>
         </div>
       } @else if (bookState.characters(); as characters) {
          @if (characters.length > 0) {
             <div class="space-y-3">
               @for (char of characters; track char.id) {
                 <div (click)="viewCharacterDetails(char)"
-                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex justify-between items-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/80 transition duration-150">
+                     class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-start cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/80 transition duration-150">
                   <div class="mr-4 flex-grow">
-                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ char.name }}</h3>
-                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap line-clamp-2">{{ char.description || 'Tidak ada deskripsi.' }}</p>
+                     <h3 class="text-lg font-semibold text-slate-800 dark:text-white">{{ char.name }}</h3>
+                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-wrap line-clamp-2">{{ char.description || 'Tidak ada deskripsi.' }}</p>
                   
                       @if (char.relationships && char.relationships.length > 0) {
-                        <div class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-2">
-                          <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-2">Hubungan</h4>
+                        <div class="mt-3 border-t border-slate-200 dark:border-slate-700 pt-2">
+                          <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider mb-2">Hubungan</h4>
                           <div class="flex flex-wrap gap-2">
                             @for (rel of char.relationships; track rel.targetId) {
                               @if (bookState.characterMap().get(rel.targetId); as targetChar) {
-                                <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
-                                  {{ rel.type }}: <span class="font-medium text-gray-900 dark:text-white">{{ targetChar.name }}</span>
+                                <span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-full">
+                                  {{ rel.type }}: <span class="font-medium text-slate-800 dark:text-white">{{ targetChar.name }}</span>
                                 </span>
                               }
                             }
@@ -59,7 +59,7 @@ import { CharacterDetailModalComponent } from '../character-detail-modal/charact
               }
             </div>
          } @else {
-           <p class="text-center text-gray-500 py-6">Belum ada karakter. Klik tombol di atas untuk menambah!</p>
+           <p class="text-center text-slate-500 py-6">Belum ada karakter. Klik tombol di atas untuk menambah!</p>
          }
       }
 

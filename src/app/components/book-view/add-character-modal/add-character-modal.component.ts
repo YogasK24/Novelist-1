@@ -20,28 +20,28 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       role="dialog"
     >
       <div 
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
+        class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"
         (click)="$event.stopPropagation()" 
       >
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
             {{ characterToEdit() ? 'Edit Karakter' : 'Tambah Karakter Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
+          <button (click)="close()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
         <form [formGroup]="characterForm" (ngSubmit)="onSubmit()">
           <div class="mb-4">
-            <label for="charName" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            <label for="charName" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
               Nama Karakter
             </label>
             <input
               type="text"
               id="charName"
               formControlName="name" 
-              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Misal: Andra, Bima..."
               required
             />
@@ -51,34 +51,34 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           </div>
 
           <div class="mb-4">
-             <label for="charDesc" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+             <label for="charDesc" class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
                Deskripsi Singkat (Opsional)
              </label>
              <textarea
                id="charDesc"
                formControlName="description" 
                rows="3"
-               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+               class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                placeholder="Ciri-ciri, peran, atau catatan singkat..."
              ></textarea>
           </div>
 
           <!-- Hubungan Karakter Section -->
-          <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300 mb-3">Hubungan Karakter</h3>
+          <div class="mb-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-300 mb-3">Hubungan Karakter</h3>
             
             <div formArrayName="relationships" class="space-y-3 max-h-40 overflow-y-auto pr-2">
               @for (relGroup of relationshipsArray.controls; track $index) {
-                <div [formGroupName]="$index" class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md flex gap-3 items-center">
+                <div [formGroupName]="$index" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-md flex gap-3 items-center">
                   
-                  <select formControlName="targetId" class="flex-1 px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <select formControlName="targetId" class="flex-1 px-3 py-2 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded-md text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     <option [ngValue]="null" disabled>Pilih Karakter</option>
                     @for (target of availableTargets(); track target.id) {
                       <option [ngValue]="target.id">{{ target.name }}</option>
                     }
                   </select>
                   
-                  <input type="text" formControlName="type" placeholder="Tipe (Rival, Teman, etc.)" class="flex-1 px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md text-gray-900 dark:text-white text-sm placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <input type="text" formControlName="type" placeholder="Tipe (Rival, Teman, etc.)" class="flex-1 px-3 py-2 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded-md text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
                   
                   <button type="button" (click)="removeRelationship($index)" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-1 flex-shrink-0" aria-label="Hapus Hubungan">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -86,11 +86,11 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                 </div>
               }
                @if (relationshipsArray.controls.length === 0) {
-                  <p class="text-sm text-center text-gray-500 py-2">Belum ada hubungan yang ditambahkan.</p>
+                  <p class="text-sm text-center text-slate-500 py-2">Belum ada hubungan yang ditambahkan.</p>
                }
             </div>
 
-            <button type="button" (click)="addRelationship()" class="mt-3 px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white transition-colors duration-150">
+            <button type="button" (click)="addRelationship()" class="mt-3 px-3 py-1.5 text-sm bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 rounded-md text-slate-800 dark:text-white transition-colors duration-150">
               + Tambah Hubungan
             </button>
           </div>
@@ -99,7 +99,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             <button
               type="button"
               (click)="close()"
-              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white transition duration-150"
+              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 rounded-md text-slate-800 dark:text-white transition duration-150"
             >
               Batal
             </button>

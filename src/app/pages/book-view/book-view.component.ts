@@ -19,7 +19,7 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
     BottomNavComponent
   ],
   template: `
-   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500"> 
+   <div class="flex flex-col min-h-screen"> 
       <app-book-view-header></app-book-view-header>
 
       <main class="flex-grow container mx-auto px-4 py-6">

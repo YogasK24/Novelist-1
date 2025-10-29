@@ -14,44 +14,44 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       [class.opacity-100]="show()" [class.opacity-0]="!show()" [class.pointer-events-none]="!show()"
       (click)="close()" aria-modal="true" role="dialog">
       <div 
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl transform transition-all duration-300"
+        class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-2xl transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"
         (click)="$event.stopPropagation()">
 
         @if (character(); as currentCharacter) {
           <div class="flex justify-between items-start mb-4">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
               {{ currentCharacter.name }}
             </h2>
-            <button (click)="close()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
+            <button (click)="close()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none">&times;</button>
           </div>
 
           <div class="max-h-[70vh] overflow-y-auto pr-2">
-              <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Deskripsi</h3>
-              <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-6 bg-gray-100 dark:bg-gray-700/50 p-3 rounded-md">
+              <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Deskripsi</h3>
+              <p class="text-slate-700 dark:text-slate-300 whitespace-pre-wrap mb-6 bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
                 {{ currentCharacter.description || 'Tidak ada deskripsi.' }}
               </p>
 
               <div>
-                  <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Hubungan</h3>
+                  <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Hubungan</h3>
                   @if (currentCharacter.relationships && currentCharacter.relationships.length > 0; as relationships) {
                       <div class="space-y-2">
                           @for (rel of currentCharacter.relationships; track rel.targetId) {
                               @if (bookState.characterMap().get(rel.targetId); as targetChar) {
-                                  <div class="flex items-center gap-3 bg-gray-100 dark:bg-gray-700/50 p-3 rounded-md">
+                                  <div class="flex items-center gap-3 bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
                                       <span class="text-sm font-medium text-purple-600 dark:text-purple-300">{{ rel.type }}:</span>
-                                      <span class="text-gray-900 dark:text-white flex-grow">{{ targetChar.name }}</span>
+                                      <span class="text-slate-900 dark:text-white flex-grow">{{ targetChar.name }}</span>
                                   </div>
                               } @else {
-                                  <div class="text-sm text-gray-500 dark:text-gray-400 italic bg-gray-100 dark:bg-gray-700/50 p-3 rounded-md">
+                                  <div class="text-sm text-slate-500 dark:text-slate-400 italic bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
                                       {{ rel.type }} dengan [Karakter ID {{ rel.targetId }} - Tidak Ditemukan]
                                   </div>
                               }
                           }
                       </div>
                   } @else {
-                      <p class="text-gray-500 dark:text-gray-400 italic">Tidak ada hubungan yang tercatat.</p>
+                      <p class="text-slate-500 dark:text-slate-400 italic">Tidak ada hubungan yang tercatat.</p>
                   }
               </div>
               
