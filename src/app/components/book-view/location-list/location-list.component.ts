@@ -1,7 +1,6 @@
 // src/app/components/book-view/location-list/location-list.component.ts
 import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable } from 'rxjs';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ILocation } from '../../../../types/data';
 import { AddLocationModalComponent } from '../add-location-modal/add-location-modal.component';
@@ -20,11 +19,11 @@ import { AddLocationModalComponent } from '../add-location-modal/add-location-mo
       </button>
 
       <!-- Tampilkan Loading -->
-      @if (bookState.isLoading$ | async) {
+      @if (bookState.isLoading() === 'loading') {
         <div class="flex justify-center items-center py-6">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
         </div>
-      } @else if (locations$ | async; as locations) {
+      } @else if (bookState.locations(); as locations) {
          @if (locations.length > 0) {
             <!-- Daftar Lokasi -->
             <div class="space-y-3">
@@ -67,8 +66,7 @@ import { AddLocationModalComponent } from '../add-location-modal/add-location-mo
 })
 export class LocationListComponent {
   public bookState = inject(CurrentBookStateService); 
-  locations$: Observable<ILocation[]> = this.bookState.locations$;
-
+  
   showModal: WritableSignal<boolean> = signal(false);
   editingLocation: WritableSignal<ILocation | null> = signal(null);
 
@@ -87,7 +85,6 @@ export class LocationListComponent {
   }
 
   deleteLocation(id: number, name: string): void {
-    alert('Tombol Hapus Lokasi Terklik!');
     if (window.confirm(`Yakin ingin menghapus lokasi "${name}"?`)) {
       this.bookState.deleteLocation(id).catch(err => console.error("Gagal menghapus:", err));
     }

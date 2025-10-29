@@ -20,21 +20,16 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
   ],
   template: `
    <div class="min-h-screen bg-gray-900 text-gray-200 flex flex-col"> 
-      <!-- Header -->
       <app-book-view-header></app-book-view-header>
 
-      <!-- Konten Utama -->
       <main class="flex-grow container mx-auto px-4 py-6">
-        <!-- Tampilkan Loading -->
-        @if (bookState.isLoading$ | async) {
+        @if (bookState.isLoading() === 'loading' || bookState.isLoading() === 'initial') {
           <div class="flex justify-center items-center py-10">
              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
           </div>
-        } @else if (bookState.currentBook$ | async; as book) { 
-           <!-- Tampilkan Tabs jika buku ada -->
+        } @else if (bookState.currentBook()) { 
            <app-book-view-tabs></app-book-view-tabs>
         } @else {
-          <!-- Tampilkan pesan jika buku tidak ditemukan (setelah loading selesai) -->
           <div class="text-center py-10 text-red-400">
              Buku tidak ditemukan atau gagal dimuat. 
              <a [routerLink]="['/']" class="text-blue-400 hover:underline">Kembali ke Dashboard</a>
@@ -42,10 +37,8 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
         }
       </main>
 
-      <!-- Navigasi Bawah (Fixed) -->
       <app-bottom-nav></app-bottom-nav>
 
-      <!-- Padding bawah agar konten tidak tertutup BottomNav -->
       <div class="h-16"></div> 
    </div>
   `

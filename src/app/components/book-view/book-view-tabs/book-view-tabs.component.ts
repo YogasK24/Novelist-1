@@ -5,15 +5,21 @@ import { CommonModule } from '@angular/common';
 import { CharacterListComponent } from '../character-list/character-list.component';
 import { LocationListComponent } from '../location-list/location-list.component';
 import { PlotEventListComponent } from '../plot-event-list/plot-event-list.component';
+import { ChapterListComponent } from '../chapter-list/chapter-list.component';
+import { ThemeListComponent } from '../theme-list/theme-list.component';
+import { PropListComponent } from '../prop-list/prop-list.component';
 
 @Component({
   selector: 'app-book-view-tabs',
   standalone: true,
   imports: [
     CommonModule,
-    CharacterListComponent, // Daftarkan komponen list
+    CharacterListComponent,
     LocationListComponent,
     PlotEventListComponent,
+    ChapterListComponent,
+    ThemeListComponent,
+    PropListComponent,
   ],
   template: `
     <div>
@@ -39,9 +45,10 @@ import { PlotEventListComponent } from '../plot-event-list/plot-event-list.compo
       @switch (activeTab) {
          @case ('characters') { <app-character-list></app-character-list> }
          @case ('locations') { <app-location-list></app-location-list> }
+         @case ('chapters') { <app-chapter-list-tab></app-chapter-list-tab> }
          @case ('events') { <app-plot-event-list></app-plot-event-list> }
-         @case ('themes') { <div class="p-4 text-gray-500">Konten Themes akan datang...</div> }
-         @case ('props') { <div class="p-4 text-gray-500">Konten Props akan datang...</div> }
+         @case ('themes') { <app-theme-list></app-theme-list> }
+         @case ('props') { <app-prop-list></app-prop-list> }
          @default { <div class="p-4 text-gray-500">Pilih tab</div> }
       }
     </div>
@@ -49,10 +56,11 @@ import { PlotEventListComponent } from '../plot-event-list/plot-event-list.compo
 })
 export class BookViewTabsComponent {
   tabs = [
-    { key: 'themes', label: 'Themes' },
-    { key: 'events', label: 'Events' },
     { key: 'characters', label: 'Characters' },
     { key: 'locations', label: 'Locations' },
+    { key: 'chapters', label: 'Chapters' },
+    { key: 'events', label: 'Events' },
+    { key: 'themes', label: 'Themes' },
     { key: 'props', label: 'Props' },
   ];
   // Default tab aktif

@@ -37,3 +37,17 @@ export interface IChapter {
   content: string; 
   order: number; 
 }
+
+export interface ITheme {
+  id?: number; 
+  bookId: number; 
+  name: string; // Nama tema, misal: "Keberanian", "Pengkhianatan"
+  description: string; // Deskripsi singkat
+}
+
+export interface IProp { // Prop bisa berarti item penting dalam cerita
+  id?: number; 
+  bookId: number; 
+  name: string; // Nama prop, misal: "Pedang Legendaris", "Surat Wasiat"
+  description: string; // Deskripsi/catatan tentang prop
+}

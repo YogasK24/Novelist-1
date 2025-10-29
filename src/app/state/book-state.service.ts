@@ -1,10 +1,7 @@
 // src/app/state/book-state.service.ts
+// GANTI SEMUA ISI FILE INI (MIGRASI SIGNALS)
 
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-// FIX: Corrected the import path for DatabaseService.
-// The service is located in the same 'state' directory, not '../services'.
-// This resolves TypeScript errors where 'dbService' was treated as 'unknown'.
+import { Injectable, inject, signal } from '@angular/core';
 import { DatabaseService } from './database.service'; 
 import type { IBook } from '../../types/data';
 
@@ -14,14 +11,9 @@ import type { IBook } from '../../types/data';
 export class BookStateService {
   private readonly dbService = inject(DatabaseService);
 
-  // --- State Internal (Private BehaviorSubjects) ---
-  private readonly _books$ = new BehaviorSubject<IBook[]>([]);
-  private readonly _isLoading$ = new BehaviorSubject<boolean>(false);
-
-  // --- State Publik (Public Observables) ---
-  // Komponen akan subscribe ke sini
-  readonly books$: Observable<IBook[]> = this._books$.asObservable();
-  readonly isLoading$: Observable<boolean> = this._isLoading$.asObservable();
+  // --- STATE PRIMER (Writable Signals) ---
+  readonly books = signal<IBook[]>([]);
+  readonly isLoading = signal<boolean>(false);
 
   constructor() {
     // Langsung muat buku saat service pertama kali dibuat
@@ -31,20 +23,20 @@ export class BookStateService {
   // --- Actions (Metode Publik) ---
 
   async fetchBooks(): Promise<void> {
-    this._isLoading$.next(true); // Update state loading
+    this.isLoading.set(true); // Update state loading
     try {
       const books = await this.dbService.getAllBooks();
-      this._books$.next(books); // Update state buku
+      this.books.set(books); // Update state buku
     } catch (error) {
       console.error("Gagal fetch books:", error);
-      this._books$.next([]); // Reset jika gagal
+      this.books.set([]); // Reset jika gagal
     } finally {
-      this._isLoading$.next(false); // Update state loading selesai
+      this.isLoading.set(false); // Update state loading selesai
     }
   }
 
   async addNewBook(title: string): Promise<void> {
-    this._isLoading$.next(true); // Bisa tambahkan loading spesifik add
+    this.isLoading.set(true); 
     try {
       const newBookId = await this.dbService.addBook(title);
       if (newBookId !== undefined) {
@@ -53,33 +45,30 @@ export class BookStateService {
     } catch (error) {
       console.error("Gagal menambah buku:", error);
     } finally {
-       this._isLoading$.next(false); // Selesai loading add
+       this.isLoading.set(false);
     }
   }
 
   async deleteBook(bookId: number): Promise<void> {
-    this._isLoading$.next(true); // Loading spesifik delete
+    this.isLoading.set(true); 
     try {
       await this.dbService.deleteBookAndData(bookId);
-      // Update state secara optimis (tanpa fetch ulang)
-      const currentBooks = this._books$.getValue();
-      this._books$.next(currentBooks.filter(book => book.id !== bookId));
+      // Update state secara optimis
+      this.books.update(currentBooks => currentBooks.filter(book => book.id !== bookId));
     } catch (error) {
       console.error("Gagal menghapus buku:", error);
-      // Jika gagal, mungkin fetch ulang untuk konsistensi
-      await this.fetchBooks(); 
+      await this.fetchBooks(); // Jika gagal, fetch ulang untuk konsistensi
     } finally {
-      this._isLoading$.next(false);
+      this.isLoading.set(false);
     }
   }
 
   async updateBookTitle(bookId: number, newTitle: string): Promise<void> {
-     this._isLoading$.next(true); // Loading spesifik update
+     this.isLoading.set(true);
     try {
       await this.dbService.updateBookTitle(bookId, newTitle);
       // Update state secara optimis
-      const currentBooks = this._books$.getValue();
-      this._books$.next(
+      this.books.update(currentBooks =>
         currentBooks.map(book => 
           book.id === bookId 
             ? { ...book, title: newTitle, lastModified: new Date() } 
@@ -88,9 +77,9 @@ export class BookStateService {
       );
     } catch (error) {
       console.error("Gagal update judul buku:", error);
-      await this.fetchBooks(); // Fetch ulang jika gagal
+      await this.fetchBooks();
     } finally {
-        this._isLoading$.next(false);
+        this.isLoading.set(false);
     }
   }
 }

@@ -19,7 +19,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
         </a>
         <!-- Judul Buku (di tengah jika bisa) -->
         <h1 class="text-lg font-semibold text-white truncate mx-4 flex-grow text-center">
-          {{ (bookState.currentBook$ | async)?.title || 'Loading...' }}
+          {{ bookState.currentBook()?.title || 'Loading...' }}
         </h1>
         <!-- Placeholder untuk ikon kanan -->
         <div class="w-10"> <!-- Sesuaikan width jika perlu -->

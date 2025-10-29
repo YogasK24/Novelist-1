@@ -4,7 +4,7 @@
 import { Injectable } from '@angular/core'; // Import Injectable decorator
 import Dexie, { type Table } from 'dexie';
 // Pastikan path impor ini benar
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter } from '../../types/data';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp } from '../../types/data';
 
 // --- DEFINE DATABASE SHAPE WITH AN INTERFACE ---
 // This avoids subclassing issues with TypeScript's type inference for Dexie.
@@ -18,6 +18,8 @@ interface INovelistDB {
   locations: Table<ILocation, number>;
   plotEvents: Table<IPlotEvent, number>;
   chapters: Table<IChapter, number>;
+  themes: Table<ITheme, number>;
+  props: Table<IProp, number>;
 }
 
 // --- BUAT ANGULAR SERVICE ---
@@ -34,12 +36,14 @@ export class DatabaseService {
     // This resolves TypeScript errors where methods like `version()` and `transaction()` were not found.
     // The cast is updated to match the new intersection type.
     this.db = new Dexie('NovelistDB_Angular') as Dexie & INovelistDB;
-    this.db.version(1).stores({
+    this.db.version(3).stores({
       books: '++id, title, lastModified',
       characters: '++id, bookId, name',
       locations: '++id, bookId, name',
       plotEvents: '++id, bookId, order',
       chapters: '++id, bookId, order',
+      themes: '++id, bookId, name',
+      props: '++id, bookId, name'
     });
   }
 
@@ -139,11 +143,45 @@ export class DatabaseService {
        return undefined;
      }
   }
-  async updateChapter(id: number, changes: Partial<Omit<IChapter, 'id' | 'bookId' | 'content' | 'order'>>): Promise<number> {
+  async updateChapter(id: number, changes: Partial<Omit<IChapter, 'id' | 'bookId' | 'order'>>): Promise<number> {
      return await this.db.chapters.update(id, changes);
   }
   async deleteChapter(id: number): Promise<void> {
      await this.db.chapters.delete(id);
+  }
+
+  // --- Operasi Themes ---
+  async getThemesByBookId(bookId: number): Promise<ITheme[]> {
+    return await this.db.themes.where({ bookId }).toArray();
+  }
+  async addTheme(theme: Omit<ITheme, 'id'>): Promise<number | undefined> {
+     try {
+       const id = await this.db.themes.add(theme as ITheme);
+       return id;
+     } catch (error) { console.error("Gagal menambah theme:", error); return undefined; }
+  }
+  async updateTheme(id: number, changes: Partial<Omit<ITheme, 'id' | 'bookId'>>): Promise<number> {
+     return await this.db.themes.update(id, changes);
+  }
+  async deleteTheme(id: number): Promise<void> {
+     await this.db.themes.delete(id);
+  }
+
+  // --- Operasi Props ---
+   async getPropsByBookId(bookId: number): Promise<IProp[]> {
+    return await this.db.props.where({ bookId }).toArray();
+  }
+  async addProp(prop: Omit<IProp, 'id'>): Promise<number | undefined> {
+     try {
+       const id = await this.db.props.add(prop as IProp);
+       return id;
+     } catch (error) { console.error("Gagal menambah prop:", error); return undefined; }
+  }
+  async updateProp(id: number, changes: Partial<Omit<IProp, 'id' | 'bookId'>>): Promise<number> {
+     return await this.db.props.update(id, changes);
+  }
+  async deleteProp(id: number): Promise<void> {
+     await this.db.props.delete(id);
   }
 
   // --- Operasi Hapus Buku Beserta Anaknya (Transaction) ---
@@ -152,12 +190,14 @@ export class DatabaseService {
       // Akses tabel via this.db
       // FIX: The transaction method was called with too many arguments.
       // Passing the tables as an array resolves this issue when multiple tables are involved.
-      await this.db.transaction('rw', [this.db.books, this.db.characters, this.db.locations, this.db.plotEvents, this.db.chapters], async () => {
+      await this.db.transaction('rw', [this.db.books, this.db.characters, this.db.locations, this.db.plotEvents, this.db.chapters, this.db.themes, this.db.props], async () => {
         await Promise.all([ 
           this.db.characters.where({ bookId }).delete(),
           this.db.locations.where({ bookId }).delete(),
           this.db.plotEvents.where({ bookId }).delete(),
           this.db.chapters.where({ bookId }).delete(),
+          this.db.themes.where({ bookId }).delete(),
+          this.db.props.where({ bookId }).delete(),
           this.db.books.delete(bookId) 
         ]);
       });
