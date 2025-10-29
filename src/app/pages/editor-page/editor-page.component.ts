@@ -1,8 +1,8 @@
 // src/app/pages/editor-page/editor-page.component.ts
-import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy, effect, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy, effect, ElementRef, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, combineLatest, map } from 'rxjs';
 import { CurrentBookStateService } from '../../state/current-book-state.service';
 import type { IChapter } from '../../../types/data';
 import { NotificationService } from '../../state/notification.service';
@@ -90,12 +90,12 @@ declare var Quill: any;
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
+export class EditorPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
   private notificationService = inject(NotificationService);
   
-  @ViewChild('editor') editorEl!: ElementRef;
+  editorEl = viewChild.required<ElementRef>('editor');
   private quillInstance: any;
   private contentUpdateTimer: any;
 
@@ -130,10 +130,29 @@ export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         }
     });
+
+    // Inisialisasi Quill setelah elemen editor dan data chapter siap
+    effect(() => {
+      const editorElement = this.editorEl(); // Ini adalah ElementRef
+      if (this.chapter() && editorElement && !this.quillInstance) {
+        this.initQuill();
+      }
+    });
   }
 
   ngOnInit(): void {
-    this.routeSub = this.route.params.subscribe(async params => {
+    if (!this.route.parent) {
+      console.error("EditorPageComponent must be used within a parent route with a book ID.");
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.routeSub = combineLatest([
+      this.route.parent.params,
+      this.route.params
+    ]).pipe(
+      map(([parentParams, childParams]) => ({...parentParams, ...childParams}))
+    ).subscribe(async params => {
       this.isLoading.set(true);
       const bookId = Number(params['id']);
       const chapterId = Number(params['chapterId']);
@@ -145,27 +164,18 @@ export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
             this.bookState.loadBookData(bookId);
         }
         await this.bookState.loadChapters(bookId);
-        this.isLoading.set(false);
       } else {
         console.error("Invalid Book/Chapter ID:", params);
-        this.isLoading.set(false);
       }
+      this.isLoading.set(false);
     });
-  }
-  
-  ngAfterViewInit(): void {
-      // Use an effect to initialize Quill once the editor element and chapter data are ready
-      effect(() => {
-        if (this.chapter() && this.editorEl && !this.quillInstance) {
-          this.initQuill();
-        }
-      });
   }
 
   initQuill(): void {
-    if (!this.editorEl?.nativeElement || this.quillInstance) return;
+    const editorElement = this.editorEl()?.nativeElement;
+    if (!editorElement || this.quillInstance) return;
 
-    this.quillInstance = new Quill(this.editorEl.nativeElement, {
+    this.quillInstance = new Quill(editorElement, {
       theme: 'snow',
       modules: {
         toolbar: [

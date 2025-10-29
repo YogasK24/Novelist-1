@@ -20,13 +20,19 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
         + Tambah Event Plot
       </button>
 
-      @if (bookState.isLoadingChildren().plotEvents) {
-        <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
+      @if (bookState.isLoadingChildren().plotEvents || isReordering()) {
+        <div class="flex justify-center items-center py-6"> 
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div> 
+          @if (isReordering()) {
+             <span class="ml-3 text-gray-400">Menyimpan urutan...</span>
+          }
+        </div>
       } @else if (bookState.plotEvents(); as plotEvents) {
          @if (plotEvents.length > 0) {
             <!-- Timeline Container -->
             <div 
               cdkDropList 
+              [cdkDropListDisabled]="isReordering()"
               (cdkDropListDropped)="onDrop($event)" 
               class="relative pl-8 before:content-[''] before:absolute before:top-0 before:left-4 before:bottom-0 before:w-0.5 before:bg-gray-700">
               
@@ -35,7 +41,8 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
                 <div 
                   cdkDrag 
                   [cdkDragData]="event"
-                  class="relative mb-6 group transition-transform duration-200">
+                  class="relative mb-6 group transition-transform duration-200"
+                  [class.opacity-50]="isReordering()">
 
                   <!-- Timeline Node (titik di garis) -->
                   <div class="absolute -left-[calc(1rem+2px)] top-1 w-4 h-4 rounded-full bg-purple-500 border-2 border-gray-800 group-hover:bg-purple-400 transition"></div>
@@ -78,10 +85,10 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
 
                     <!-- Tombol Aksi terpisah di pojok -->
                     <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <button (click)="openEditModal(event); $event.stopPropagation()" class="text-gray-400 hover:text-blue-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Edit Event">
+                        <button [disabled]="isReordering()" (click)="openEditModal(event); $event.stopPropagation()" class="text-gray-400 hover:text-blue-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Edit Event">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         </button>
-                        <button (click)="deletePlotEvent(event.id!, event.title); $event.stopPropagation()" class="text-gray-400 hover:text-red-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Hapus Event">
+                        <button [disabled]="isReordering()" (click)="deletePlotEvent(event.id!, event.title); $event.stopPropagation()" class="text-gray-400 hover:text-red-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Hapus Event">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     </div>
@@ -126,6 +133,9 @@ export class PlotEventListComponent {
   // State BARU untuk modal detail
   showDetailModal = signal(false);
   viewingEvent = signal<IPlotEvent | null>(null);
+  
+  // State BARU: Reordering
+  isReordering: WritableSignal<boolean> = signal(false);
 
   // --- Logika Modal Edit/Tambah (sudah ada) ---
   openAddModal(): void {
@@ -160,6 +170,8 @@ export class PlotEventListComponent {
 
   // --- Logika Drag and Drop (sudah ada) ---
   onDrop(event: CdkDragDrop<IPlotEvent[]>): void {
+    if (this.isReordering()) return; // Cegah double drop
+
     const currentEvents = [...this.bookState.plotEvents()];
     
     moveItemInArray(currentEvents, event.previousIndex, event.currentIndex);
@@ -169,8 +181,14 @@ export class PlotEventListComponent {
       order: index + 1 // Recalculate order based on new array position
     }));
     
-    this.bookState.reorderPlotEvents(reorderedEvents).catch(err => {
-        console.error("Gagal menyimpan urutan event:", err);
-    });
+    this.isReordering.set(true); // <-- SET LOADING TRUE
+
+    this.bookState.reorderPlotEvents(reorderedEvents)
+        .catch(err => {
+            console.error("Gagal menyimpan urutan event:", err);
+        })
+        .finally(() => {
+            this.isReordering.set(false); // <-- SET LOADING FALSE
+        });
   }
 }

@@ -23,13 +23,24 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
       </div>
 
 
-      @if (bookState.isLoadingChildren().chapters) {
-        <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
+      @if (bookState.isLoadingChildren().chapters || isReordering()) {
+        <div class="flex justify-center items-center py-6"> 
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div> 
+          @if (isReordering()) {
+             <span class="ml-3 text-gray-400">Menyimpan urutan...</span>
+          }
+        </div>
       } @else if (bookState.chapters(); as chapters) {
          @if (chapters.length > 0) {
-            <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-3 p-1 -mx-1 rounded-lg">
+            <div cdkDropList 
+                 [cdkDropListDisabled]="isReordering()"
+                 (cdkDropListDropped)="onDrop($event)" 
+                 class="space-y-3 p-1 -mx-1 rounded-lg">
               @for (chap of chapters; track chap.id) {
-                <div cdkDrag [cdkDragData]="chap" class="bg-gray-800 rounded-lg shadow flex items-start group hover:bg-gray-700/80 transition cursor-grab">
+                <div cdkDrag 
+                     [cdkDragData]="chap" 
+                     class="bg-gray-800 rounded-lg shadow flex items-start group hover:bg-gray-700/80 transition cursor-grab"
+                     [class.opacity-50]="isReordering()">
                   
                   <div class="p-4 text-gray-500" cdkDragHandle>
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /> </svg>
@@ -53,10 +64,10 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
                   </div>
 
                   <div class="flex-shrink-0 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity p-4">
-                     <button (click)="openEditModal(chap); $event.stopPropagation()" class="text-blue-400 hover:text-blue-300 p-1" aria-label="Edit Judul Bab">
+                     <button [disabled]="isReordering()" (click)="openEditModal(chap); $event.stopPropagation()" class="text-blue-400 hover:text-blue-300 p-1" aria-label="Edit Judul Bab">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /> </svg>
                      </button>
-                     <button (click)="deleteChapter(chap.id!, chap.title); $event.stopPropagation()" class="text-red-400 hover:text-red-300 p-1" aria-label="Hapus Bab">
+                     <button [disabled]="isReordering()" (click)="deleteChapter(chap.id!, chap.title); $event.stopPropagation()" class="text-red-400 hover:text-red-300 p-1" aria-label="Hapus Bab">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> </svg>
                      </button>
                   </div>
@@ -85,6 +96,7 @@ export class ChapterListComponent {
   
   showModal: WritableSignal<boolean> = signal(false);
   editingChapter: WritableSignal<IChapter | null> = signal(null);
+  isReordering: WritableSignal<boolean> = signal(false); // <-- BARU: Reordering State
 
   openAddModal(): void {
     this.editingChapter.set(null); 
@@ -144,6 +156,8 @@ export class ChapterListComponent {
   }
 
   onDrop(event: CdkDragDrop<IChapter[]>): void {
+    if (this.isReordering()) return; // Cegah double drop
+
     const currentChapters = [...this.bookState.chapters()];
     
     moveItemInArray(currentChapters, event.previousIndex, event.currentIndex);
@@ -153,8 +167,14 @@ export class ChapterListComponent {
       order: index + 1
     }));
     
-    this.bookState.reorderChapters(reorderedChapters).catch(err => {
-        console.error("Gagal menyimpan urutan bab:", err);
-    });
+    this.isReordering.set(true); // <-- SET LOADING TRUE
+    
+    this.bookState.reorderChapters(reorderedChapters)
+        .catch(err => {
+            console.error("Gagal menyimpan urutan bab:", err);
+        })
+        .finally(() => {
+            this.isReordering.set(false); // <-- SET LOADING FALSE
+        });
   }
 }
