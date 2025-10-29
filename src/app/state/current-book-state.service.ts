@@ -3,13 +3,15 @@
 
 import { Injectable, inject, signal, effect, WritableSignal, computed } from '@angular/core';
 import { DatabaseService } from './database.service';
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship } from '../../types/data';
+import { BookStateService } from './book-state.service';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrentBookStateService {
   private readonly dbService = inject(DatabaseService);
+  private readonly bookStateService = inject(BookStateService);
 
   // --- STATE PRIMER (Writable Signals) ---
   readonly currentBookId = signal<number | null>(null);
@@ -21,6 +23,7 @@ export class CurrentBookStateService {
       chapters: false,
       themes: false,
       props: false,
+      writingLogs: false, // <-- BARU
   });
   
   readonly currentBook = signal<IBook | null>(null);
@@ -30,6 +33,38 @@ export class CurrentBookStateService {
   readonly chapters = signal<IChapter[]>([]);
   readonly themes = signal<ITheme[]>([]);
   readonly props = signal<IProp[]>([]);
+  readonly writingLogs = signal<IWritingLog[]>([]); // <-- BARU
+
+  // Helper untuk mendapatkan tanggal hari ini (YYYY-MM-DD)
+  private getTodayDateString(): string {
+      return new Date().toISOString().slice(0, 10);
+  }
+
+  // --- KOMPUTASI STATISTIK (Signal Computed) ---
+
+  // Total kata yang ditulis hari ini
+  readonly wordsWrittenToday = computed<number>(() => {
+      const today = this.getTodayDateString();
+      const logs = this.writingLogs();
+      
+      // Cari log hari ini
+      const todayLog = logs.find(log => log.date === today);
+      return todayLog ? todayLog.wordCountAdded : 0;
+  });
+
+  // Target kata per hari
+  readonly dailyTarget = computed<number>(() => {
+      return this.currentBook()?.dailyWordTarget ?? 0;
+  });
+
+  // Persentase progres harian
+  readonly dailyProgressPercentage = computed<number>(() => {
+      const target = this.dailyTarget();
+      const written = this.wordsWrittenToday();
+      
+      if (target <= 0) return 0;
+      return Math.min(100, Math.floor((written / target) * 100));
+  });
 
   // --- KOMPUTASI RELASI (Signal Computed) ---
   // 1. Peta ID Karakter -> Objek Karakter
@@ -85,6 +120,7 @@ export class CurrentBookStateService {
         chapters: false,
         themes: false,
         props: false,
+        writingLogs: false, // <-- BARU
     });
     this.currentBook.set(null);
     this.characters.set([]);
@@ -93,6 +129,7 @@ export class CurrentBookStateService {
     this.chapters.set([]);
     this.themes.set([]);
     this.props.set([]);
+    this.writingLogs.set([]); // <-- BARU
   }
 
   /** Metode Private: Memuat data buku utama saja */
@@ -218,6 +255,21 @@ export class CurrentBookStateService {
         this.isLoadingChildren.update(s => ({ ...s, props: false }));
     }
   }
+  
+  // <-- BARU
+  async loadWritingLogs(bookId: number): Promise<void> {
+    this.isLoadingChildren.update(s => ({ ...s, writingLogs: true }));
+    try {
+        const logs = await this.dbService.getWritingLogsByBookId(bookId);
+        this.writingLogs.set(logs ?? []);
+    } catch (e) {
+        console.error("Gagal load writing logs:", e);
+        this.writingLogs.set([]);
+    } finally {
+        this.isLoadingChildren.update(s => ({ ...s, writingLogs: false }));
+    }
+  }
+
 
   // --- CRUD Actions ---
 
@@ -342,6 +394,8 @@ export class CurrentBookStateService {
           chap.id === id ? { ...chap, content: content } : chap
         )
       );
+      // <-- BARU: Panggil kalkulasi ulang jumlah kata
+      await this._recalculateAndUpdateWordCount();
     } catch(error) { 
       console.error("updateChapterContent error:", error);
       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
@@ -352,6 +406,8 @@ export class CurrentBookStateService {
      try {
        await this.dbService.deleteChapter(id);
        await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
+       // <-- BARU: Panggil kalkulasi ulang jumlah kata setelah hapus
+       await this._recalculateAndUpdateWordCount();
      } catch(error) { console.error("deleteChapter error:", error); }
   }
   
@@ -418,4 +474,62 @@ export class CurrentBookStateService {
        await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props);
      } catch(error) { console.error("deleteProp error:", error); }
   }
+  
+  // --- FUNGSI BARU UNTUK WORD COUNT ---
+
+  private _countWordsInChapterContent(content: string): number {
+    if (!content) return 0;
+    try {
+      if (content.trim().startsWith('{')) {
+        const delta = JSON.parse(content);
+        if (delta && Array.isArray(delta.ops)) {
+          return delta.ops.reduce((count: number, op: any) => {
+            if (typeof op.insert === 'string') {
+              const words = op.insert.trim().split(/\s+/).filter(Boolean);
+              return count + words.length;
+            }
+            return count;
+          }, 0);
+        }
+      }
+    } catch(e) { /* Fallback to plain text */ }
+
+    return content.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  private async _recalculateAndUpdateWordCount(): Promise<void> {
+    const book = this.currentBook();
+    const bookId = this.currentBookId();
+    if (!book || !bookId) return;
+
+    const oldTotalWordCount = book.wordCount;
+    const allChapters = this.chapters();
+    const newTotalWordCount = allChapters.reduce((total, chap) => total + this._countWordsInChapterContent(chap.content), 0);
+    
+    const wordCountChange = newTotalWordCount - oldTotalWordCount;
+
+    if (wordCountChange !== 0) {
+      try {
+        // 1. Update total kata di database
+        await this.dbService.updateBookStats(bookId, { wordCount: newTotalWordCount });
+        
+        // 2. Update state buku saat ini secara optimis
+        this.currentBook.update(current => current ? { ...current, wordCount: newTotalWordCount } : null);
+
+        // 3. Update state buku di daftar utama (dashboard)
+        this.bookStateService.updateBookInList(bookId, { wordCount: newTotalWordCount });
+
+        // 4. Catat perubahan ke log harian
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        await this.dbService.upsertWritingLog(bookId, today, wordCountChange);
+        
+        // 5. Muat ulang log untuk memperbarui UI
+        await this.loadWritingLogs(bookId);
+
+      } catch (error) {
+        console.error("Gagal update jumlah kata dan log:", error);
+      }
+    }
+  }
+
 }

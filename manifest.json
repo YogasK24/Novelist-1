@@ -1,9 +1,10 @@
 {
-  "name": "Novelist App - Offline Writing Tool",
+  "name": "Novelist App - Writing Tool",
   "short_name": "Novelist",
   "description": "Alat perencanaan dan penulisan novel yang berfungsi penuh secara offline.",
   "start_url": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#1a1a1a",
   "theme_color": "#4c1d95",
   "icons": [

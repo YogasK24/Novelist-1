@@ -1,5 +1,5 @@
 // src/app/components/book-view/chapter-list/chapter-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -79,19 +79,12 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChapterListComponent implements OnInit {
+export class ChapterListComponent {
   public bookState = inject(CurrentBookStateService); 
   private router = inject(Router);
   
   showModal: WritableSignal<boolean> = signal(false);
   editingChapter: WritableSignal<IChapter | null> = signal(null);
-
-  ngOnInit(): void {
-    const bookId = this.bookState.currentBookId();
-    if (bookId !== null) {
-        this.bookState.loadChapters(bookId);
-    }
-  }
 
   openAddModal(): void {
     this.editingChapter.set(null); 

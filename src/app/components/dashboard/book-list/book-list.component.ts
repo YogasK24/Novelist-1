@@ -23,7 +23,8 @@ import { BookCardComponent } from '../book-card/book-card.component';
             @for (book of books; track book.id) {
               <app-book-card 
                 [book]="book"
-                (editClicked)="handleEditClicked($event)">
+                (editClicked)="handleEditClicked($event)"
+                (setTargetClicked)="handleSetTargetClicked($event)">
               </app-book-card>
             }
           </div>
@@ -40,8 +41,13 @@ import { BookCardComponent } from '../book-card/book-card.component';
 export class BookListComponent {
   readonly bookState = inject(BookStateService);
   editClicked = output<IBook>();
+  setTargetClicked = output<IBook>();
 
   handleEditClicked(book: IBook): void {
     this.editClicked.emit(book);
+  }
+  
+  handleSetTargetClicked(book: IBook): void {
+    this.setTargetClicked.emit(book);
   }
 }

@@ -5,6 +5,7 @@ import { BookListComponent } from '../../components/dashboard/book-list/book-lis
 import { AddBookButtonComponent } from '../../components/dashboard/add-book-button/add-book-button.component';
 import { AddBookModalComponent } from '../../components/dashboard/add-book-modal/add-book-modal.component';
 import type { IBook } from '../../../types/data';
+import { SetTargetModalComponent } from '../../components/dashboard/set-target-modal/set-target-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,13 +14,17 @@ import type { IBook } from '../../../types/data';
     NavbarComponent,
     BookListComponent,
     AddBookButtonComponent,
-    AddBookModalComponent
+    AddBookModalComponent,
+    SetTargetModalComponent
   ],
   template: `
     <div class="min-h-screen bg-gray-900 text-gray-200">
       <app-navbar></app-navbar>
       <main class="container mx-auto px-4 py-8">
-        <app-book-list (editClicked)="handleOpenEditModal($event)"></app-book-list>
+        <app-book-list 
+          (editClicked)="handleOpenEditModal($event)"
+          (setTargetClicked)="handleOpenSetTargetModal($event)">
+        </app-book-list>
       </main>
       <app-add-book-button (addClicked)="handleOpenAddModal()"></app-add-book-button>
 
@@ -29,6 +34,13 @@ import type { IBook } from '../../../types/data';
           (closeModal)="handleCloseModal()">
         </app-add-book-modal>
       }
+
+      @if (showSetTargetModal()) {
+        <app-set-target-modal
+          [book]="bookForTarget()"
+          (closeModal)="handleCloseSetTargetModal()">
+        </app-set-target-modal>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +48,9 @@ import type { IBook } from '../../../types/data';
 export class DashboardComponent {
   showModal = signal(false);
   editingBook = signal<IBook | null>(null);
+
+  showSetTargetModal = signal(false);
+  bookForTarget = signal<IBook | null>(null);
 
   handleOpenAddModal(): void {
     this.editingBook.set(null);
@@ -51,5 +66,15 @@ export class DashboardComponent {
     this.showModal.set(false);
     // Opsional: delay reset agar transisi mulus
     setTimeout(() => this.editingBook.set(null), 300); 
+  }
+
+  handleOpenSetTargetModal(book: IBook): void {
+    this.bookForTarget.set(book);
+    this.showSetTargetModal.set(true);
+  }
+
+  handleCloseSetTargetModal(): void {
+    this.showSetTargetModal.set(false);
+    setTimeout(() => this.bookForTarget.set(null), 300);
   }
 }

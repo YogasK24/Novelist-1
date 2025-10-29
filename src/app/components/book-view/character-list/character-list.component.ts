@@ -1,5 +1,5 @@
 // src/app/components/book-view/character-list/character-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common'; // Untuk async pipe, ngIf, ngFor
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; // State service
 import type { ICharacter } from '../../../../types/data';
@@ -80,20 +80,13 @@ import { AddCharacterModalComponent } from '../add-character-modal/add-character
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CharacterListComponent implements OnInit {
+export class CharacterListComponent {
   // Inject state service
   public bookState = inject(CurrentBookStateService); 
 
   // Gunakan Signal untuk state modal
   showModal: WritableSignal<boolean> = signal(false);
   editingCharacter: WritableSignal<ICharacter | null> = signal(null);
-
-  ngOnInit(): void {
-    const bookId = this.bookState.currentBookId();
-    if (bookId !== null) {
-        this.bookState.loadCharacters(bookId);
-    }
-  }
 
   openAddModal(): void {
     this.editingCharacter.set(null); // Mode tambah

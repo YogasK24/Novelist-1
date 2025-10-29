@@ -1,6 +1,6 @@
 // src/app/components/dashboard/book-card/book-card.component.ts
 import { Component, ChangeDetectionStrategy, input, output, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { IBook } from '../../../../types/data';
 import { BookStateService } from '../../../state/book-state.service';
@@ -8,22 +8,33 @@ import { BookStateService } from '../../../state/book-state.service';
 @Component({
   selector: 'app-book-card',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, CommonModule],
   template: `
     <div
       class="group relative block bg-gray-800/50 ring-1 ring-white/10 rounded-lg shadow-lg hover:ring-purple-400/50 transition-all duration-300 overflow-hidden h-full flex flex-col p-4">
 
       <div class="flex-grow">
-        <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors truncate">
+        <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors truncate">
           {{ book().title }}
         </h3>
+        <p class="text-sm text-gray-400">
+          {{ book().wordCount | number }} words
+        </p>
       </div>
       
-      <p class="text-xs text-gray-400 mt-2">
+      <p class="text-xs text-gray-500 mt-2">
         Modified: {{ book().lastModified | date:'shortDate' }}
       </p>
 
       <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <button (click)="onSetTarget($event)"
+          class="text-gray-400 hover:text-green-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+          aria-label="Set Daily Target">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12a3 3 0 106 0 3 3 0 00-6 0z" />
+          </svg>
+        </button>
         <button (click)="onEdit($event)"
           class="text-gray-400 hover:text-blue-400 p-1.5 bg-gray-900/60 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Edit Judul">
@@ -44,8 +55,15 @@ import { BookStateService } from '../../../state/book-state.service';
 export class BookCardComponent {
   book = input.required<IBook>(); 
   editClicked = output<IBook>();
+  setTargetClicked = output<IBook>();
 
   private readonly bookState = inject(BookStateService);
+  
+  onSetTarget(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.setTargetClicked.emit(this.book());
+  }
 
   onEdit(event: MouseEvent): void {
     // Mencegah navigasi saat tombol edit diklik

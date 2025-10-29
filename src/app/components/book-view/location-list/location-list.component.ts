@@ -1,5 +1,5 @@
 // src/app/components/book-view/location-list/location-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ILocation } from '../../../../types/data';
@@ -64,18 +64,11 @@ import { AddLocationModalComponent } from '../add-location-modal/add-location-mo
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LocationListComponent implements OnInit {
+export class LocationListComponent {
   public bookState = inject(CurrentBookStateService); 
   
   showModal: WritableSignal<boolean> = signal(false);
   editingLocation: WritableSignal<ILocation | null> = signal(null);
-
-  ngOnInit(): void {
-    const bookId = this.bookState.currentBookId();
-    if (bookId !== null) {
-        this.bookState.loadLocations(bookId);
-    }
-  }
 
   openAddModal(): void {
     this.editingLocation.set(null);

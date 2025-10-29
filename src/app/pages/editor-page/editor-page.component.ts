@@ -13,87 +13,78 @@ declare var Quill: any;
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="h-screen bg-gray-800 text-gray-200 flex flex-col">
-      <header class="bg-gray-900 shadow-md sticky top-0 z-40 flex-shrink-0">
-        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-          @if (bookState.currentBook(); as book) {
-            <a [routerLink]="['/book', book.id, 'write']" class="flex items-center gap-2 text-white hover:text-gray-300 transition duration-150 p-2 -ml-2 rounded-lg" aria-label="Back to Chapters">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span class="hidden sm:inline">All Chapters</span>
-            </a>
-          }
-          <h1 class="text-lg font-semibold text-white truncate mx-4 text-center">
-            {{ chapter()?.title || 'Loading...' }}
-          </h1>
-          <div class="w-28 text-right">
-            <span class="text-sm transition-opacity" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
+    @if (isLoading()) {
+      <div class="flex h-full w-full items-center justify-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
+      </div>
+    } @else if (chapter(); as currentChapter) {
+      <div class="flex h-full flex-col p-4 sm:p-6 bg-gray-800">
+        <!-- Chapter Title & Save Controls -->
+        <div class="mb-4 flex flex-shrink-0 items-center justify-between border-b border-gray-700 pb-3">
+          <h2 class="truncate text-2xl font-bold text-white" [title]="currentChapter.title">
+            {{ currentChapter.title }}
+          </h2>
+          <div class="flex-shrink-0 text-right">
+            <span class="hidden text-sm text-gray-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
             <button 
               (click)="saveContent()" 
               [disabled]="!isDirty() || isSaving()"
-              class="ml-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 text-sm">
+              class="ml-2 rounded-md bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
               {{ isSaving() ? 'Saving...' : 'Save' }}
             </button>
           </div>
         </div>
-      </header>
+        
+        <!-- Editor Area -->
+        <div class="quill-container flex-grow overflow-y-auto relative -mx-4 -mb-4 sm:-mx-6 sm:-mb-6">
+          <div #editor class="h-full"></div>
+        </div>
 
-      @if (isLoading()) {
-        <div class="flex-grow flex justify-center items-center">
-          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
-        </div>
-      } @else if (chapter()) {
-        <main class="flex-grow overflow-y-auto p-4 md:p-8 quill-container">
-          <div #editor></div>
-        </main>
-      } @else {
-        <div class="m-auto text-center text-gray-500">
-          <h3 class="text-xl">Chapter not found.</h3>
-          @if(bookState.currentBookId(); as bookId) {
-             <a [routerLink]="['/book', bookId, 'write']" class="text-purple-400 hover:underline">Back to chapters</a>
-          }
-        </div>
-      }
-    </div>
+      </div>
+    } @else {
+      <div class="m-auto p-4 text-center text-gray-500">
+        <h3 class="text-xl">Chapter not found.</h3>
+        @if(bookState.currentBookId(); as bookId) {
+            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-400 hover:underline">Back to chapters</a>
+        }
+      </div>
+    }
   `,
   styles: [`
-    .quill-container {
-      height: calc(100% - 1rem); /* Fallback */
-      height: calc(100% - 1rem);
+    :host {
+      display: block;
+      height: 100%;
+      overflow: hidden; /* Prevent double scrollbars */
     }
     .quill-container .ql-editor {
-      font-size: 1.125rem;
+      font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      font-size: 1.125rem; /* 18px */
       line-height: 1.75;
       color: #d1d5db; /* gray-300 */
       height: 100%;
-      padding-top: 1rem;
+      padding: 1rem 2rem; /* Vertical and horizontal padding */
+      max-width: 80ch;
+      margin: 0 auto;
     }
     .ql-toolbar {
+      background-color: #374151; /* gray-700 */
       border-color: #4b5563 !important; /* gray-600 */
       border-left: 0 !important;
       border-right: 0 !important;
       border-top: 0 !important;
-      padding: 12px 8px !important;
+      padding: 8px !important;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .ql-toolbar .ql-stroke {
-      stroke: #9ca3af; /* gray-400 */
-    }
-    .ql-toolbar .ql-picker-label {
-      color: #9ca3af; /* gray-400 */
-    }
-    .ql-toolbar .ql-active .ql-stroke {
-      stroke: #c4b5fd; /* violet-300 */
-    }
-     .ql-toolbar .ql-active .ql-fill {
-      fill: #c4b5fd; /* violet-300 */
-    }
-    .ql-toolbar .ql-active .ql-picker-label {
-      color: #c4b5fd; /* violet-300 */
-    }
+    .ql-toolbar .ql-stroke { stroke: #9ca3af; }
+    .ql-toolbar .ql-picker-label { color: #9ca3af; }
+    .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; }
+    .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; }
+    .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; }
     .ql-snow.ql-container {
       border: none !important;
-      height: calc(100% - 42px);
+      height: calc(100% - 49px); /* Adjust for toolbar height */
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

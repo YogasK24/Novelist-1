@@ -1,6 +1,7 @@
 // src/app/components/book-view/book-view-tabs/book-view-tabs.component.ts
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CurrentBookStateService } from '../../../state/current-book-state.service';
 // Import komponen list yang akan kita buat
 import { CharacterListComponent } from '../character-list/character-list.component';
 import { LocationListComponent } from '../location-list/location-list.component';
@@ -30,7 +31,7 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
         <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
           @for (tab of tabs; track tab.key) {
             <button 
-              (click)="activeTab = tab.key"
+              (click)="setActiveTab(tab.key)"
               [class.text-purple-400]="activeTab === tab.key"
               [class.border-purple-400]="activeTab === tab.key"
               [class.text-gray-400]="activeTab !== tab.key"
@@ -57,7 +58,9 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
     </div>
   `
 })
-export class BookViewTabsComponent {
+export class BookViewTabsComponent implements OnInit {
+  private bookState = inject(CurrentBookStateService);
+
   tabs = [
     { key: 'connections', label: 'Connections' },
     { key: 'characters', label: 'Characters' },
@@ -68,5 +71,55 @@ export class BookViewTabsComponent {
     { key: 'props', label: 'Props' },
   ];
   // Default tab aktif
-  activeTab: string = 'connections'; 
+  activeTab: string = 'connections';
+  private loadedTabs = new Set<string>();
+
+  ngOnInit(): void {
+    // Muat data untuk tab default saat komponen dibuat
+    this.loadTabData(this.activeTab);
+  }
+
+  setActiveTab(key: string): void {
+    this.activeTab = key;
+    this.loadTabData(key);
+  }
+
+  private loadTabData(key: string): void {
+    const bookId = this.bookState.currentBookId();
+    if (bookId === null || this.loadedTabs.has(key)) {
+      return; // Sudah dimuat atau belum ada ID buku
+    }
+
+    // Panggil action pemuatan spesifik berdasarkan tab
+    switch (key) {
+      case 'connections':
+        this.bookState.loadCharacters(bookId);
+        break;
+      case 'characters':
+        this.bookState.loadCharacters(bookId);
+        break;
+      case 'locations':
+        this.bookState.loadLocations(bookId);
+        break;
+      case 'chapters':
+        this.bookState.loadChapters(bookId);
+        // Chapter list membutuhkan data karakter untuk menampilkan nama
+        this.bookState.loadCharacters(bookId);
+        break;
+      case 'events':
+        // Detail event membutuhkan data karakter dan lokasi
+        this.bookState.loadPlotEvents(bookId);
+        this.bookState.loadCharacters(bookId);
+        this.bookState.loadLocations(bookId);
+        break;
+      case 'themes':
+        this.bookState.loadThemes(bookId);
+        break;
+      case 'props':
+        this.bookState.loadProps(bookId);
+        break;
+    }
+
+    this.loadedTabs.add(key); // Tandai sebagai sudah dimuat
+  }
 }

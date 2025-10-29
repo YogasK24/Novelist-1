@@ -6,6 +6,8 @@ export interface IBook {
   title: string;
   createdAt: Date;
   lastModified: Date;
+  wordCount: number;         // <-- BARU: Total jumlah kata di buku ini
+  dailyWordTarget: number;   // <-- BARU: Target kata per hari (misal: 500)
 }
 
 export interface IRelationship { // <-- BARU: Interface Relasi
@@ -59,4 +61,11 @@ export interface IProp { // Prop bisa berarti item penting dalam cerita
   bookId: number; 
   name: string; // Nama prop, misal: "Pedang Legendaris", "Surat Wasiat"
   description: string; // Deskripsi/catatan tentang prop
+}
+
+export interface IWritingLog { // <-- BARU: Log harian
+  id?: number;
+  bookId: number;
+  date: string;              // Format YYYY-MM-DD
+  wordCountAdded: number;    // Jumlah kata yang ditambahkan hari itu
 }

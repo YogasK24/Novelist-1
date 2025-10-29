@@ -1,5 +1,5 @@
 // src/app/components/book-view/plot-event-list/plot-event-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
@@ -116,7 +116,7 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlotEventListComponent implements OnInit {
+export class PlotEventListComponent {
   public bookState = inject(CurrentBookStateService); 
   
   // State untuk modal edit/tambah
@@ -126,16 +126,6 @@ export class PlotEventListComponent implements OnInit {
   // State BARU untuk modal detail
   showDetailModal = signal(false);
   viewingEvent = signal<IPlotEvent | null>(null);
-
-  ngOnInit(): void {
-    const bookId = this.bookState.currentBookId();
-    if (bookId !== null) {
-        // Muat juga karakter dan lokasi agar lookup nama berhasil di modal detail
-        this.bookState.loadPlotEvents(bookId);
-        this.bookState.loadCharacters(bookId);
-        this.bookState.loadLocations(bookId);
-    }
-  }
 
   // --- Logika Modal Edit/Tambah (sudah ada) ---
   openAddModal(): void {

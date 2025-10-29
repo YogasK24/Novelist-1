@@ -4,7 +4,7 @@
 import { Injectable } from '@angular/core'; // Import Injectable decorator
 import Dexie, { type Table } from 'dexie';
 // Pastikan path impor ini benar
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship } from '../../types/data';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
 
 // --- DEFINE DATABASE SHAPE WITH AN INTERFACE ---
 // This avoids subclassing issues with TypeScript's type inference for Dexie.
@@ -20,6 +20,7 @@ interface INovelistDB {
   chapters: Table<IChapter, number>;
   themes: Table<ITheme, number>;
   props: Table<IProp, number>;
+  writingLogs: Table<IWritingLog, number>; // <-- BARU
 }
 
 // --- BUAT ANGULAR SERVICE ---
@@ -45,6 +46,17 @@ export class DatabaseService {
       themes: '++id, bookId, name',
       props: '++id, bookId, name'
     });
+    // <-- VERSI BARU
+    this.db.version(6).stores({
+      books: '++id, title, lastModified',
+      characters: '++id, bookId, name, *relationships.targetId',
+      locations: '++id, bookId, name',
+      plotEvents: '++id, bookId, order, locationId, *characterIds',
+      chapters: '++id, bookId, order, *characterIds',
+      themes: '++id, bookId, name',
+      props: '++id, bookId, name',
+      writingLogs: '++id, bookId, date, &[bookId+date]' // <-- SKEMA BARU
+    });
   }
 
   // --- Wrapper Fungsi CRUD (menggunakan instance db internal) ---
@@ -55,7 +67,15 @@ export class DatabaseService {
   }
   async addBook(title: string): Promise<number | undefined> {
     try {
-      const id = await this.db.books.add({ title, createdAt: new Date(), lastModified: new Date() });
+      // <-- UPDATE: Tambahkan nilai default untuk statistik
+      const newBook: Omit<IBook, 'id'> = { 
+        title, 
+        createdAt: new Date(), 
+        lastModified: new Date(),
+        wordCount: 0,
+        dailyWordTarget: 500 
+      };
+      const id = await this.db.books.add(newBook as IBook);
       return id;
     } catch (error) {
       console.error("Gagal menambah buku:", error);
@@ -64,6 +84,11 @@ export class DatabaseService {
   }
   async updateBookTitle(id: number, title: string): Promise<number> {
     return await this.db.books.update(id, { title, lastModified: new Date() });
+  }
+
+  // <-- BARU: Update statistik buku
+  async updateBookStats(id: number, stats: Partial<Pick<IBook, 'wordCount' | 'dailyWordTarget'>>): Promise<number> {
+    return await this.db.books.update(id, { ...stats, lastModified: new Date() });
   }
 
   async getBookById(id: number): Promise<IBook | undefined> {
@@ -183,6 +208,21 @@ export class DatabaseService {
   async deleteProp(id: number): Promise<void> {
      await this.db.props.delete(id);
   }
+  
+  // --- FUNGSI BARU UNTUK LOG PENULISAN ---
+  async getWritingLogsByBookId(bookId: number): Promise<IWritingLog[]> {
+    return await this.db.writingLogs.where({ bookId }).toArray();
+  }
+
+  async upsertWritingLog(bookId: number, date: string, wordCountChange: number): Promise<void> {
+    const existingLog = await this.db.writingLogs.where({ bookId, date }).first();
+    if (existingLog && existingLog.id) {
+        const newCount = existingLog.wordCountAdded + wordCountChange;
+        await this.db.writingLogs.update(existingLog.id, { wordCountAdded: newCount });
+    } else {
+        await this.db.writingLogs.add({ bookId, date, wordCountAdded: wordCountChange });
+    }
+  }
 
   // <-- FUNGSI BARU UNTUK REORDERING -->
 
@@ -205,7 +245,7 @@ export class DatabaseService {
       // Akses tabel via this.db
       // FIX: The transaction method was called with too many arguments.
       // Passing the tables as an array resolves this issue when multiple tables are involved.
-      await this.db.transaction('rw', [this.db.books, this.db.characters, this.db.locations, this.db.plotEvents, this.db.chapters, this.db.themes, this.db.props], async () => {
+      await this.db.transaction('rw', [this.db.books, this.db.characters, this.db.locations, this.db.plotEvents, this.db.chapters, this.db.themes, this.db.props, this.db.writingLogs], async () => {
         await Promise.all([ 
           this.db.characters.where({ bookId }).delete(),
           this.db.locations.where({ bookId }).delete(),
@@ -213,6 +253,7 @@ export class DatabaseService {
           this.db.chapters.where({ bookId }).delete(),
           this.db.themes.where({ bookId }).delete(),
           this.db.props.where({ bookId }).delete(),
+          this.db.writingLogs.where({ bookId }).delete(), // <-- HAPUS LOG
           this.db.books.delete(bookId) 
         ]);
       });

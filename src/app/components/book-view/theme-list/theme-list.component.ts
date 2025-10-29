@@ -1,5 +1,5 @@
 // src/app/components/book-view/theme-list/theme-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ITheme } from '../../../../types/data';
@@ -64,18 +64,11 @@ import { AddThemeModalComponent } from '../add-theme-modal/add-theme-modal.compo
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ThemeListComponent implements OnInit {
+export class ThemeListComponent {
   public bookState = inject(CurrentBookStateService); 
   
   showModal: WritableSignal<boolean> = signal(false);
   editingTheme: WritableSignal<ITheme | null> = signal(null);
-
-  ngOnInit(): void {
-    const bookId = this.bookState.currentBookId();
-    if (bookId !== null) {
-        this.bookState.loadThemes(bookId);
-    }
-  }
 
   openAddModal(): void {
     this.editingTheme.set(null);

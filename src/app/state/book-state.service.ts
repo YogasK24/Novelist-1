@@ -82,4 +82,39 @@ export class BookStateService {
         this.isLoading.set(false);
     }
   }
+
+  // <-- AKSI BARU UNTUK UPDATE STATS
+  async updateBookStats(bookId: number, data: Partial<Pick<IBook, 'dailyWordTarget' | 'wordCount'>>): Promise<void> {
+    this.isLoading.set(true);
+   try {
+     await this.dbService.updateBookStats(bookId, data);
+     // Update state secara optimis
+     this.books.update(currentBooks =>
+       currentBooks.map(book =>
+         book.id === bookId
+           ? { ...book, ...data, lastModified: new Date() }
+           : book
+       )
+     );
+   } catch (error) {
+     console.error("Gagal update statistik buku:", error);
+     await this.fetchBooks();
+   } finally {
+       this.isLoading.set(false);
+   }
+ }
+ 
+  /**
+   * Memperbarui buku dalam daftar state secara optimis.
+   * Digunakan untuk sinkronisasi dari service lain (misal: CurrentBookStateService).
+   */
+  updateBookInList(bookId: number, data: Partial<Pick<IBook, 'wordCount' | 'dailyWordTarget'>>): void {
+    this.books.update(currentBooks =>
+      currentBooks.map(book =>
+        book.id === bookId
+          ? { ...book, ...data, lastModified: new Date() }
+          : book
+      )
+    );
+  }
 }

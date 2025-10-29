@@ -1,217 +1,223 @@
 // src/app/components/book-view/character-map/character-map.component.ts
-import { Component, AfterViewInit, OnDestroy, inject, ElementRef, ChangeDetectionStrategy, effect, ViewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnDestroy, ElementRef, ViewChild, effect, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ICharacter } from '../../../../types/data';
+import * as d3 from 'd3';
 
-// Asumsi global D3 tersedia melalui CDN
-declare var d3: any; 
-
-// Interface untuk data D3.js
-// FIX: Redefined Node and Link interfaces to remove dependency on the 'd3' namespace,
-// which was causing compilation errors. Added properties that are dynamically attached
-// by the D3 simulation to ensure type safety.
-interface Node {
-    id: number;
-    name: string;
-    x?: number;
-    y?: number;
-    fx?: number | null;
-    fy?: number | null;
+// Definisikan tipe data untuk node dan link D3
+interface Node extends d3.SimulationNodeDatum {
+  id: number;
+  name: string;
 }
 
-interface Link {
-    source: any; 
-    target: any;
-    type: string; 
-}
+// FIX: Changed interface with 'extends' to a type alias with an intersection.
+// This can resolve complex type inference issues. In this case, TypeScript was
+// incorrectly reporting that the 'source' property did not exist on the Link type,
+// even though it's part of d3.SimulationLinkDatum.
+type Link = d3.SimulationLinkDatum<Node> & {
+  type: string;
+};
 
 @Component({
   selector: 'app-character-map',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex flex-col h-full min-h-[70vh]">
-        <h3 class="text-xl font-semibold mb-3">Peta Hubungan Karakter</h3>
-        @if (bookState.characters().length < 2) {
-             <div class="text-center py-10 text-gray-500 bg-gray-800/50 ring-1 ring-white/10 rounded-lg">
-                <p>Tambahkan minimal dua karakter dan definisikan hubungan mereka untuk melihat peta.</p>
-             </div>
-        } @else {
-             <div #mapContainer class="flex-grow bg-gray-800/50 ring-1 ring-white/10 rounded-lg shadow-inner overflow-hidden relative">
-             </div>
-        }
+    <div class="p-4 rounded-lg bg-gray-800/50 min-h-[60vh] relative">
+      <!-- Kontainer untuk render D3 -->
+      <div #container class="w-full h-full min-h-[60vh]"></div>
+      
+      <!-- Tampilan Loading -->
+      @if (bookState.isLoadingChildren().characters) {
+        <div class="absolute inset-0 flex justify-center items-center bg-gray-800/50">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+        </div>
+      } @else if (bookState.characters().length === 0) {
+         <!-- Tampilan jika tidak ada karakter -->
+         <div class="absolute inset-0 flex justify-center items-center">
+            <p class="text-center text-gray-500">
+                Tambah karakter untuk melihat visualisasi hubungan mereka.
+            </p>
+         </div>
+      }
     </div>
   `,
+  styles: [`
+    :host {
+      display: block;
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CharacterMapComponent implements AfterViewInit, OnDestroy {
+export class CharacterMapComponent implements OnDestroy, AfterViewInit {
   public bookState = inject(CurrentBookStateService);
-  
-  @ViewChild('mapContainer') private mapContainer!: ElementRef<HTMLDivElement>;
-  
+
+  @ViewChild('container') private container!: ElementRef<HTMLDivElement>;
   private svg: any;
-  private simulation: any;
+  private simulation: d3.Simulation<Node, Link> | undefined;
+  
   private resizeObserver!: ResizeObserver;
 
   constructor() {
+    // Gunakan effect untuk bereaksi terhadap perubahan data karakter
     effect(() => {
-        const characters = this.bookState.characters();
-        if (this.svg && this.simulation) {
-            this.updateMap(characters);
-        }
+      const characters = this.bookState.characters();
+      if (this.container && this.container.nativeElement.clientWidth > 0) {
+          if (characters.length > 0) {
+            this.createGraph(characters);
+          } else {
+            this.clearGraph();
+          }
+      }
     });
   }
-
+  
   ngAfterViewInit(): void {
-    if (typeof d3 === 'undefined') {
-        console.error("D3.js library is not loaded. Check index.html CDN.");
-        return;
-    }
+    // Amati perubahan ukuran kontainer untuk membuat grafik responsif
+    this.resizeObserver = new ResizeObserver(() => {
+        this.updateGraphSize();
+    });
+    this.resizeObserver.observe(this.container.nativeElement);
     
-    // Hanya setup observer jika container ada
-    if (this.mapContainer?.nativeElement) {
-      this.resizeObserver = new ResizeObserver(entries => {
-        const { width, height } = entries[0].contentRect;
-        if (width > 0 && height > 0) {
-            // Jika SVG belum ada, inisialisasi. Jika sudah ada, resize.
-            if (!this.svg) {
-                this.initializeMap(width, height);
-                this.updateMap(this.bookState.characters());
-            } else {
-                this.resizeMap(width, height);
-            }
-        }
-      });
-      this.resizeObserver.observe(this.mapContainer.nativeElement);
-    }
-  }
-  
-  ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
-    this.simulation?.stop();
-  }
-  
-  private resizeMap(width: number, height: number): void {
-      this.svg.attr("width", width).attr("height", height);
-      this.simulation.force("center", d3.forceCenter(width / 2, height / 2));
-      this.simulation.alpha(0.3).restart(); // Beri sedikit 'dorongan' pada simulasi
-  }
-
-  private initializeMap(width: number, height: number): void {
-      if (!this.mapContainer?.nativeElement) return;
-      
-      d3.select(this.mapContainer.nativeElement).select("svg").remove();
-
-      this.svg = d3.select(this.mapContainer.nativeElement).append("svg")
-          .attr("width", width)
-          .attr("height", height)
-          .attr("viewBox", [0, 0, width, height])
-          .attr("style", "max-width: 100%; height: auto;");
-
-      this.simulation = d3.forceSimulation()
-          .force("link", d3.forceLink().id((d: any) => d.id).distance(150).strength(0.5))
-          .force("charge", d3.forceManyBody().strength(-400))
-          .force("center", d3.forceCenter(width / 2, height / 2));
-          
-      // Definisikan grup untuk link dan node agar node berada di atas link
-      this.svg.append("g").attr("class", "links");
-      this.svg.append("g").attr("class", "nodes");
-  }
-  
-  private updateMap(characters: ICharacter[]): void {
-      if (!this.svg || !this.simulation || characters.length < 1) {
-          this.svg?.selectAll("*").remove(); 
-          this.simulation?.nodes([]);
-          return;
+    // Panggil pembuatan grafik secara manual sekali setelah view init,
+    // karena effect mungkin sudah berjalan sebelum `this.container` siap.
+    const characters = this.bookState.characters();
+    if (this.container.nativeElement.clientWidth > 0) {
+      if (characters.length > 0) {
+        this.createGraph(characters);
+      } else {
+        this.clearGraph();
       }
-      
-      const nodes: Node[] = characters.map(char => ({ id: char.id!, name: char.name, x: char.id, y: char.id }));
-      const links: Link[] = [];
-      const charIdSet = new Set(characters.map(c => c.id));
+    }
+  }
 
-      characters.forEach(char => {
-          (char.relationships || []).forEach(rel => {
-              if (charIdSet.has(rel.targetId) && char.id! < rel.targetId) {
-                  links.push({
-                      source: char.id!,
-                      target: rel.targetId,
-                      type: rel.type
-                  });
-              }
-          });
-      });
-
-      const old = new Map(this.svg.select(".nodes").selectAll("g").data().map((d: any) => [d.id, d]));
-      const updatedNodes = nodes.map(d => Object.assign(old.get(d.id) || {}, d));
-
-      // Update link
-      const link = this.svg.select(".links").selectAll("line")
-          .data(links, (d: Link) => `${d.source}-${d.target}`);
-      link.exit().remove();
-      const linkEnter = link.enter().append("line")
-          .attr("stroke", "#4b5563") // gray-600
-          .attr("stroke-opacity", 0.7)
-          .attr("stroke-width", 1.5);
-      
-      // Update node
-      const node = this.svg.select(".nodes").selectAll("g")
-          .data(updatedNodes, (d: Node) => d.id);
-      node.exit().remove();
-      const nodeEnter = node.enter().append("g")
-          .call(this.drag(this.simulation));
-
-      nodeEnter.append("circle")
-          .attr("r", 18)
-          .attr("fill", "#6d28d9") // violet-700
-          .attr("stroke", "#a78bfa") // violet-400
-          .attr("stroke-width", 2);
-      
-      nodeEnter.append("text")
-          .text((d: Node) => d.name)
-          .attr("x", 24)
-          .attr("y", 6)
-          .attr("fill", "#e5e7eb") // gray-200
-          .style("font-size", "14px")
-          .style("text-shadow", "0 1px 3px #000");
-
-      this.simulation.nodes(updatedNodes);
-      this.simulation.force("link").links(links);
-      
-      this.simulation.on("tick", () => {
-          link.merge(linkEnter)
-              .attr("x1", (d: any) => d.source.x)
-              .attr("y1", (d: any) => d.source.y)
-              .attr("x2", (d: any) => d.target.x)
-              .attr("y2", (d: any) => d.target.y);
-          node.merge(nodeEnter)
-              .attr("transform", (d: Node) => `translate(${d.x}, ${d.y})`);
-      });
-
-      this.simulation.alpha(1).restart();
+  ngOnDestroy(): void {
+      this.simulation?.stop(); // Hentikan simulasi saat komponen dihancurkan
+      if (this.resizeObserver) {
+          this.resizeObserver.disconnect();
+      }
   }
   
-  private drag = (simulation: any) => {
-    const dragstarted = (event: any, d: any) => {
+  private updateGraphSize(): void {
+    if (!this.svg || !this.simulation || !this.container) return;
+    const width = this.container.nativeElement.clientWidth;
+    const height = this.container.nativeElement.clientHeight;
+    
+    this.svg.attr('width', width).attr('height', height);
+    this.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+    this.simulation.alpha(0.3).restart(); // "Bangunkan" simulasi
+  }
+
+  private clearGraph(): void {
+    if (!this.container) return;
+    d3.select(this.container.nativeElement).selectAll('*').remove();
+    this.svg = null;
+    this.simulation = undefined;
+  }
+
+  private createGraph(characters: ICharacter[]): void {
+    this.clearGraph();
+    
+    if (characters.length === 0 || !this.container) return;
+
+    // Transformasi data aplikasi menjadi data untuk D3
+    const nodes: Node[] = characters.map(c => ({ id: c.id!, name: c.name }));
+    const links: Link[] = [];
+    
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    characters.forEach(c => {
+      if (c.relationships) {
+        c.relationships.forEach(rel => {
+          if (nodeMap.has(c.id!) && nodeMap.has(rel.targetId)) {
+            links.push({
+              source: c.id!,
+              target: rel.targetId,
+              type: rel.type
+            });
+          }
+        });
+      }
+    });
+
+    const width = this.container.nativeElement.clientWidth;
+    const height = this.container.nativeElement.clientHeight || 600; // Fallback
+
+    this.svg = d3.select(this.container.nativeElement)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', [0, 0, width, height]);
+
+    // Konfigurasi simulasi fisika
+    this.simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id((d: any) => d.id).distance(150))
+      .force('charge', d3.forceManyBody().strength(-400))
+      .force('center', d3.forceCenter(width / 2, height / 2));
+
+    // Render elemen link (garis)
+    const link = this.svg.append('g')
+      .attr('stroke', '#9ca3af') // gray-400
+      .attr('stroke-opacity', 0.6)
+      .selectAll('line')
+      .data(links)
+      .join('line')
+      .attr('stroke-width', 2);
+      
+    // Render elemen node (lingkaran + teks)
+    const node = this.svg.append('g')
+      .selectAll('g')
+      .data(nodes)
+      .join('g')
+      .call(this.drag(this.simulation));
+
+    node.append('circle')
+      .attr('r', 10)
+      .attr('fill', '#a855f7'); // purple-500
+
+    node.append('text')
+      .text((d: any) => d.name)
+      .attr('x', 15)
+      .attr('y', 5)
+      .attr('fill', '#d1d5db') // gray-300
+      .style('text-shadow', '0 0 3px #000')
+      .attr('font-size', '12px');
+
+    // Update posisi elemen pada setiap "tick" simulasi
+    this.simulation.on('tick', () => {
+      link
+        .attr('x1', (d: any) => d.source.x)
+        .attr('y1', (d: any) => d.source.y)
+        .attr('x2', (d: any) => d.target.x)
+        .attr('y2', (d: any) => d.target.y);
+
+      node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+    });
+  }
+  
+  // Fungsi untuk mengaktifkan drag & drop pada node
+  private drag(simulation: d3.Simulation<Node, Link>): any {
+    function dragstarted(event: any) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    };
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
+    }
     
-    const dragged = (event: any, d: any) => {
-      d.fx = event.x;
-      d.fy = event.y;
-    };
+    function dragged(event: any) {
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    }
     
-    const dragended = (event: any, d: any) => {
+    function dragended(event: any) {
       if (!event.active) simulation.alphaTarget(0);
-      d.fx = d.x; // Pin node
-      d.fy = d.y; // Pin node
-    };
+      event.subject.fx = null;
+      event.subject.fy = null;
+    }
     
     return d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended);
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended);
   }
 }
