@@ -10,39 +10,39 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div 
-      class="fixed inset-0 bg-black/70 flex justify-center items-center z-50"
+      class="fixed inset-0 bg-black/60 flex justify-center items-center z-50"
       (click)="closeModal.emit()" 
       aria-modal="true"
       role="dialog"
     >
       <div 
-        class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md ring-1 ring-white/10"
+        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md ring-1 ring-gray-200 dark:ring-white/10"
         (click)="$event.stopPropagation()" 
       >
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-white">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
             Set Daily Word Target
           </h2>
-          <button (click)="closeModal.emit()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+          <button (click)="closeModal.emit()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
-        <p class="text-sm text-gray-400 mb-4">Set a daily writing goal for "{{ book()?.title }}". This helps track your progress.</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Set a daily writing goal for "{{ book()?.title }}". This helps track your progress.</p>
 
         <form [formGroup]="targetForm" (ngSubmit)="onSubmit()">
           <div class="mb-6">
-            <label for="dailyTarget" class="block text-sm font-medium text-gray-300 mb-1">
+            <label for="dailyTarget" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
               Words per Day
             </label>
             <input
               type="number"
               id="dailyTarget"
               formControlName="target"
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="e.g., 500"
               min="0"
             />
              @if (targetForm.get('target')?.invalid && targetForm.get('target')?.touched) {
-              <div class="text-red-400 text-sm mt-1">
+              <div class="text-red-500 dark:text-red-400 text-sm mt-1">
                Please enter a valid number (0 or more).
              </div>
             }
@@ -51,7 +51,7 @@ import { CommonModule } from '@angular/common';
             <button
               type="button"
               (click)="closeModal.emit()"
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white font-semibold transition-colors duration-150"
+              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white font-semibold transition-colors duration-150"
             >
               Cancel
             </button>

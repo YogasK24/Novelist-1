@@ -37,7 +37,7 @@ export class NotificationService {
         // Cleanup: Hapus timer jika sinyal berubah sebelum timeout
         onCleanup(() => clearTimeout(timer));
       }
-    }, { allowSignalWrites: true }); // Izinkan penulisan sinyal di dalam effect
+    });
   }
 
   /**

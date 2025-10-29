@@ -9,18 +9,21 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
   imports: [CommonModule],
   template: `
     <div class="h-full flex flex-col">
-      <h2 class="text-lg font-bold mb-4 text-white flex-shrink-0">World Notes</h2>
+      <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex-shrink-0">World Notes</h2>
       
-      <div class="border-b border-gray-700 mb-4 flex-shrink-0">
+      <div class="border-b border-gray-200 dark:border-gray-700 mb-4 flex-shrink-0">
         <nav class="flex space-x-4" aria-label="Tabs">
           @for (tab of tabs; track tab.key) {
             <button 
               (click)="activeTab.set(tab.key)"
-              [class.text-purple-400]="activeTab() === tab.key"
-              [class.border-purple-400]="activeTab() === tab.key"
-              [class.text-gray-400]="activeTab() !== tab.key"
+              [class.text-purple-600]="activeTab() === tab.key"
+              [class.dark:text-purple-400]="activeTab() === tab.key"
+              [class.border-purple-500]="activeTab() === tab.key"
+              [class.dark:border-purple-400]="activeTab() === tab.key"
+              [class.text-gray-500]="activeTab() !== tab.key"
+              [class.dark:text-gray-400]="activeTab() !== tab.key"
               [class.border-transparent]="activeTab() !== tab.key"
-              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-white transition"
+              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-gray-700 dark:hover:text-white transition"
             >
               {{ tab.label }}
             </button>
@@ -37,9 +40,9 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
                     @if (characters.length > 0) {
                         <div class="space-y-2">
                             @for (char of characters; track char.id) {
-                                <div class="bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-600 cursor-pointer">
-                                    <strong class="text-white">{{ char.name }}</strong> 
-                                    <p class="text-xs text-gray-400 truncate">{{ char.description || 'No description.' }}</p>
+                                <div class="bg-gray-100 dark:bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">
+                                    <strong class="text-gray-900 dark:text-white">{{ char.name }}</strong> 
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ char.description || 'No description.' }}</p>
                                 </div>
                             }
                         </div>
@@ -55,9 +58,9 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
                     @if (locations.length > 0) {
                         <div class="space-y-2">
                             @for (loc of locations; track loc.id) {
-                                <div class="bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-600 cursor-pointer">
-                                    <strong class="text-white">{{ loc.name }}</strong> 
-                                    <p class="text-xs text-gray-400 truncate">{{ loc.description || 'No description.' }}</p>
+                                <div class="bg-gray-100 dark:bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">
+                                    <strong class="text-gray-900 dark:text-white">{{ loc.name }}</strong> 
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ loc.description || 'No description.' }}</p>
                                 </div>
                             }
                         </div>
@@ -73,8 +76,8 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
                      @if (events.length > 0) {
                         <div class="space-y-2">
                             @for (event of events; track event.id) {
-                                <div class="bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-600 cursor-pointer">
-                                    <strong class="text-white">{{ event.order }}. {{ event.title }}</strong> 
+                                <div class="bg-gray-100 dark:bg-gray-700/80 p-2 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">
+                                    <strong class="text-gray-900 dark:text-white">{{ event.order }}. {{ event.title }}</strong> 
                                 </div>
                             }
                         </div>

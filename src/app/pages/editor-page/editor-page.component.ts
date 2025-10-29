@@ -16,17 +16,17 @@ declare var Quill: any;
   template: `
     @if (isLoading()) {
       <div class="flex h-full w-full items-center justify-center">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 dark:border-purple-400"></div>
       </div>
     } @else if (chapter(); as currentChapter) {
-      <div class="flex h-full flex-col p-4 sm:p-6 bg-gray-800">
+      <div class="flex h-full flex-col bg-white dark:bg-gray-800">
         <!-- Chapter Title & Save Controls -->
-        <div class="mb-4 flex flex-shrink-0 items-center justify-between border-b border-gray-700 pb-3">
-          <h2 class="truncate text-2xl font-bold text-white" [title]="currentChapter.title">
+        <div class="flex-shrink-0 p-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 class="truncate text-2xl font-bold text-gray-900 dark:text-white" [title]="currentChapter.title">
             {{ currentChapter.title }}
           </h2>
           <div class="flex-shrink-0 text-right">
-            <span class="hidden text-sm text-gray-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
+            <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
             <button 
               (click)="saveContent()" 
               [disabled]="!isDirty() || isSaving()"
@@ -37,7 +37,7 @@ declare var Quill: any;
         </div>
         
         <!-- Editor Area -->
-        <div class="quill-container flex-grow overflow-y-auto relative -mx-4 -mb-4 sm:-mx-6 sm:-mb-6">
+        <div class="quill-container flex-grow overflow-y-auto relative">
           <div #editor class="h-full"></div>
         </div>
 
@@ -46,7 +46,7 @@ declare var Quill: any;
       <div class="m-auto p-4 text-center text-gray-500">
         <h3 class="text-xl">Chapter not found.</h3>
         @if(bookState.currentBookId(); as bookId) {
-            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-400 hover:underline">Back to chapters</a>
+            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-500 dark:text-purple-400 hover:underline">Back to chapters</a>
         }
       </div>
     }
@@ -61,15 +61,17 @@ declare var Quill: any;
       font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
       font-size: 1.125rem; /* 18px */
       line-height: 1.75;
-      color: #d1d5db; /* gray-300 */
       height: 100%;
-      padding: 1rem 2rem; /* Vertical and horizontal padding */
+      padding: 1rem 2rem;
       max-width: 80ch;
       margin: 0 auto;
+      color: #374151; /* gray-700 for light mode */
+    }
+    .ql-snow.ql-container {
+      border: none !important;
+      height: calc(100% - 49px); /* Adjust for toolbar height */
     }
     .ql-toolbar {
-      background-color: #374151; /* gray-700 */
-      border-color: #4b5563 !important; /* gray-600 */
       border-left: 0 !important;
       border-right: 0 !important;
       border-top: 0 !important;
@@ -77,16 +79,28 @@ declare var Quill: any;
       position: sticky;
       top: 0;
       z-index: 10;
+      background-color: #f3f4f6; /* gray-100 */
+      border-color: #e5e7eb !important; /* gray-200 */
     }
-    .ql-toolbar .ql-stroke { stroke: #9ca3af; }
-    .ql-toolbar .ql-picker-label { color: #9ca3af; }
-    .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; }
-    .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; }
-    .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; }
-    .ql-snow.ql-container {
-      border: none !important;
-      height: calc(100% - 49px); /* Adjust for toolbar height */
+    .ql-toolbar .ql-stroke { stroke: #6b7280; } /* gray-500 */
+    .ql-toolbar .ql-picker-label { color: #6b7280; }
+    .ql-toolbar .ql-active .ql-stroke { stroke: #6d28d9; } /* violet-700 */
+    .ql-toolbar .ql-active .ql-fill { fill: #6d28d9; }
+    .ql-toolbar .ql-active .ql-picker-label { color: #6d28d9; }
+
+    /* Dark Mode Styles */
+    html.dark .quill-container .ql-editor {
+      color: #d1d5db; /* gray-300 */
     }
+    html.dark .ql-toolbar {
+      background-color: #374151; /* gray-700 */
+      border-color: #4b5563 !important; /* gray-600 */
+    }
+    html.dark .ql-toolbar .ql-stroke { stroke: #9ca3af; }
+    html.dark .ql-toolbar .ql-picker-label { color: #9ca3af; }
+    html.dark .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; } /* violet-300 */
+    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; }
+    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -95,7 +109,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   public bookState = inject(CurrentBookStateService);
   private notificationService = inject(NotificationService);
   
-  editorEl = viewChild.required<ElementRef>('editor');
+  editorEl = viewChild<ElementRef>('editor');
   private quillInstance: any;
   private contentUpdateTimer: any;
 

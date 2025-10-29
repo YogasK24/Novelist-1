@@ -11,7 +11,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div 
-      class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 transition-opacity duration-300"
+      class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 transition-opacity duration-300"
       [class.opacity-100]="show()"
       [class.opacity-0]="!show()"
       [class.pointer-events-none]="!show()"
@@ -20,45 +20,45 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       role="dialog"
     >
       <div 
-        class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300"
+        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"
         (click)="$event.stopPropagation()" 
       >
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-white">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
             {{ locationToEdit() ? 'Edit Lokasi' : 'Tambah Lokasi Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+          <button (click)="close()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
         <form [formGroup]="locationForm" (ngSubmit)="onSubmit()">
           <div class="mb-4">
-            <label for="locName" class="block text-sm font-medium text-gray-300 mb-1">
+            <label for="locName" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
               Nama Lokasi
             </label>
             <input
               type="text"
               id="locName"
               formControlName="name" 
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Misal: Hutan Ajaib, Kota Cyber..."
               required
             />
             @if (locationForm.controls['name'].invalid && (locationForm.controls['name'].dirty || locationForm.controls['name'].touched)) {
-              <div class="text-red-400 text-xs mt-1"> Nama tidak boleh kosong. </div>
+              <div class="text-red-500 dark:text-red-400 text-xs mt-1"> Nama tidak boleh kosong. </div>
             }
           </div>
 
           <div class="mb-6">
-             <label for="locDesc" class="block text-sm font-medium text-gray-300 mb-1">
+             <label for="locDesc" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                Deskripsi Singkat (Opsional)
              </label>
              <textarea
                id="locDesc"
                formControlName="description" 
                rows="3"
-               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                placeholder="Deskripsi fisik, suasana, atau catatan..."
              ></textarea>
           </div>
@@ -67,7 +67,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             <button
               type="button"
               (click)="close()"
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white transition duration-150"
+              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-gray-800 dark:text-white transition duration-150"
             >
               Batal
             </button>

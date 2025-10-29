@@ -27,16 +27,19 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
   template: `
     <div>
       <!-- Navigasi Tab -->
-      <div class="border-b border-gray-700 mb-4">
+      <div class="border-b border-gray-200 dark:border-gray-700 mb-4">
         <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
           @for (tab of tabs; track tab.key) {
             <button 
               (click)="setActiveTab(tab.key)"
-              [class.text-purple-400]="activeTab === tab.key"
-              [class.border-purple-400]="activeTab === tab.key"
-              [class.text-gray-400]="activeTab !== tab.key"
+              [class.text-purple-600]="activeTab === tab.key"
+              [class.dark:text-purple-400]="activeTab === tab.key"
+              [class.border-purple-500]="activeTab === tab.key"
+              [class.dark:border-purple-400]="activeTab === tab.key"
+              [class.text-gray-500]="activeTab !== tab.key"
+              [class.dark:text-gray-400]="activeTab !== tab.key"
               [class.border-transparent]="activeTab !== tab.key"
-              class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm hover:text-white hover:border-gray-500 transition"
+              class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm hover:text-gray-700 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition"
             >
               {{ tab.label }}
             </button>
