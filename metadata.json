@@ -1,0 +1,5 @@
+{
+  "name": "Novelist App",
+  "description": "Sebuah kerangka aplikasi untuk membantu penulis merancang dan menulis novel, dibangun dengan Angular dan Tailwind CSS.",
+  "requestFramePermissions": []
+}
