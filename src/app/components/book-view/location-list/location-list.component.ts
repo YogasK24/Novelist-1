@@ -87,8 +87,9 @@ export class LocationListComponent {
   }
 
   deleteLocation(id: number, name: string): void {
+    alert('Tombol Hapus Lokasi Terklik!');
     if (window.confirm(`Yakin ingin menghapus lokasi "${name}"?`)) {
-      this.bookState.deleteLocation(id);
+      this.bookState.deleteLocation(id).catch(err => console.error("Gagal menghapus:", err));
     }
   }
 }

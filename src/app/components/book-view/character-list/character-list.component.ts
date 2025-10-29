@@ -90,8 +90,9 @@ export class CharacterListComponent {
   }
 
   deleteCharacter(id: number, name: string): void {
+    alert('Tombol Hapus Karakter Terklik!'); // <-- TAMBAHKAN BARIS INI
     if (window.confirm(`Yakin ingin menghapus karakter "${name}"?`)) {
-      this.bookState.deleteCharacter(id);
+      this.bookState.deleteCharacter(id).catch(err => console.error("Gagal menghapus:", err)); 
     }
   }
 }

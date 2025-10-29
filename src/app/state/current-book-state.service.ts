@@ -1,11 +1,13 @@
 // src/app/state/current-book-state.service.ts
+// REFAKTORED VERSION
 
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, of, combineLatest, switchMap, shareReplay, distinctUntilChanged, tap, finalize } from 'rxjs';
-import { DatabaseService } from './database.service';
+import { BehaviorSubject, Observable, of, combineLatest, EMPTY } from 'rxjs';
+import { switchMap, shareReplay, distinctUntilChanged, tap, finalize, catchError } from 'rxjs/operators';
+import { DatabaseService } from './database.service'; // Pastikan path benar
 import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter } from '../../types/data';
 
-// Interface state gabungan (opsional, bisa dihapus jika tidak dipakai langsung)
+// Interface state gabungan (opsional)
 interface CurrentBookFullState {
   book: IBook | null;
   characters: ICharacter[];
@@ -23,7 +25,6 @@ export class CurrentBookStateService {
   // --- State Internal ---
   private readonly _currentBookId$ = new BehaviorSubject<number | null>(null);
   private readonly _isLoading$ = new BehaviorSubject<boolean>(false);
-  // Tambahkan BehaviorSubject internal untuk data anak
   private readonly _characters$ = new BehaviorSubject<ICharacter[]>([]);
   private readonly _locations$ = new BehaviorSubject<ILocation[]>([]);
   private readonly _plotEvents$ = new BehaviorSubject<IPlotEvent[]>([]);
@@ -33,13 +34,21 @@ export class CurrentBookStateService {
   readonly isLoading$: Observable<boolean> = this._isLoading$.asObservable();
   readonly currentBookId$: Observable<number | null> = this._currentBookId$.asObservable();
 
-  // Observable buku utama (langsung dari DB saat ID berubah)
+  // Observable buku utama
   readonly currentBook$: Observable<IBook | null> = this._currentBookId$.pipe(
     distinctUntilChanged(),
-    tap(() => this._isLoading$.next(true)), // Mulai loading saat ID berubah
-    switchMap(id => id === null ? of(null) : this.dbService.getBookById(id)),
-    tap(() => this._isLoading$.next(false)), // Selesai loading buku utama
-    shareReplay(1)
+    // Tidak set loading di sini, biarkan pipeline utama yang handle
+    switchMap(id => {
+        if (id === null) return of(null);
+        // Ambil buku dari DB, tangani error jika tidak ditemukan
+        return this.dbService.getBookById(id).then(book => book ?? null)
+                   .catch(err => {
+                       console.error(`Error fetching book ${id}:`, err);
+                       return null; // Kembalikan null jika error
+                   });
+    }),
+    // Gunakan shareReplay dengan refCount
+    shareReplay({ bufferSize: 1, refCount: true }) 
   );
 
   // Observable data anak (dari BehaviorSubject internal)
@@ -55,46 +64,59 @@ export class CurrentBookStateService {
       locations: this.locations$,
       plotEvents: this.plotEvents$,
       chapters: this.chapters$
-  }).pipe(shareReplay(1));
+  // Gunakan shareReplay dengan refCount
+  }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
 
   constructor() {
-     // Dengarkan perubahan ID buku untuk memuat semua data anak
+     // Pipeline utama untuk memuat data anak saat ID berubah
      this._currentBookId$.pipe(
         distinctUntilChanged(),
-        tap(() => { // Reset data anak saat ID null atau berubah
-            this._isLoading$.next(true); // Set loading di awal
+        tap(() => { // Reset state anak dan set loading=true saat ID berubah
+            this._isLoading$.next(true); 
             this._characters$.next([]);
             this._locations$.next([]);
             this._plotEvents$.next([]);
             this._chapters$.next([]);
         }),
-        // Hanya lanjut jika ID tidak null
-        switchMap(id => id === null ? of(null) : this.loadAllChildData(id)),
-        finalize(() => this._isLoading$.next(false)) // Pastikan loading false di akhir
+        switchMap(id => {
+            if (id === null) {
+                // Jika ID null, langsung set loading=false dan hentikan pipeline
+                this._isLoading$.next(false);
+                return EMPTY; // EMPTY observable agar tidak lanjut
+            }
+            // Jika ID ada, panggil loadAllChildData
+            // Gunakan catchError untuk menangani error di loadAllChildData
+            // dan finalize untuk memastikan loading=false
+            return of(id).pipe(
+                switchMap(bookId => this.loadAllChildData(bookId)),
+                catchError(err => {
+                    console.error("Error dalam pipeline loadAllChildData:", err);
+                    return EMPTY; // Hentikan pipeline jika ada error parah saat load
+                }),
+                // Finalize akan selalu jalan, baik sukses maupun error
+                finalize(() => this._isLoading$.next(false)) 
+            );
+        })
      ).subscribe(); // Subscribe agar pipeline ini aktif
   }
 
   // --- Metode Internal untuk Memuat Data Anak ---
   private async loadAllChildData(bookId: number): Promise<void> {
-    try {
-        const [characters, locations, plotEvents, chapters] = await Promise.all([
-            this.dbService.getCharactersByBookId(bookId),
-            this.dbService.getLocationsByBookId(bookId),
-            this.dbService.getPlotEventsByBookId(bookId),
-            this.dbService.getChaptersByBookId(bookId),
-        ]);
-        // Update BehaviorSubjects internal
-        this._characters$.next(characters || []);
-        this._locations$.next(locations || []);
-        this._plotEvents$.next(plotEvents || []);
-        this._chapters$.next(chapters || []);
-    } catch (error) {
-        console.error("Gagal load data anak:", error);
-        // Biarkan state anak kosong
-    } finally {
-        this._isLoading$.next(false); // Set loading false setelah semua selesai
-    }
+    // try...catch sudah ada di dalam dbService, di sini fokus update state
+    // Promise.all akan reject jika salah satu gagal, jadi kita tangani di pipeline utama
+    const [characters, locations, plotEvents, chapters] = await Promise.all([
+        this.dbService.getCharactersByBookId(bookId),
+        this.dbService.getLocationsByBookId(bookId),
+        this.dbService.getPlotEventsByBookId(bookId),
+        this.dbService.getChaptersByBookId(bookId),
+    ]);
+    // Update BehaviorSubjects internal
+    this._characters$.next(characters ?? []); // Gunakan ?? [] untuk fallback jika undefined
+    this._locations$.next(locations ?? []);
+    this._plotEvents$.next(plotEvents ?? []);
+    this._chapters$.next(chapters ?? []);
+    // Loading state dihandle oleh finalize di pipeline utama
   }
 
 
@@ -102,7 +124,6 @@ export class CurrentBookStateService {
 
   /** Memulai proses pemuatan data buku berdasarkan ID */
   loadBookData(bookId: number): void {
-     // Hanya perlu emit ID baru, pipeline di constructor akan handle loading
      if (this._currentBookId$.getValue() !== bookId) {
         this._currentBookId$.next(bookId);
      }
@@ -110,117 +131,133 @@ export class CurrentBookStateService {
 
   /** Membersihkan data buku saat ini */
   clearBookData(): void {
-    this._currentBookId$.next(null); // Ini akan otomatis mereset state via pipeline
+    this._currentBookId$.next(null); 
   }
 
-  // --- CRUD Actions (Sekarang update state internal secara eksplisit) ---
+  // --- CRUD Actions (Lebih aman dan efisien) ---
+
+  // Fungsi helper untuk refresh data anak tertentu
+  private async refreshChildData<T>(
+    fetchFn: (bookId: number) => Promise<T[]>, 
+    subject: BehaviorSubject<T[]>
+  ): Promise<void> {
+      const bookId = this._currentBookId$.getValue();
+      if (!bookId) return; // Pemeriksaan null eksplisit
+      try {
+          // Set loading=true sebelum fetch ulang (opsional, tergantung UX)
+          // this._isLoading$.next(true); 
+          const updatedList = await fetchFn(bookId);
+          subject.next(updatedList ?? []); // Update state dengan data baru
+      } catch (error) {
+          console.error("Gagal refresh data anak:", error);
+          // Mungkin reset subject ke [] atau biarkan data lama?
+          // subject.next([]); 
+      } finally {
+          // this._isLoading$.next(false); // Set false jika loading di set true di atas
+      }
+  }
 
   // Character Actions
   async addCharacter(name: string, description: string): Promise<void> {
     const bookId = this._currentBookId$.getValue();
-    if (!bookId) return;
-    const newId = await this.dbService.addCharacter({ bookId, name, description });
-    if (newId !== undefined) {
-      // Ambil data terbaru dan update state
-      const updatedList = await this.dbService.getCharactersByBookId(bookId);
-      this._characters$.next(updatedList);
-    }
+    if (!bookId) return; // Pemeriksaan null eksplisit
+    try {
+      await this.dbService.addCharacter({ bookId, name, description });
+      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this._characters$);
+    } catch(error) { console.error("addCharacter error:", error); }
   }
   async updateCharacter(id: number, data: { name: string, description: string }): Promise<void> {
-    const bookId = this._currentBookId$.getValue();
-    if (!bookId) return;
-    await this.dbService.updateCharacter(id, data);
-    const updatedList = await this.dbService.getCharactersByBookId(bookId);
-    this._characters$.next(updatedList);
+    if (!this._currentBookId$.getValue()) return; // Pemeriksaan null eksplisit
+    try {
+      await this.dbService.updateCharacter(id, data);
+      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this._characters$);
+    } catch(error) { console.error("updateCharacter error:", error); }
   }
   async deleteCharacter(id: number): Promise<void> {
-     const bookId = this._currentBookId$.getValue();
-     if (!bookId) return;
-    await this.dbService.deleteCharacter(id);
-    const updatedList = await this.dbService.getCharactersByBookId(bookId);
-    this._characters$.next(updatedList);
+     if (!this._currentBookId$.getValue()) return; // Pemeriksaan null eksplisit
+     try {
+       await this.dbService.deleteCharacter(id);
+       await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this._characters$);
+     } catch(error) { console.error("deleteCharacter error:", error); }
   }
 
   // Location Actions
   async addLocation(name: string, description: string): Promise<void> {
     const bookId = this._currentBookId$.getValue();
     if (!bookId) return;
-    const newId = await this.dbService.addLocation({ bookId, name, description });
-    if (newId !== undefined) {
-      const updatedList = await this.dbService.getLocationsByBookId(bookId);
-      this._locations$.next(updatedList);
-    }
+    try {
+      await this.dbService.addLocation({ bookId, name, description });
+      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this._locations$);
+    } catch(error) { console.error("addLocation error:", error); }
   }
   async updateLocation(id: number, data: { name: string, description: string }): Promise<void> {
-    const bookId = this._currentBookId$.getValue();
-    if (!bookId) return;
-    await this.dbService.updateLocation(id, data);
-    const updatedList = await this.dbService.getLocationsByBookId(bookId);
-    this._locations$.next(updatedList);
+    if (!this._currentBookId$.getValue()) return;
+    try {
+      await this.dbService.updateLocation(id, data);
+      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this._locations$);
+    } catch(error) { console.error("updateLocation error:", error); }
   }
   async deleteLocation(id: number): Promise<void> {
-     const bookId = this._currentBookId$.getValue();
-     if (!bookId) return;
-    await this.dbService.deleteLocation(id);
-    const updatedList = await this.dbService.getLocationsByBookId(bookId);
-    this._locations$.next(updatedList);
+     if (!this._currentBookId$.getValue()) return;
+     try {
+       await this.dbService.deleteLocation(id);
+       await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this._locations$);
+     } catch(error) { console.error("deleteLocation error:", error); }
   }
 
   // Plot Event Actions
   async addPlotEvent(title: string, summary: string): Promise<void> {
     const bookId = this._currentBookId$.getValue();
     if (!bookId) return;
-    // Dapatkan order terbaru langsung dari DB
-    const currentEvents = await this.dbService.getPlotEventsByBookId(bookId);
-    const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
-    const newOrder = maxOrder + 1;
-    const newId = await this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder });
-    if (newId !== undefined) {
-        const updatedList = await this.dbService.getPlotEventsByBookId(bookId); // Sudah terurut
-        this._plotEvents$.next(updatedList);
-    }
+    try {
+      // Ambil order terbaru saat ini juga, lebih aman
+      const currentEvents = await this.dbService.getPlotEventsByBookId(bookId);
+      const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
+      const newOrder = maxOrder + 1;
+      await this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder });
+      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this._plotEvents$);
+    } catch(error) { console.error("addPlotEvent error:", error); }
   }
   async updatePlotEvent(id: number, data: { title: string, summary: string }): Promise<void> {
-    const bookId = this._currentBookId$.getValue();
-    if (!bookId) return;
-    await this.dbService.updatePlotEvent(id, data);
-    const updatedList = await this.dbService.getPlotEventsByBookId(bookId);
-    this._plotEvents$.next(updatedList);
+    if (!this._currentBookId$.getValue()) return;
+    try {
+      await this.dbService.updatePlotEvent(id, data);
+      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this._plotEvents$);
+    } catch(error) { console.error("updatePlotEvent error:", error); }
   }
   async deletePlotEvent(id: number): Promise<void> {
-     const bookId = this._currentBookId$.getValue();
-     if (!bookId) return;
-    await this.dbService.deletePlotEvent(id);
-    const updatedList = await this.dbService.getPlotEventsByBookId(bookId);
-    this._plotEvents$.next(updatedList);
+     if (!this._currentBookId$.getValue()) return;
+     try {
+       await this.dbService.deletePlotEvent(id);
+       await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this._plotEvents$);
+     } catch(error) { console.error("deletePlotEvent error:", error); }
   }
 
   // Chapter Actions
   async addChapter(title: string): Promise<void> {
     const bookId = this._currentBookId$.getValue();
     if (!bookId) return;
-    const currentChapters = await this.dbService.getChaptersByBookId(bookId);
-    const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
-    const newOrder = maxOrder + 1;
-    const newId = await this.dbService.addChapter({ bookId, title, content: "", order: newOrder });
-    if (newId !== undefined) {
-       const updatedList = await this.dbService.getChaptersByBookId(bookId); // Sudah terurut
-       this._chapters$.next(updatedList);
-    }
+    try {
+      const currentChapters = await this.dbService.getChaptersByBookId(bookId);
+      const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
+      const newOrder = maxOrder + 1;
+      await this.dbService.addChapter({ bookId, title, content: "", order: newOrder });
+      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this._chapters$);
+    } catch(error) { console.error("addChapter error:", error); }
   }
   async updateChapterTitle(id: number, title: string): Promise<void> {
-    const bookId = this._currentBookId$.getValue();
-    if (!bookId) return;
-    await this.dbService.updateChapter(id, { title });
-    const updatedList = await this.dbService.getChaptersByBookId(bookId);
-    this._chapters$.next(updatedList);
+    if (!this._currentBookId$.getValue()) return;
+    try {
+      await this.dbService.updateChapter(id, { title });
+      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this._chapters$);
+    } catch(error) { console.error("updateChapterTitle error:", error); }
   }
   async deleteChapter(id: number): Promise<void> {
-     const bookId = this._currentBookId$.getValue();
-     if (!bookId) return;
-    await this.dbService.deleteChapter(id);
-    const updatedList = await this.dbService.getChaptersByBookId(bookId);
-    this._chapters$.next(updatedList);
+     if (!this._currentBookId$.getValue()) return;
+     try {
+       await this.dbService.deleteChapter(id);
+       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this._chapters$);
+     } catch(error) { console.error("deleteChapter error:", error); }
   }
 
 }
