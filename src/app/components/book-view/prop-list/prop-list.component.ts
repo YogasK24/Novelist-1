@@ -19,7 +19,7 @@ import { AddPropModalComponent } from '../add-prop-modal/add-prop-modal.componen
       </button>
 
       <!-- Tampilkan Loading -->
-      @if (bookState.isLoading()) {
+      @if (bookState.isLoadingChildren().props) {
         <div class="flex justify-center items-center py-6">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
         </div>

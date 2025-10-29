@@ -13,7 +13,15 @@ export class CurrentBookStateService {
 
   // --- STATE PRIMER (Writable Signals) ---
   readonly currentBookId = signal<number | null>(null);
-  readonly isLoading = signal<boolean>(false); // Digunakan untuk pemuatan buku utama
+  readonly isLoadingBook = signal<boolean>(false); // Digunakan untuk pemuatan buku utama
+  readonly isLoadingChildren = signal({ // Pemuatan data anak yang terpisah
+      characters: false,
+      locations: false,
+      plotEvents: false,
+      chapters: false,
+      themes: false,
+      props: false,
+  });
   
   readonly currentBook = signal<IBook | null>(null);
   readonly characters = signal<ICharacter[]>([]);
@@ -69,7 +77,15 @@ export class CurrentBookStateService {
   }
   
   private resetState(): void {
-    this.isLoading.set(false);
+    this.isLoadingBook.set(false);
+    this.isLoadingChildren.set({
+        characters: false,
+        locations: false,
+        plotEvents: false,
+        chapters: false,
+        themes: false,
+        props: false,
+    });
     this.currentBook.set(null);
     this.characters.set([]);
     this.locations.set([]);
@@ -81,7 +97,7 @@ export class CurrentBookStateService {
 
   /** Metode Private: Memuat data buku utama saja */
   private async loadBookCoreData(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingBook.set(true);
     try {
         const bookData = await this.dbService.getBookById(bookId);
         this.currentBook.set(bookData ?? null); 
@@ -93,7 +109,7 @@ export class CurrentBookStateService {
         console.error("Gagal memuat data buku inti:", error);
         this.currentBook.set(null);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingBook.set(false);
     }
   }
 
@@ -126,7 +142,7 @@ export class CurrentBookStateService {
 
   // --- Actions Publik untuk Lazy Loading Data Anak ---
   async loadCharacters(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, characters: true }));
     try {
         const characters = await this.dbService.getCharactersByBookId(bookId);
         this.characters.set(characters ?? []);
@@ -134,12 +150,12 @@ export class CurrentBookStateService {
         console.error("Gagal load characters:", e);
         this.characters.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, characters: false }));
     }
   }
 
   async loadLocations(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, locations: true }));
     try {
         const locations = await this.dbService.getLocationsByBookId(bookId);
         this.locations.set(locations ?? []);
@@ -147,12 +163,12 @@ export class CurrentBookStateService {
         console.error("Gagal load locations:", e);
         this.locations.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, locations: false }));
     }
   }
 
   async loadPlotEvents(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, plotEvents: true }));
     try {
         const plotEvents = await this.dbService.getPlotEventsByBookId(bookId);
         this.plotEvents.set(plotEvents ?? []);
@@ -160,12 +176,12 @@ export class CurrentBookStateService {
         console.error("Gagal load plot events:", e);
         this.plotEvents.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, plotEvents: false }));
     }
   }
 
   async loadChapters(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, chapters: true }));
     try {
         const chapters = await this.dbService.getChaptersByBookId(bookId);
         this.chapters.set(chapters ?? []);
@@ -173,12 +189,12 @@ export class CurrentBookStateService {
         console.error("Gagal load chapters:", e);
         this.chapters.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, chapters: false }));
     }
   }
 
   async loadThemes(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, themes: true }));
     try {
         const themes = await this.dbService.getThemesByBookId(bookId);
         this.themes.set(themes ?? []);
@@ -186,12 +202,12 @@ export class CurrentBookStateService {
         console.error("Gagal load themes:", e);
         this.themes.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, themes: false }));
     }
   }
 
   async loadProps(bookId: number): Promise<void> {
-    this.isLoading.set(true);
+    this.isLoadingChildren.update(s => ({ ...s, props: true }));
     try {
         const props = await this.dbService.getPropsByBookId(bookId);
         this.props.set(props ?? []);
@@ -199,7 +215,7 @@ export class CurrentBookStateService {
         console.error("Gagal load props:", e);
         this.props.set([]);
     } finally {
-        this.isLoading.set(false);
+        this.isLoadingChildren.update(s => ({ ...s, props: false }));
     }
   }
 

@@ -1,16 +1,15 @@
 // src/app/components/book-view/plot-event-list/plot-event-list.component.ts
-// GANTI SEMUA ISI FILE INI
-
 import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
-import type { IPlotEvent } from '../../../../types/data'; // Ganti tipe
-import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-event-modal.component'; // Import modal event
+import type { IPlotEvent } from '../../../../types/data';
+import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-event-modal.component';
 
 @Component({
-  selector: 'app-plot-event-list', // Selector sudah benar
+  selector: 'app-plot-event-list',
   standalone: true,
-  imports: [CommonModule, AddPlotEventModalComponent], // Import modal event
+  imports: [CommonModule, AddPlotEventModalComponent, DragDropModule], // <-- Tambahkan DragDropModule
   template: `
     <div>
       <button 
@@ -19,17 +18,22 @@ import { AddPlotEventModalComponent } from '../add-plot-event-modal/add-plot-eve
         + Tambah Event Plot
       </button>
 
-      @if (bookState.isLoading()) {
+      @if (bookState.isLoadingChildren().plotEvents) {
         <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
       } @else if (bookState.plotEvents(); as plotEvents) {
          @if (plotEvents.length > 0) {
-            <div class="space-y-3">
+            <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-3 p-1 -mx-1 rounded-lg">
               @for (event of plotEvents; track event.id) {
-                <div class="bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start group">
+                <div cdkDrag [cdkDragData]="event" 
+                     class="bg-gray-800 p-4 rounded-lg shadow flex items-start group hover:bg-gray-700/80 transition cursor-grab">
+                  
+                  <div class="mr-4 text-gray-500 pt-0.5" cdkDragHandle>
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /> </svg>
+                  </div>
+
                   <div class="mr-4 overflow-hidden flex-grow"> 
                      <h3 class="text-lg font-semibold text-white truncate">{{ event.order }}. {{ event.title }}</h3> 
                      
-                     <!-- Info Relasi -->
                      <div class="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-400">
                        @if (getLocationName(event.locationId); as locationName) {
                          <div class="flex items-center gap-1.5" title="Lokasi">
@@ -115,24 +119,31 @@ export class PlotEventListComponent implements OnInit {
     }
   }
 
-  // --- Helper Functions for Template (Optimized) ---
-
   getLocationName(locationId: number | null): string | undefined {
-    if (locationId === null) {
-      return undefined;
-    }
-    // Akses Map secara langsung (O(1))
+    if (locationId === null) return undefined;
     return this.bookState.locationNameMap().get(locationId);
   }
 
   getCharacterNames(characterIds: number[]): string[] {
-    if (!characterIds || characterIds.length === 0) {
-      return [];
-    }
+    if (!characterIds || characterIds.length === 0) return [];
     const charMap = this.bookState.characterMap();
-    // Map ID ke Nama menggunakan Map (O(N) tapi pencarian di dalam loop Map adalah O(1))
     return characterIds
       .map(id => charMap.get(id)?.name)
       .filter((name): name is string => !!name);
+  }
+
+  onDrop(event: CdkDragDrop<IPlotEvent[]>): void {
+    const currentEvents = [...this.bookState.plotEvents()];
+    
+    moveItemInArray(currentEvents, event.previousIndex, event.currentIndex);
+
+    const reorderedEvents = currentEvents.map((event, index) => ({
+      ...event,
+      order: index + 1
+    }));
+    
+    this.bookState.reorderPlotEvents(reorderedEvents).catch(err => {
+        console.error("Gagal menyimpan urutan event:", err);
+    });
   }
 }

@@ -23,7 +23,7 @@ import { EditorComponent } from '../../components/write-page/editor/editor.compo
     <div class="h-screen bg-gray-900 text-gray-200 flex flex-col">
       <app-write-page-header></app-write-page-header>
       
-      @if (bookState.isLoading() === 'loading' || bookState.isLoading() === 'initial') {
+      @if (bookState.isLoadingBook() || bookState.isLoadingChildren().chapters) {
         <div class="flex-grow flex justify-center items-center">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
         </div>
@@ -83,6 +83,7 @@ export class WritePageComponent implements OnInit, OnDestroy {
       const bookId = Number(params['id']);
       if (!isNaN(bookId)) {
         this.bookState.loadBookData(bookId);
+        this.bookState.loadChapters(bookId);
       } else {
         console.error("Invalid Book ID:", params['id']);
         this.bookState.clearBookData();

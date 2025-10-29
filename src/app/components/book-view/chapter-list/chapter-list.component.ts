@@ -2,6 +2,7 @@
 import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
 import type { IChapter } from '../../../../types/data';
 import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal.component';
@@ -9,7 +10,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
 @Component({
   selector: 'app-chapter-list-tab',
   standalone: true,
-  imports: [CommonModule, AddChapterModalComponent],
+  imports: [CommonModule, AddChapterModalComponent, DragDropModule], // <-- Tambahkan DragDropModule
   template: `
     <div>
       <div class="flex justify-between items-center mb-4 gap-4">
@@ -22,16 +23,19 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
       </div>
 
 
-      @if (bookState.isLoading()) {
+      @if (bookState.isLoadingChildren().chapters) {
         <div class="flex justify-center items-center py-6"> <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div> </div>
       } @else if (bookState.chapters(); as chapters) {
          @if (chapters.length > 0) {
-            <div class="space-y-3">
+            <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-3 p-1 -mx-1 rounded-lg">
               @for (chap of chapters; track chap.id) {
-                <div class="bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start group hover:bg-gray-700/80 transition cursor-pointer" 
-                     (click)="openEditor(chap)">
-
-                  <div class="mr-4 overflow-hidden flex-grow"> 
+                <div cdkDrag [cdkDragData]="chap" class="bg-gray-800 rounded-lg shadow flex items-start group hover:bg-gray-700/80 transition cursor-grab">
+                  
+                  <div class="p-4 text-gray-500" cdkDragHandle>
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /> </svg>
+                  </div>
+                  
+                  <div class="pr-4 py-4 mr-4 overflow-hidden flex-grow cursor-pointer" (click)="openEditor(chap)"> 
                      <h3 class="text-lg font-semibold text-white truncate">{{ chap.order }}. {{ chap.title }}</h3> 
                      <p class="text-sm text-gray-400 mt-1"> 
                         {{ countWords(chap.content) }} kata
@@ -48,7 +52,7 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
                      }
                   </div>
 
-                  <div class="flex-shrink-0 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex-shrink-0 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity p-4">
                      <button (click)="openEditModal(chap); $event.stopPropagation()" class="text-blue-400 hover:text-blue-300 p-1" aria-label="Edit Judul Bab">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /> </svg>
                      </button>
@@ -119,7 +123,6 @@ export class ChapterListComponent implements OnInit {
   countWords(content: string): number {
     if (!content) return 0;
     try {
-      // Handle Quill JSON content
       if (content.trim().startsWith('{')) {
         const delta = JSON.parse(content);
         if (delta && Array.isArray(delta.ops)) {
@@ -134,7 +137,6 @@ export class ChapterListComponent implements OnInit {
       }
     } catch(e) { /* Fallback to plain text */ }
 
-    // Fallback for plain text
     return content.trim().split(/\s+/).filter(Boolean).length;
   }
 
@@ -146,5 +148,20 @@ export class ChapterListComponent implements OnInit {
     return characterIds
       .map(id => charMap.get(id)?.name)
       .filter((name): name is string => !!name);
+  }
+
+  onDrop(event: CdkDragDrop<IChapter[]>): void {
+    const currentChapters = [...this.bookState.chapters()];
+    
+    moveItemInArray(currentChapters, event.previousIndex, event.currentIndex);
+
+    const reorderedChapters = currentChapters.map((chapter, index) => ({
+      ...chapter,
+      order: index + 1
+    }));
+    
+    this.bookState.reorderChapters(reorderedChapters).catch(err => {
+        console.error("Gagal menyimpan urutan bab:", err);
+    });
   }
 }
