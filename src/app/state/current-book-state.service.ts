@@ -5,6 +5,7 @@ import { Injectable, inject, signal, effect, WritableSignal, computed } from '@a
 import { DatabaseService } from './database.service';
 import { BookStateService } from './book-state.service';
 import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
+import { NotificationService } from './notification.service'; // <-- Import BARU
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp,
 export class CurrentBookStateService {
   private readonly dbService = inject(DatabaseService);
   private readonly bookStateService = inject(BookStateService);
+  private readonly notificationService = inject(NotificationService); // <-- Inject BARU
 
   // --- STATE PRIMER (Writable Signals) ---
   readonly currentBookId = signal<number | null>(null);
@@ -23,7 +25,7 @@ export class CurrentBookStateService {
       chapters: false,
       themes: false,
       props: false,
-      writingLogs: false, // <-- BARU
+      writingLogs: false, 
   });
   
   readonly currentBook = signal<IBook | null>(null);
@@ -33,7 +35,7 @@ export class CurrentBookStateService {
   readonly chapters = signal<IChapter[]>([]);
   readonly themes = signal<ITheme[]>([]);
   readonly props = signal<IProp[]>([]);
-  readonly writingLogs = signal<IWritingLog[]>([]); // <-- BARU
+  readonly writingLogs = signal<IWritingLog[]>([]);
 
   // Helper untuk mendapatkan tanggal hari ini (YYYY-MM-DD)
   private getTodayDateString(): string {
@@ -120,7 +122,7 @@ export class CurrentBookStateService {
         chapters: false,
         themes: false,
         props: false,
-        writingLogs: false, // <-- BARU
+        writingLogs: false, 
     });
     this.currentBook.set(null);
     this.characters.set([]);
@@ -129,7 +131,7 @@ export class CurrentBookStateService {
     this.chapters.set([]);
     this.themes.set([]);
     this.props.set([]);
-    this.writingLogs.set([]); // <-- BARU
+    this.writingLogs.set([]);
   }
 
   /** Metode Private: Memuat data buku utama saja */
@@ -144,6 +146,7 @@ export class CurrentBookStateService {
         }
     } catch (error) {
         console.error("Gagal memuat data buku inti:", error);
+        this.notificationService.error("Gagal memuat detail novel.");
         this.currentBook.set(null);
     } finally {
         this.isLoadingBook.set(false);
@@ -153,7 +156,8 @@ export class CurrentBookStateService {
   
   private async refreshChildData<T>(
     fetchFn: (bookId: number) => Promise<T[]>, 
-    targetSignal: WritableSignal<T[]>
+    targetSignal: WritableSignal<T[]>,
+    errorMessage: string = "Gagal memuat data",
   ): Promise<void> {
       const bookId = this.currentBookId();
       if (!bookId) return;
@@ -161,7 +165,8 @@ export class CurrentBookStateService {
           const updatedList = await fetchFn(bookId);
           targetSignal.set(updatedList ?? []);
       } catch (error) {
-          console.error("Gagal refresh data anak:", error);
+          console.error(errorMessage, error);
+          this.notificationService.error(errorMessage);
       }
   }
 
@@ -185,6 +190,7 @@ export class CurrentBookStateService {
         this.characters.set(characters ?? []);
     } catch (e) {
         console.error("Gagal load characters:", e);
+        this.notificationService.error("Gagal memuat daftar karakter.");
         this.characters.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, characters: false }));
@@ -198,6 +204,7 @@ export class CurrentBookStateService {
         this.locations.set(locations ?? []);
     } catch (e) {
         console.error("Gagal load locations:", e);
+        this.notificationService.error("Gagal memuat daftar lokasi.");
         this.locations.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, locations: false }));
@@ -211,6 +218,7 @@ export class CurrentBookStateService {
         this.plotEvents.set(plotEvents ?? []);
     } catch (e) {
         console.error("Gagal load plot events:", e);
+        this.notificationService.error("Gagal memuat event plot.");
         this.plotEvents.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, plotEvents: false }));
@@ -224,6 +232,7 @@ export class CurrentBookStateService {
         this.chapters.set(chapters ?? []);
     } catch (e) {
         console.error("Gagal load chapters:", e);
+        this.notificationService.error("Gagal memuat bab.");
         this.chapters.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, chapters: false }));
@@ -237,6 +246,7 @@ export class CurrentBookStateService {
         this.themes.set(themes ?? []);
     } catch (e) {
         console.error("Gagal load themes:", e);
+        this.notificationService.error("Gagal memuat tema.");
         this.themes.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, themes: false }));
@@ -250,13 +260,13 @@ export class CurrentBookStateService {
         this.props.set(props ?? []);
     } catch (e) {
         console.error("Gagal load props:", e);
+        this.notificationService.error("Gagal memuat properti.");
         this.props.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, props: false }));
     }
   }
   
-  // <-- BARU
   async loadWritingLogs(bookId: number): Promise<void> {
     this.isLoadingChildren.update(s => ({ ...s, writingLogs: true }));
     try {
@@ -264,6 +274,7 @@ export class CurrentBookStateService {
         this.writingLogs.set(logs ?? []);
     } catch (e) {
         console.error("Gagal load writing logs:", e);
+        this.notificationService.error("Gagal memuat log penulisan.");
         this.writingLogs.set([]);
     } finally {
         this.isLoadingChildren.update(s => ({ ...s, writingLogs: false }));
@@ -279,22 +290,36 @@ export class CurrentBookStateService {
     if (!bookId) return;
     try {
       await this.dbService.addCharacter({ bookId, name, description, relationships });
-      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters);
-    } catch(error) { console.error("addCharacter error:", error); }
+      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters, "Gagal memuat karakter terbaru");
+      this.notificationService.success(`Karakter "${name}" berhasil ditambahkan.`);
+    } catch(error) { 
+      console.error("addCharacter error:", error); 
+      this.notificationService.error(`Gagal menambahkan karakter "${name}".`);
+    }
   }
   async updateCharacter(id: number, data: { name: string, description: string, relationships: IRelationship[] }): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updateCharacter(id, data);
-      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters);
-    } catch(error) { console.error("updateCharacter error:", error); }
+      await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters, "Gagal memuat karakter terbaru");
+      this.notificationService.success(`Karakter "${data.name}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updateCharacter error:", error); 
+      this.notificationService.error(`Gagal memperbarui karakter "${data.name}".`);
+    }
   }
   async deleteCharacter(id: number): Promise<void> {
      if (!this.currentBookId()) return;
+     // Dapatkan nama karakter sebelum dihapus
+     const charName = this.characters().find(c => c.id === id)?.name ?? 'Karakter';
      try {
        await this.dbService.deleteCharacter(id);
-       await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters);
-     } catch(error) { console.error("deleteCharacter error:", error); }
+       await this.refreshChildData(this.dbService.getCharactersByBookId.bind(this.dbService), this.characters, "Gagal memuat karakter terbaru");
+       this.notificationService.success(`Karakter "${charName}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deleteCharacter error:", error); 
+       this.notificationService.error(`Gagal menghapus karakter "${charName}".`);
+     }
   }
 
   // Location Actions
@@ -303,22 +328,35 @@ export class CurrentBookStateService {
     if (!bookId) return;
     try {
       await this.dbService.addLocation({ bookId, name, description });
-      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations);
-    } catch(error) { console.error("addLocation error:", error); }
+      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations, "Gagal memuat lokasi terbaru");
+      this.notificationService.success(`Lokasi "${name}" berhasil ditambahkan.`);
+    } catch(error) { 
+      console.error("addLocation error:", error); 
+      this.notificationService.error(`Gagal menambahkan lokasi "${name}".`);
+    }
   }
   async updateLocation(id: number, data: { name: string, description: string }): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updateLocation(id, data);
-      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations);
-    } catch(error) { console.error("updateLocation error:", error); }
+      await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations, "Gagal memuat lokasi terbaru");
+      this.notificationService.success(`Lokasi "${data.name}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updateLocation error:", error); 
+      this.notificationService.error(`Gagal memperbarui lokasi "${data.name}".`);
+    }
   }
   async deleteLocation(id: number): Promise<void> {
      if (!this.currentBookId()) return;
+     const locName = this.locations().find(l => l.id === id)?.name ?? 'Lokasi';
      try {
        await this.dbService.deleteLocation(id);
-       await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations);
-     } catch(error) { console.error("deleteLocation error:", error); }
+       await this.refreshChildData(this.dbService.getLocationsByBookId.bind(this.dbService), this.locations, "Gagal memuat lokasi terbaru");
+       this.notificationService.success(`Lokasi "${locName}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deleteLocation error:", error); 
+       this.notificationService.error(`Gagal menghapus lokasi "${locName}".`);
+     }
   }
 
   // Plot Event Actions
@@ -330,39 +368,49 @@ export class CurrentBookStateService {
       const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
       const newOrder = maxOrder + 1;
       await this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder, locationId, characterIds });
-      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents);
-    } catch(error) { console.error("addPlotEvent error:", error); }
+      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents, "Gagal memuat event plot terbaru");
+      this.notificationService.success(`Event "${title}" berhasil ditambahkan.`);
+    } catch(error) { 
+      console.error("addPlotEvent error:", error); 
+      this.notificationService.error(`Gagal menambahkan event "${title}".`);
+    }
   }
   async updatePlotEvent(id: number, data: { title: string, summary: string, locationId: number | null, characterIds: number[] }): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updatePlotEvent(id, data);
-      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents);
-    } catch(error) { console.error("updatePlotEvent error:", error); }
+      await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents, "Gagal memuat event plot terbaru");
+      this.notificationService.success(`Event "${data.title}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updatePlotEvent error:", error); 
+      this.notificationService.error(`Gagal memperbarui event "${data.title}".`);
+    }
   }
   async deletePlotEvent(id: number): Promise<void> {
      if (!this.currentBookId()) return;
+     const eventTitle = this.plotEvents().find(e => e.id === id)?.title ?? 'Event Plot';
      try {
        await this.dbService.deletePlotEvent(id);
-       await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents);
-     } catch(error) { console.error("deletePlotEvent error:", error); }
+       await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents, "Gagal memuat event plot terbaru");
+       this.notificationService.success(`Event "${eventTitle}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deletePlotEvent error:", error); 
+       this.notificationService.error(`Gagal menghapus event "${eventTitle}".`);
+     }
   }
 
-  // <-- ACTIONS REORDER PLOT EVENT -->
+  // ACTIONS REORDER PLOT EVENT
   async reorderPlotEvents(reorderedEvents: IPlotEvent[]): Promise<void> {
     if (!this.currentBookId()) return;
 
-    // 1. Simpan ke database
     try {
         await this.dbService.updatePlotEventOrder(reorderedEvents);
-        
-        // 2. Update signal secara optimis (atau refresh)
-        // Kita update secara optimis karena kita sudah tahu urutannya
         this.plotEvents.set(reorderedEvents); 
+        this.notificationService.success("Urutan event plot berhasil disimpan.");
     } catch(error) { 
         console.error("reorderPlotEvents error:", error); 
-        // Jika gagal, refresh dari DB
-        await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents);
+        this.notificationService.error("Gagal menyimpan urutan event plot.");
+        await this.refreshChildData(this.dbService.getPlotEventsByBookId.bind(this.dbService), this.plotEvents, "Gagal memuat ulang event plot");
     }
   }
 
@@ -375,15 +423,23 @@ export class CurrentBookStateService {
       const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
       const newOrder = maxOrder + 1;
       await this.dbService.addChapter({ bookId, title, content: "", order: newOrder, characterIds });
-      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
-    } catch(error) { console.error("addChapter error:", error); }
+      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters, "Gagal memuat bab terbaru");
+      this.notificationService.success(`Bab "${title}" berhasil dibuat.`);
+    } catch(error) { 
+      console.error("addChapter error:", error); 
+      this.notificationService.error(`Gagal membuat bab "${title}".`);
+    }
   }
   async updateChapterTitle(id: number, title: string, characterIds: number[]): Promise<void> {
     if (!this.currentBookId()) return;
     try {
       await this.dbService.updateChapter(id, { title, characterIds });
-      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
-    } catch(error) { console.error("updateChapterTitle error:", error); }
+      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters, "Gagal memuat bab terbaru");
+      this.notificationService.success(`Bab "${title}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updateChapterTitle error:", error); 
+      this.notificationService.error(`Gagal memperbarui bab "${title}".`);
+    }
   }
   async updateChapterContent(id: number, content: string): Promise<void> {
     if (!this.currentBookId()) return;
@@ -394,36 +450,41 @@ export class CurrentBookStateService {
           chap.id === id ? { ...chap, content: content } : chap
         )
       );
-      // <-- BARU: Panggil kalkulasi ulang jumlah kata
+      
       await this._recalculateAndUpdateWordCount();
+      // this.notificationService.success("Progress disimpan.", 1000); // Notif cepat // Dihapus karena notif dari editor
     } catch(error) { 
       console.error("updateChapterContent error:", error);
-      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
+      this.notificationService.error("Gagal menyimpan konten bab.");
+      await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters, "Gagal memuat ulang bab");
     }
   }
   async deleteChapter(id: number): Promise<void> {
      if (!this.currentBookId()) return;
+     const chapTitle = this.chapters().find(c => c.id === id)?.title ?? 'Bab';
      try {
        await this.dbService.deleteChapter(id);
-       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
-       // <-- BARU: Panggil kalkulasi ulang jumlah kata setelah hapus
+       await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters, "Gagal memuat bab terbaru");
        await this._recalculateAndUpdateWordCount();
-     } catch(error) { console.error("deleteChapter error:", error); }
+       this.notificationService.success(`Bab "${chapTitle}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deleteChapter error:", error); 
+       this.notificationService.error(`Gagal menghapus bab "${chapTitle}".`);
+     }
   }
   
-  // <-- ACTIONS REORDER CHAPTERS -->
+  // ACTIONS REORDER CHAPTERS
   async reorderChapters(reorderedChapters: IChapter[]): Promise<void> {
     if (!this.currentBookId()) return;
 
-    // 1. Simpan ke database
     try {
         await this.dbService.updateChapterOrder(reorderedChapters);
-        
-        // 2. Update signal secara optimis
         this.chapters.set(reorderedChapters);
+        this.notificationService.success("Urutan bab berhasil disimpan.");
     } catch(error) { 
         console.error("reorderChapters error:", error); 
-        await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters);
+        this.notificationService.error("Gagal menyimpan urutan bab.");
+        await this.refreshChildData(this.dbService.getChaptersByBookId.bind(this.dbService), this.chapters, "Gagal memuat ulang bab");
     }
   }
   
@@ -433,22 +494,35 @@ export class CurrentBookStateService {
     if (!bookId) return; 
     try {
       await this.dbService.addTheme({ bookId, name, description });
-      await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes);
-    } catch(error) { console.error("addTheme error:", error); }
+      await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes, "Gagal memuat tema terbaru");
+      this.notificationService.success(`Tema "${name}" berhasil ditambahkan.`);
+    } catch(error) { 
+      console.error("addTheme error:", error); 
+      this.notificationService.error(`Gagal menambahkan tema "${name}".`);
+    }
   }
   async updateTheme(id: number, data: { name: string, description: string }): Promise<void> {
     if (!this.currentBookId()) return; 
     try {
       await this.dbService.updateTheme(id, data);
-      await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes);
-    } catch(error) { console.error("updateTheme error:", error); }
+      await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes, "Gagal memuat tema terbaru");
+      this.notificationService.success(`Tema "${data.name}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updateTheme error:", error); 
+      this.notificationService.error(`Gagal memperbarui tema "${data.name}".`);
+    }
   }
   async deleteTheme(id: number): Promise<void> {
      if (!this.currentBookId()) return; 
+     const themeName = this.themes().find(t => t.id === id)?.name ?? 'Tema';
      try {
        await this.dbService.deleteTheme(id);
-       await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes);
-     } catch(error) { console.error("deleteTheme error:", error); }
+       await this.refreshChildData(this.dbService.getThemesByBookId.bind(this.dbService), this.themes, "Gagal memuat tema terbaru");
+       this.notificationService.success(`Tema "${themeName}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deleteTheme error:", error); 
+       this.notificationService.error(`Gagal menghapus tema "${themeName}".`);
+     }
   }
 
   // --- Props ---
@@ -457,22 +531,35 @@ export class CurrentBookStateService {
     if (!bookId) return; 
     try {
       await this.dbService.addProp({ bookId, name, description });
-      await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props);
-    } catch(error) { console.error("addProp error:", error); }
+      await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props, "Gagal memuat properti terbaru");
+      this.notificationService.success(`Properti "${name}" berhasil ditambahkan.`);
+    } catch(error) { 
+      console.error("addProp error:", error); 
+      this.notificationService.error(`Gagal menambahkan properti "${name}".`);
+    }
   }
   async updateProp(id: number, data: { name: string, description: string }): Promise<void> {
     if (!this.currentBookId()) return; 
     try {
       await this.dbService.updateProp(id, data);
-      await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props);
-    } catch(error) { console.error("updateProp error:", error); }
+      await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props, "Gagal memuat properti terbaru");
+      this.notificationService.success(`Properti "${data.name}" berhasil diperbarui.`);
+    } catch(error) { 
+      console.error("updateProp error:", error); 
+      this.notificationService.error(`Gagal memperbarui properti "${data.name}".`);
+    }
   }
   async deleteProp(id: number): Promise<void> {
      if (!this.currentBookId()) return; 
+     const propName = this.props().find(p => p.id === id)?.name ?? 'Properti';
      try {
        await this.dbService.deleteProp(id);
-       await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props);
-     } catch(error) { console.error("deleteProp error:", error); }
+       await this.refreshChildData(this.dbService.getPropsByBookId.bind(this.dbService), this.props, "Gagal memuat properti terbaru");
+       this.notificationService.success(`Properti "${propName}" berhasil dihapus.`);
+     } catch(error) { 
+       console.error("deleteProp error:", error);
+       this.notificationService.error(`Gagal menghapus properti "${propName}".`);
+     }
   }
   
   // --- FUNGSI BARU UNTUK WORD COUNT ---
@@ -528,6 +615,7 @@ export class CurrentBookStateService {
 
       } catch (error) {
         console.error("Gagal update jumlah kata dan log:", error);
+        this.notificationService.error("Gagal memperbarui statistik jumlah kata.");
       }
     }
   }

@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-theme-modal/add-theme-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { ITheme } from '../../../../types/data';
@@ -73,10 +73,10 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             </button>
             <button
               type="submit"
-              [disabled]="themeForm.invalid" 
+              [disabled]="themeForm.invalid || isLoading()" 
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"
             >
-              Simpan
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
         </form>
@@ -92,6 +92,8 @@ export class AddThemeModalComponent {
 
   private fb = inject(FormBuilder);
   private bookState = inject(CurrentBookStateService); 
+
+  isLoading = signal(false);
 
   themeForm = this.fb.group({
     name: ['', Validators.required],
@@ -115,7 +117,7 @@ export class AddThemeModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.themeForm.invalid) {
+    if (this.themeForm.invalid || this.isLoading()) {
       this.themeForm.markAllAsTouched();
       return;
     }
@@ -123,6 +125,7 @@ export class AddThemeModalComponent {
     const { name, description } = this.themeForm.value;
     const theme = this.themeToEdit();
 
+    this.isLoading.set(true);
     try {
       if (theme && theme.id) {
         await this.bookState.updateTheme(theme.id, { name: name!, description: description! });
@@ -132,6 +135,8 @@ export class AddThemeModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan tema:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

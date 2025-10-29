@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-location-modal/add-location-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { ILocation } from '../../../../types/data';
@@ -73,10 +73,10 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             </button>
             <button
               type="submit"
-              [disabled]="locationForm.invalid" 
+              [disabled]="locationForm.invalid || isLoading()" 
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"
             >
-              Simpan
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
         </form>
@@ -92,6 +92,8 @@ export class AddLocationModalComponent {
 
   private fb = inject(FormBuilder);
   private bookState = inject(CurrentBookStateService); 
+
+  isLoading = signal(false);
 
   locationForm = this.fb.group({
     name: ['', Validators.required],
@@ -115,7 +117,7 @@ export class AddLocationModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.locationForm.invalid) {
+    if (this.locationForm.invalid || this.isLoading()) {
       this.locationForm.markAllAsTouched();
       return;
     }
@@ -123,6 +125,7 @@ export class AddLocationModalComponent {
     const { name, description } = this.locationForm.value;
     const location = this.locationToEdit();
 
+    this.isLoading.set(true);
     try {
       if (location && location.id) {
         await this.bookState.updateLocation(location.id, { name: name!, description: description! });
@@ -132,6 +135,8 @@ export class AddLocationModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan lokasi:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

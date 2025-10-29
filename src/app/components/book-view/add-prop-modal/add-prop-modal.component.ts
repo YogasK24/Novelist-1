@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-prop-modal/add-prop-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { IProp } from '../../../../types/data';
@@ -73,10 +73,10 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             </button>
             <button
               type="submit"
-              [disabled]="propForm.invalid" 
+              [disabled]="propForm.invalid || isLoading()" 
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"
             >
-              Simpan
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
         </form>
@@ -92,6 +92,8 @@ export class AddPropModalComponent {
 
   private fb = inject(FormBuilder);
   private bookState = inject(CurrentBookStateService); 
+
+  isLoading = signal(false);
 
   propForm = this.fb.group({
     name: ['', Validators.required],
@@ -115,7 +117,7 @@ export class AddPropModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.propForm.invalid) {
+    if (this.propForm.invalid || this.isLoading()) {
       this.propForm.markAllAsTouched();
       return;
     }
@@ -123,6 +125,7 @@ export class AddPropModalComponent {
     const { name, description } = this.propForm.value;
     const prop = this.propToEdit();
 
+    this.isLoading.set(true);
     try {
       if (prop && prop.id) {
         await this.bookState.updateProp(prop.id, { name: name!, description: description! });
@@ -132,6 +135,8 @@ export class AddPropModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan properti:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

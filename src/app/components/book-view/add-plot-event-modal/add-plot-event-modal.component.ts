@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-plot-event-modal/add-plot-event-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormArray, FormControl } from '@angular/forms';
 import type { IPlotEvent } from '../../../../types/data'; // Import tipe relasi
@@ -86,7 +86,9 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
 
           <div class="flex justify-end space-x-3">
             <button type="button" (click)="close()" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white transition duration-150"> Batal </button>
-            <button type="submit" [disabled]="eventForm.invalid" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> Simpan </button>
+            <button type="submit" [disabled]="eventForm.invalid || isLoading()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> 
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }} 
+            </button>
           </div>
         </form>
       </div>
@@ -101,6 +103,7 @@ export class AddPlotEventModalComponent {
 
   private fb = inject(FormBuilder);
   public bookState = inject(CurrentBookStateService);
+  isLoading = signal(false);
 
   eventForm = this.fb.group({
     title: ['', Validators.required],
@@ -150,7 +153,7 @@ export class AddPlotEventModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.eventForm.invalid) {
+    if (this.eventForm.invalid || this.isLoading()) {
       this.eventForm.markAllAsTouched();
       return;
     }
@@ -161,6 +164,7 @@ export class AddPlotEventModalComponent {
     
     const uniqueCharacterIds = [...new Set(characterIds)].filter(id => id != null) as number[];
 
+    this.isLoading.set(true);
     try {
       if (event && event.id != null) {
         await this.bookState.updatePlotEvent(event.id, { 
@@ -175,6 +179,8 @@ export class AddPlotEventModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan event plot:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

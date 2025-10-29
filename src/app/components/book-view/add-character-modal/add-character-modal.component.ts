@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-character-modal/add-character-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import type { ICharacter, IRelationship } from '../../../../types/data';
@@ -105,10 +105,10 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             </button>
             <button
               type="submit"
-              [disabled]="characterForm.invalid" 
+              [disabled]="characterForm.invalid || isLoading()" 
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"
             >
-              Simpan
+              {{ isLoading() ? 'Menyimpan...' : (characterToEdit() ? 'Simpan Perubahan' : 'Simpan') }}
             </button>
           </div>
         </form>
@@ -124,6 +124,8 @@ export class AddCharacterModalComponent {
 
   private fb = inject(FormBuilder);
   private bookState = inject(CurrentBookStateService); 
+
+  isLoading = signal(false);
 
   readonly availableTargets = computed<ICharacter[]>(() => {
     const characters = this.bookState.characters();
@@ -182,7 +184,7 @@ export class AddCharacterModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.characterForm.invalid) {
+    if (this.characterForm.invalid || this.isLoading()) {
       this.characterForm.markAllAsTouched();
       return;
     }
@@ -194,6 +196,7 @@ export class AddCharacterModalComponent {
       .filter((rel: any) => rel && rel.targetId != null && rel.type && rel.type.trim() !== '')
       .map((rel: any) => ({ targetId: Number(rel.targetId), type: rel.type.trim() }));
 
+    this.isLoading.set(true);
     try {
       if (character && character.id) {
         await this.bookState.updateCharacter(character.id, { 
@@ -207,6 +210,8 @@ export class AddCharacterModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan karakter:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

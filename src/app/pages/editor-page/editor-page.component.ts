@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { CurrentBookStateService } from '../../state/current-book-state.service';
 import type { IChapter } from '../../../types/data';
+import { NotificationService } from '../../state/notification.service';
 
 declare var Quill: any;
 
@@ -92,6 +93,7 @@ declare var Quill: any;
 export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
   private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
+  private notificationService = inject(NotificationService);
   
   @ViewChild('editor') editorEl!: ElementRef;
   private quillInstance: any;
@@ -210,8 +212,10 @@ export class EditorPageComponent implements OnInit, OnDestroy, AfterViewInit {
       const content = JSON.stringify(this.quillInstance.getContents());
       await this.bookState.updateChapterContent(chap.id!, content);
       this.isDirty.set(false);
+      this.notificationService.info('Perubahan disimpan otomatis.', 2000);
     } catch(e) {
       console.error("Failed to save content", e);
+      this.notificationService.error('Gagal menyimpan perubahan.');
     } finally {
       this.isSaving.set(false);
     }

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, input, output, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, output, effect, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BookStateService } from '../../../state/book-state.service';
 import type { IBook } from '../../../../types/data';
@@ -57,10 +57,10 @@ import { CommonModule } from '@angular/common';
             </button>
             <button
               type="submit"
-              [disabled]="targetForm.invalid"
+              [disabled]="targetForm.invalid || isLoading()"
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
-              Save Target
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan Target' }}
             </button>
           </div>
         </form>
@@ -76,6 +76,8 @@ export class SetTargetModalComponent {
   private readonly fb = inject(FormBuilder);
   private readonly bookState = inject(BookStateService);
   
+  isLoading = signal(false);
+
   targetForm = this.fb.group({
     target: [500, [Validators.required, Validators.min(0)]]
   });
@@ -92,7 +94,7 @@ export class SetTargetModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.targetForm.invalid) {
+    if (this.targetForm.invalid || this.isLoading()) {
       this.targetForm.markAllAsTouched();
       return;
     }
@@ -100,10 +102,16 @@ export class SetTargetModalComponent {
     const target = this.targetForm.value.target!;
     const currentBook = this.book();
 
-    if (currentBook && currentBook.id) {
-      await this.bookState.updateBookStats(currentBook.id, { dailyWordTarget: target });
+    this.isLoading.set(true);
+    try {
+      if (currentBook && currentBook.id) {
+        await this.bookState.updateBookStats(currentBook.id, { dailyWordTarget: target });
+      }
+      this.closeModal.emit();
+    } catch (e) {
+      console.error("Failed to save target:", e);
+    } finally {
+      this.isLoading.set(false);
     }
-    
-    this.closeModal.emit();
   }
 }

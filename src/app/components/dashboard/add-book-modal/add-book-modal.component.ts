@@ -54,10 +54,10 @@ import type { IBook } from '../../../../types/data';
             </button>
             <button
               type="submit"
-              [disabled]="bookForm.invalid"
+              [disabled]="bookForm.invalid || isLoading()"
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
-              {{ isEditing() ? 'Save Changes' : 'Save Book' }}
+              {{ isLoading() ? 'Menyimpan...' : (isEditing() ? 'Simpan Perubahan' : 'Buat Novel') }}
             </button>
           </div>
         </form>
@@ -74,6 +74,7 @@ export class AddBookModalComponent {
   private readonly bookState = inject(BookStateService);
   
   isEditing = signal(false);
+  isLoading = signal(false);
 
   bookForm = this.fb.group({
     title: ['', Validators.required]
@@ -93,7 +94,7 @@ export class AddBookModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.bookForm.invalid) {
+    if (this.bookForm.invalid || this.isLoading()) {
       this.bookForm.markAllAsTouched();
       return;
     }
@@ -101,14 +102,20 @@ export class AddBookModalComponent {
     const title = this.bookForm.value.title!;
     const book = this.bookToEdit();
 
-    if (book && book.id) {
-      // Editing existing book
-      await this.bookState.updateBookTitle(book.id, title);
-    } else {
-      // Adding new book
-      await this.bookState.addNewBook(title);
+    this.isLoading.set(true);
+    try {
+      if (book && book.id) {
+        // Editing existing book
+        await this.bookState.updateBookTitle(book.id, title);
+      } else {
+        // Adding new book
+        await this.bookState.addNewBook(title);
+      }
+      this.closeModal.emit();
+    } catch (e) {
+      console.error("Failed to save book:", e);
+    } finally {
+      this.isLoading.set(false);
     }
-    
-    this.closeModal.emit();
   }
 }

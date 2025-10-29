@@ -1,5 +1,5 @@
 // src/app/components/book-view/add-chapter-modal/add-chapter-modal.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormArray, FormControl } from '@angular/forms';
 import type { IChapter } from '../../../../types/data';
@@ -64,7 +64,9 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
 
           <div class="flex justify-end space-x-3">
             <button type="button" (click)="close()" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-white transition duration-150"> Batal </button>
-            <button type="submit" [disabled]="chapterForm.invalid" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> Simpan </button>
+            <button type="submit" [disabled]="chapterForm.invalid || isLoading()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-white disabled:opacity-50 transition duration-150"> 
+              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }} 
+            </button>
           </div>
         </form>
       </div>
@@ -79,6 +81,7 @@ export class AddChapterModalComponent {
 
   private fb = inject(FormBuilder);
   public bookState = inject(CurrentBookStateService);
+  isLoading = signal(false);
 
   chapterForm = this.fb.group({
     title: ['', Validators.required],
@@ -122,7 +125,7 @@ export class AddChapterModalComponent {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.chapterForm.invalid) {
+    if (this.chapterForm.invalid || this.isLoading()) {
       this.chapterForm.markAllAsTouched();
       return;
     }
@@ -133,6 +136,7 @@ export class AddChapterModalComponent {
     
     const uniqueCharacterIds = [...new Set(characterIds)].filter(id => id != null) as number[];
 
+    this.isLoading.set(true);
     try {
       if (chapter && chapter.id != null) {
         await this.bookState.updateChapterTitle(chapter.id, titleValue, uniqueCharacterIds);
@@ -142,6 +146,8 @@ export class AddChapterModalComponent {
       this.close();
     } catch (error) {
       console.error("Gagal menyimpan bab:", error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
