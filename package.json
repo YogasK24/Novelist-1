@@ -2,6 +2,9 @@
   "name": "novelist-app",
   "version": "1.0.0",
   "description": "Sebuah kerangka aplikasi untuk membantu penulis merancang dan menulis novel, dibangun dengan Angular dan Tailwind CSS.",
+  "scripts": {
+    "pwa-assets": "pwa-asset-generator logo.png assets/icons -i index.html -m manifest.json"
+  },
   "dependencies": {
     "rxjs": "^7.8.2",
     "@angular/compiler": "^20.3.7",

@@ -29,7 +29,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
             {{ propToEdit() ? 'Edit Properti' : 'Tambah Properti Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none">
+          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -76,7 +76,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               type="button"
               (click)="close()"
               class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 
-                     text-gray-800 dark:text-gray-200 rounded-md transition duration-150"
+                     text-gray-800 dark:text-gray-200 rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500"
             >
               Batal
             </button>
@@ -84,7 +84,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               type="submit"
               [disabled]="propForm.invalid || isLoading()" 
               class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md 
-                     disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
+                     disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
               {{ isLoading() ? 'Menyimpan...' : 'Simpan' }}
             </button>

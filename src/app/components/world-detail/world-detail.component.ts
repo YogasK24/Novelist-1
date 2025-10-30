@@ -25,7 +25,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
               [class.dark:text-gray-400]="activeTab() !== tab.key"
               [class.border-transparent]="activeTab() !== tab.key"
               
-              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-gray-900 dark:hover:text-white transition"
+              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-gray-900 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-t-md"
             >
               {{ tab.label }}
             </button>
@@ -36,7 +36,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
       <div class="flex-grow overflow-y-auto space-y-4 pr-2">
         @switch (activeTab()) {
             @case ('characters') {
-                @if (bookState.isLoadingChildren().characters) {
+                @if (bookState.isLoadingCharacters()) {
                      <p class="text-gray-500 dark:text-gray-500 text-sm text-center py-4">Loading characters...</p>
                 } @else if (bookState.characters(); as characters) {
                     @if (characters.length > 0) {
@@ -54,7 +54,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
                 }
             }
             @case ('locations') {
-                @if (bookState.isLoadingChildren().locations) {
+                @if (bookState.isLoadingLocations()) {
                      <p class="text-gray-500 dark:text-gray-500 text-sm text-center py-4">Loading locations...</p>
                 } @else if (bookState.locations(); as locations) {
                     @if (locations.length > 0) {
@@ -72,7 +72,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
                 }
             }
             @case ('events') {
-                @if (bookState.isLoadingChildren().plotEvents) {
+                @if (bookState.isLoadingPlotEvents()) {
                      <p class="text-gray-500 dark:text-gray-500 text-sm text-center py-4">Loading events...</p>
                 } @else if (bookState.plotEvents(); as events) {
                      @if (events.length > 0) {

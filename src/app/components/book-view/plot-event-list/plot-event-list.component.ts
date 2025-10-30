@@ -16,11 +16,11 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
     <div>
       <button 
         (click)="openAddModal()"
-        class="mb-6 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition duration-150">
+        class="mb-6 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-offset-gray-900">
         + Tambah Event Plot
       </button>
 
-      @if (bookState.isLoadingChildren().plotEvents || isReordering()) {
+      @if (bookState.isLoadingPlotEvents() || isReordering()) {
         <div class="flex justify-center items-center py-6"> 
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400 dark:border-purple-600"></div> 
           @if (isReordering()) {
@@ -178,7 +178,7 @@ export class PlotEventListComponent {
 
   deletePlotEvent(id: number, name: string): void {
     if (window.confirm(`Yakin ingin menghapus event "${name}"?`)) {
-      this.bookState.deletePlotEvent(id).catch(err => console.error("Gagal menghapus:", err));
+      this.bookState.deletePlotEvent(id);
     }
   }
 

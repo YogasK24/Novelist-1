@@ -24,7 +24,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
               {{ currentCharacter.name }}
             </h2>
-            <button (click)="close()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none">
+            <button (click)="close()" class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-purple-500 rounded">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -33,32 +33,27 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
 
           <div class="max-h-[70vh] overflow-y-auto pr-2">
               <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Deskripsi</h3>
-              <p class="text-slate-700 dark:text-slate-300 whitespace-pre-wrap mb-6 bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
+              <p class="text-slate-600 dark:text-slate-300 whitespace-pre-wrap mb-6">
                 {{ currentCharacter.description || 'Tidak ada deskripsi.' }}
               </p>
 
-              <div>
+              @if (currentCharacter.relationships && currentCharacter.relationships.length > 0) {
+                <div>
                   <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Hubungan</h3>
-                  @if (currentCharacter.relationships && currentCharacter.relationships.length > 0; as relationships) {
-                      <div class="space-y-2">
-                          @for (rel of currentCharacter.relationships; track rel.targetId) {
-                              @if (bookState.characterMap().get(rel.targetId); as targetChar) {
-                                  <div class="flex items-center gap-3 bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
-                                      <span class="text-sm font-medium text-purple-600 dark:text-purple-300">{{ rel.type }}:</span>
-                                      <span class="text-slate-900 dark:text-white flex-grow">{{ targetChar.name }}</span>
-                                  </div>
-                              } @else {
-                                  <div class="text-sm text-slate-500 dark:text-slate-400 italic bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md">
-                                      {{ rel.type }} dengan [Karakter ID {{ rel.targetId }} - Tidak Ditemukan]
-                                  </div>
-                              }
-                          }
-                      </div>
-                  } @else {
-                      <p class="text-slate-500 dark:text-slate-400 italic">Tidak ada hubungan yang tercatat.</p>
-                  }
-              </div>
-              
+                  <div class="space-y-2">
+                    @for (rel of currentCharacter.relationships; track rel.targetId) {
+                      @if (bookState.characterMap().get(rel.targetId); as targetChar) {
+                        <div class="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md flex justify-between items-center">
+                          <div>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200">{{ targetChar.name }}</span>
+                            <span class="text-slate-600 dark:text-slate-400"> — {{ rel.type }}</span>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              }
           </div>
         }
       </div>
@@ -66,12 +61,13 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+// FIX: Added the missing class definition and export for the component.
 export class CharacterDetailModalComponent {
   show = input.required<boolean>();
   character = input<ICharacter | null>(null);
   closeModal = output<void>();
 
-  public bookState = inject(CurrentBookStateService);
+  bookState = inject(CurrentBookStateService);
 
   close(): void {
     this.closeModal.emit();

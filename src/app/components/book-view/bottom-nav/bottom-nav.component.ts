@@ -15,11 +15,11 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
            <a [routerLink]="['/book', bookId]" 
               routerLinkActive="text-purple-400 font-semibold" 
               [routerLinkActiveOptions]="{ exact: true }"
-              class="text-slate-400 hover:text-white transition px-2 py-1 text-center">World</a>
+              class="text-slate-400 hover:text-white transition px-2 py-1 text-center focus:outline-none focus:text-white focus:bg-slate-700 rounded-md">World</a>
 
            <a [routerLink]="['/book', bookId, 'write']" 
               routerLinkActive="text-purple-400 font-semibold" 
-              class="text-slate-400 hover:text-white transition px-2 py-1 text-center">Write</a>
+              class="text-slate-400 hover:text-white transition px-2 py-1 text-center focus:outline-none focus:text-white focus:bg-slate-700 rounded-md">Write</a>
 
            <a class="text-slate-600 px-2 py-1 text-center cursor-not-allowed">Organize</a> 
            <a class="text-slate-600 px-2 py-1 text-center cursor-not-allowed">Schedule</a> 

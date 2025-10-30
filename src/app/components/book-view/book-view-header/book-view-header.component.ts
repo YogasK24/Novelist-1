@@ -12,7 +12,7 @@ import { ThemeService } from '../../../state/theme.service';
   template: `
     <header class="bg-gray-800 dark:bg-white shadow-md sticky top-0 z-40 transition-colors duration-500">
       <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-        <a [routerLink]="['/']" class="text-gray-200 dark:text-gray-800 hover:text-gray-300 dark:hover:text-gray-600 transition duration-150 p-2 -ml-2 rounded-full" aria-label="Back to Dashboard">
+        <a [routerLink]="['/']" class="text-gray-200 dark:text-gray-800 hover:text-gray-300 dark:hover:text-gray-600 transition duration-150 p-2 -ml-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-white focus:ring-purple-400" aria-label="Back to Dashboard">
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
            </svg>
@@ -21,7 +21,7 @@ import { ThemeService } from '../../../state/theme.service';
           {{ bookState.currentBook()?.title || 'Loading...' }}
         </h1>
         <button (click)="themeService.toggleTheme()" 
-                class="p-2 text-gray-200 dark:text-gray-800 hover:bg-gray-700/50 dark:hover:bg-gray-200 rounded-full transition duration-300" 
+                class="p-2 text-gray-200 dark:text-gray-800 hover:bg-gray-700/50 dark:hover:bg-gray-200 rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-white focus:ring-purple-400" 
                 aria-label="Toggle Dark/Light Mode">
           @if (themeService.currentTheme() === 'dark') {
             <!-- Sun icon for dark mode -->

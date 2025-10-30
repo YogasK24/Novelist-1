@@ -12,7 +12,7 @@ import { GlobalSearchInputComponent } from '../shared/global-search-input/global
   template: `
     <nav class="bg-gray-800 dark:bg-white shadow-md sticky top-0 z-40 transition-colors duration-500">
       <div class="container mx-auto px-4 py-3 flex justify-between items-center gap-4">
-        <a [routerLink]="['/']" class="text-gray-200 dark:text-gray-900 hover:text-gray-300 dark:hover:text-gray-700 transition duration-150 whitespace-nowrap">
+        <a [routerLink]="['/']" class="text-gray-200 dark:text-gray-900 hover:text-gray-300 dark:hover:text-gray-700 transition duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-white focus:ring-purple-400 rounded-sm">
           Novelist App
         </a>
 
@@ -21,7 +21,7 @@ import { GlobalSearchInputComponent } from '../shared/global-search-input/global
         </div>
         
         <button (click)="themeService.toggleTheme()" 
-                class="p-2 rounded-full text-gray-200 dark:text-gray-800 hover:bg-gray-700/50 dark:hover:bg-gray-200 transition duration-300" 
+                class="p-2 rounded-full text-gray-200 dark:text-gray-800 hover:bg-gray-700/50 dark:hover:bg-gray-200 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-white focus:ring-purple-400" 
                 aria-label="Toggle Dark/Light Mode">
              @if (themeService.currentTheme() === 'dark') {
                <!-- Sun icon for dark mode -->

@@ -28,7 +28,7 @@ import type { ISearchResult, SearchResultType } from '../../../../types/data';
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">
               Hasil Pencarian untuk: "<span class="text-purple-600 dark:text-purple-400">{{ searchService.searchTerm() }}</span>"
             </h2>
-            <button (click)="searchService.closeSearch()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <button (click)="searchService.closeSearch()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -47,7 +47,7 @@ import type { ISearchResult, SearchResultType } from '../../../../types/data';
                     <li>
                       <a [routerLink]="getLinkPath(result)" 
                          (click)="onResultClick()"
-                         class="block p-4 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-150">
+                         class="block p-4 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-150 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700/50 focus:ring-1 focus:ring-purple-500">
                         
                         <div class="flex items-center space-x-3">
                           <span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full 

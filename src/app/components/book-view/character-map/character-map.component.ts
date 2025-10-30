@@ -40,7 +40,7 @@ type Link = d3.SimulationLinkDatum<Node> & {
 
       <div #container class="w-full h-full min-h-[60vh] absolute top-0 left-0"></div>
       
-      @if (bookState.isLoadingChildren().characters) {
+      @if (bookState.isLoadingCharacters()) {
         <div class="absolute inset-0 flex justify-center items-center bg-white/50 dark:bg-gray-800/50 z-20">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 dark:border-purple-400"></div>
         </div>

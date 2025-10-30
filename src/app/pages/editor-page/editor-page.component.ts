@@ -48,7 +48,8 @@ declare var Quill: any;
               [disabled]="!isDirty() || isSaving() || showSavedConfirmation()"
               class="ml-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 
                      w-28 flex items-center justify-center
-                     disabled:cursor-not-allowed"
+                     disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500"
               [class.bg-purple-600]="!showSavedConfirmation()" [class.hover:bg-purple-700]="!showSavedConfirmation()"
               [class.bg-green-600]="showSavedConfirmation()"
               [class.opacity-50]="!isDirty()"

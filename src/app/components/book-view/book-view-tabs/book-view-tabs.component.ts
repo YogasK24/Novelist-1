@@ -53,7 +53,7 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
           
           @if (bookState.contextualSearchTerm()) {
             <button (click)="bookState.clearContextualSearch()" 
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
               </svg>
@@ -78,7 +78,8 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
               
               class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm 
                      hover:text-gray-900 dark:hover:text-white 
-                     hover:border-gray-400 dark:hover:border-gray-500 transition"
+                     hover:border-gray-400 dark:hover:border-gray-500 transition
+                     focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-t-md"
             >
               {{ tab.label }}
             </button>
