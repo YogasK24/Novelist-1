@@ -16,37 +16,35 @@ declare var Quill: any;
   template: `
     @if (isLoading()) {
       <div class="flex h-full w-full items-center justify-center">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 dark:border-purple-400"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400 dark:border-purple-600"></div>
       </div>
     } @else if (chapter(); as currentChapter) {
-      <div class="flex h-full flex-col bg-white dark:bg-slate-900">
-        <!-- Chapter Title & Save Controls -->
-        <div class="flex-shrink-0 p-4 sm:px-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
-          <h2 class="truncate text-2xl font-bold text-slate-800 dark:text-white" [title]="currentChapter.title">
+      <div class="flex h-full flex-col p-4 sm:p-6 bg-white dark:bg-gray-800 transition-colors duration-500">
+        <div class="mb-4 flex flex-shrink-0 items-center justify-between border-b border-gray-300 dark:border-gray-700 pb-3">
+          <h2 class="truncate text-2xl font-bold text-gray-900 dark:text-gray-200" [title]="currentChapter.title">
             {{ currentChapter.title }}
           </h2>
           <div class="flex-shrink-0 text-right">
-            <span class="hidden text-sm text-slate-500 dark:text-slate-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
+            <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
             <button 
               (click)="saveContent()" 
               [disabled]="!isDirty() || isSaving()"
-              class="ml-2 rounded-md bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
+              class="ml-2 rounded-md bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50">
               {{ isSaving() ? 'Saving...' : 'Save' }}
             </button>
           </div>
         </div>
         
-        <!-- Editor Area -->
-        <div class="quill-container flex-grow overflow-y-auto relative">
+        <div class="quill-container flex-grow overflow-y-auto relative -mx-4 -mb-4 sm:-mx-6 sm:-mb-6">
           <div #editor class="h-full"></div>
         </div>
 
       </div>
     } @else {
-      <div class="m-auto p-4 text-center text-slate-500">
+      <div class="m-auto p-4 text-center text-gray-500 dark:text-gray-400">
         <h3 class="text-xl">Chapter not found.</h3>
         @if(bookState.currentBookId(); as bookId) {
-            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-500 dark:text-purple-400 hover:underline">Back to chapters</a>
+            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-600 dark:text-purple-400 hover:underline">Back to chapters</a>
         }
       </div>
     }
@@ -55,23 +53,29 @@ declare var Quill: any;
     :host {
       display: block;
       height: 100%;
-      overflow: hidden; /* Prevent double scrollbars */
+      overflow: hidden; 
     }
+    /* Base styles (Light Mode Default) */
     .quill-container .ql-editor {
-      font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-      font-size: 1.125rem; /* 18px */
+      /* UPDATE: Gunakan font Lora untuk konten */
+      font-family: 'Lora', 'ui-serif', 'Georgia', 'Cambria', 'serif'; 
+      font-size: 1.125rem; 
       line-height: 1.75;
+      color: #1f2937; /* gray-900 */
       height: 100%;
-      padding: 1.5rem 2rem;
-      max-width: 80ch;
+      padding: 1rem 2rem; 
+      
+      /* --- PERUBAHAN UTAMA: Batasi Lebar Teks --- */
+      max-width: 48rem; /* 3xl (768px) */
       margin: 0 auto;
-      color: #334155; /* slate-700 for light mode text */
-    }
-    .ql-snow.ql-container {
-      border: none !important;
-      height: calc(100% - 49px); /* Adjust for toolbar height */
     }
     .ql-toolbar {
+      /* UPDATE: Toolbar juga menempel di max-width editor */
+      max-width: 48rem; /* 3xl */
+      margin: 0 auto;
+      
+      background-color: #f3f4f6; /* gray-100 */
+      border-color: #d1d5db !important; /* gray-300 */
       border-left: 0 !important;
       border-right: 0 !important;
       border-top: 0 !important;
@@ -79,28 +83,30 @@ declare var Quill: any;
       position: sticky;
       top: 0;
       z-index: 10;
-      background-color: #ffffff; /* white */
-      border-color: #e2e8f0 !important; /* slate-200 */
     }
-    .ql-toolbar .ql-stroke { stroke: #64748b; } /* slate-500 */
-    .ql-toolbar .ql-picker-label { color: #64748b; }
-    .ql-toolbar .ql-active .ql-stroke { stroke: #9333ea; } /* purple-600 */
-    .ql-toolbar .ql-active .ql-fill { fill: #9333ea; }
-    .ql-toolbar .ql-active .ql-picker-label { color: #9333ea; }
+    .ql-toolbar .ql-stroke { stroke: #6b7280; } /* gray-500 */
+    .ql-toolbar .ql-picker-label { color: #6b7280; } /* gray-500 */
+    .ql-toolbar .ql-active .ql-stroke { stroke: #9333ea; } /* purple-700 */
+    .ql-toolbar .ql-active .ql-fill { fill: #9333ea; } /* purple-700 */
+    .ql-toolbar .ql-active .ql-picker-label { color: #9333ea; } /* purple-700 */
+    .ql-snow.ql-container {
+      border: none !important;
+      height: calc(100% - 49px); 
+    }
 
-    /* Dark Mode Styles */
+    /* DARK MODE OVERRIDES */
     html.dark .quill-container .ql-editor {
-      color: #cbd5e1; /* slate-300 for dark mode text */
+      color: #d1d5db; /* gray-300 */
     }
     html.dark .ql-toolbar {
-      background-color: #1e293b; /* slate-800 */
-      border-color: #334155 !important; /* slate-700 */
+      background-color: #374151; /* gray-700 */
+      border-color: #4b5563 !important; /* gray-600 */
     }
-    html.dark .ql-toolbar .ql-stroke { stroke: #94a3b8; } /* slate-400 */
-    html.dark .ql-toolbar .ql-picker-label { color: #94a3b8; }
-    html.dark .ql-toolbar .ql-active .ql-stroke { stroke: #c084fc; } /* purple-400 */
-    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c084fc; }
-    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c084fc; }
+    html.dark .ql-toolbar .ql-stroke { stroke: #9ca3af; } /* gray-400 */
+    html.dark .ql-toolbar .ql-picker-label { color: #9ca3af; } /* gray-400 */
+    html.dark .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; } /* purple-300 */
+    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; } /* purple-300 */
+    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; } /* purple-300 */
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -155,8 +161,6 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // FIX: Assign this.route.parent to a local const to help TypeScript's control flow analysis.
-    // This ensures that inside the combineLatest stream, TypeScript knows parentRoute is not null.
     const parentRoute = this.route.parent;
     if (!parentRoute) {
       console.error("EditorPageComponent must be used within a parent route with a book ID.");
@@ -164,10 +168,6 @@ export class EditorPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // FIX: Switched from a tuple-based `combineLatest` to an object-based one.
-    // This resolves a TypeScript type inference issue where the output tuple was not
-    // correctly typed, causing destructuring errors. This approach is more robust
-    // and readable.
     this.routeSub = combineLatest({
       parentParams: parentRoute.params,
       childParams: this.route.params

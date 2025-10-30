@@ -13,5 +13,8 @@
     "@angular/forms": "^20.3.7",
     "@angular/cdk": "^20.2.10",
     "d3": "^7.9.0"
+  },
+  "devDependencies": {
+    "pwa-asset-generator": "^1.7.1"
   }
 }

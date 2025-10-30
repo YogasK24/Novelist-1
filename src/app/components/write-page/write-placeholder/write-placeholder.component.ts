@@ -1,3 +1,4 @@
+// src/app/components/write-page/write-placeholder/write-placeholder.component.ts
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 

@@ -18,14 +18,16 @@ import { SetTargetModalComponent } from '../../components/dashboard/set-target-m
     SetTargetModalComponent
   ],
   template: `
-    <div>
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors duration-500 font-sans-ui">
       <app-navbar></app-navbar>
-      <main class="container mx-auto px-4 py-8">
+      
+      <main class="container mx-auto px-4 py-12 max-w-7xl"> 
         <app-book-list 
           (editClicked)="handleOpenEditModal($event)"
           (setTargetClicked)="handleOpenSetTargetModal($event)">
         </app-book-list>
       </main>
+      
       <app-add-book-button (addClicked)="handleOpenAddModal()"></app-add-book-button>
 
       @if (showModal()) {

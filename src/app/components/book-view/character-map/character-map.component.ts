@@ -6,7 +6,6 @@ import type { ICharacter } from '../../../../types/data';
 import * as d3 from 'd3';
 import { CharacterDetailModalComponent } from '../character-detail-modal/character-detail-modal.component'; // <-- Import Modal Detail
 import { FormsModule } from '@angular/forms'; // <-- Import Forms Module untuk ngModel di select
-import { ThemeService } from '../../../state/theme.service';
 
 // Definisikan tipe data untuk node dan link D3
 interface Node extends d3.SimulationNodeDatum {
@@ -69,7 +68,6 @@ type Link = d3.SimulationLinkDatum<Node> & {
 })
 export class CharacterMapComponent implements OnDestroy, AfterViewInit {
   public bookState = inject(CurrentBookStateService);
-  private themeService = inject(ThemeService);
 
   @ViewChild('container') private container!: ElementRef<HTMLDivElement>;
   private svg: any;
@@ -77,8 +75,8 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
   
   private resizeObserver!: ResizeObserver;
   private linkedByIndex: { [key: string]: boolean } = {}; // Untuk highlighting
-  private textColor = signal('#334155'); // slate-700
-  private nodeColor = signal('#a855f7'); // purple-500
+  private textColor = signal('#e2e8f0'); // slate-200 (dark mode)
+  private nodeColor = signal('#c084fc'); // purple-400 (dark mode)
 
   // State Modal
   showDetailModal = signal(false);
@@ -103,28 +101,6 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
       }
     });
 
-    effect(() => {
-      const theme = this.themeService.currentTheme();
-      this.textColor.set(theme === 'dark' ? '#e2e8f0' : '#334155'); // slate-200 : slate-700
-      this.nodeColor.set(theme === 'dark' ? '#c084fc' : '#a855f7'); // purple-400 : purple-500
-
-      if (this.svg) {
-        this.svg.selectAll('.nodes text')
-          .transition()
-          .duration(200)
-          .attr('fill', this.textColor());
-        
-        this.svg.selectAll('.nodes circle')
-          .transition()
-          .duration(200)
-          .attr('fill', this.nodeColor());
-        
-        this.svg.selectAll('.link')
-          .transition()
-          .duration(200)
-          .attr('stroke', (d: any) => this.getLinkColor(d.type));
-      }
-    });
   }
   
   ngAfterViewInit(): void {
@@ -180,7 +156,7 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
         'Kekasih': '#ec4899',
         'Mentor': '#f59e0b', // Amber-500
     };
-    return colorMap[type] || (this.themeService.currentTheme() === 'dark' ? '#475569' : '#94a3b8'); // slate-600 : slate-400
+    return colorMap[type] || '#475569'; // slate-600
   }
 
   selectNode(nodeId: number | null): void {

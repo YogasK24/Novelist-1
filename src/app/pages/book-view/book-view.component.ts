@@ -1,38 +1,38 @@
 // src/app/pages/book-view/book-view.component.ts
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router'; // Import ActivatedRoute
-import { CommonModule } from '@angular/common'; // Untuk async pipe, ngIf
-import { Subscription } from 'rxjs'; // Untuk unsubscribe
-import { CurrentBookStateService } from '../../state/current-book-state.service'; // State service
-import { BookViewHeaderComponent } from '../../components/book-view/book-view-header/book-view-header.component'; // Akan dibuat
-import { BookViewTabsComponent } from '../../components/book-view/book-view-tabs/book-view-tabs.component'; // Akan dibuat
-import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom-nav.component'; // Akan dibuat
+import { ActivatedRoute, RouterLink } from '@angular/router'; 
+import { CommonModule } from '@angular/common'; 
+import { Subscription } from 'rxjs'; 
+import { CurrentBookStateService } from '../../state/current-book-state.service'; 
+import { BookViewHeaderComponent } from '../../components/book-view/book-view-header/book-view-header.component'; 
+import { BookViewTabsComponent } from '../../components/book-view/book-view-tabs/book-view-tabs.component'; 
+import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom-nav.component'; 
 
 @Component({
   selector: 'app-book-view',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink, // Untuk tombol back di header
+    RouterLink, 
     BookViewHeaderComponent,
     BookViewTabsComponent,
     BottomNavComponent
   ],
   template: `
-   <div class="flex flex-col min-h-screen"> 
+   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500 font-sans-ui"> 
       <app-book-view-header></app-book-view-header>
 
-      <main class="flex-grow container mx-auto px-4 py-6">
+      <main class="flex-grow container mx-auto px-4 py-10 max-w-7xl"> 
         @if (bookState.isLoadingBook()) {
           <div class="flex justify-center items-center py-10">
-             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-400"></div>
+             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 dark:border-purple-600"></div>
           </div>
         } @else if (bookState.currentBook()) { 
            <app-book-view-tabs></app-book-view-tabs>
         } @else {
-          <div class="text-center py-10 text-red-600 dark:text-red-400">
+          <div class="text-center py-10 text-red-400">
              Buku tidak ditemukan atau gagal dimuat. 
-             <a [routerLink]="['/']" class="text-blue-500 dark:text-blue-400 hover:underline">Kembali ke Dashboard</a>
+             <a [routerLink]="['/']" class="text-blue-400 hover:underline">Kembali ke Dashboard</a>
           </div>
         }
       </main>

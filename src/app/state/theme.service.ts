@@ -1,57 +1,53 @@
-// FIX: Implemented the ThemeService to manage the application's visual theme (light/dark).
+// src/app/state/theme.service.ts
 import { Injectable, signal, effect } from '@angular/core';
 
-export type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  // FIX: Changed the local storage key to 'theme' to match the inline script in index.html.
-  // This ensures theme persistence across page reloads.
-  private readonly THEME_KEY = 'theme';
-
-  // State
-  readonly currentTheme = signal<Theme>(this.getInitialTheme());
+  // Signal to hold the current theme
+  readonly currentTheme = signal<Theme>('light');
 
   constructor() {
+    this.initializeTheme();
     // Tambahkan kelas transisi ke body sekali saat service diinisialisasi
     // untuk memastikan pergantian tema yang mulus.
     document.body.classList.add('transition-colors', 'duration-500');
 
     effect(() => {
       const theme = this.currentTheme();
-      localStorage.setItem(this.THEME_KEY, theme);
-
-      // Kelola kelas 'dark' pada elemen <html> untuk Tailwind
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
+        // Terapkan kelas latar belakang dan teks langsung ke <body> untuk mode gelap
+        document.body.classList.remove('bg-slate-50', 'text-slate-700');
+        document.body.classList.add('font-sans-ui', 'bg-slate-900', 'text-slate-200');
       } else {
         document.documentElement.classList.remove('dark');
-      }
-      
-      // Terapkan kelas latar belakang dan teks langsung ke <body>
-      // Ini adalah pendekatan yang lebih kuat daripada membungkus router-outlet
-      // Menggunakan palet 'slate' untuk tampilan yang lebih sejuk dan modern.
-      if (theme === 'dark') {
-        document.body.classList.remove('bg-slate-50', 'text-slate-700');
-        document.body.classList.add('bg-slate-900', 'text-slate-200');
-      } else {
+        // Terapkan kelas latar belakang dan teks langsung ke <body> untuk mode terang
         document.body.classList.remove('bg-slate-900', 'text-slate-200');
-        document.body.classList.add('bg-slate-50', 'text-slate-700');
+        document.body.classList.add('font-sans-ui', 'bg-slate-50', 'text-slate-700');
       }
+      // Simpan pilihan tema
+      localStorage.setItem('theme', theme);
     });
   }
-
-  toggleTheme(): void {
-    this.currentTheme.update(theme => (theme === 'light' ? 'dark' : 'light'));
+  
+  /**
+   * Menginisialisasi tema dari localStorage atau preferensi sistem.
+   */
+  private initializeTheme(): void {
+    const storedTheme = localStorage.getItem('theme') as Theme | null;
+    const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
+    this.currentTheme.set(initialTheme);
   }
 
-  private getInitialTheme(): Theme {
-    const storedTheme = localStorage.getItem(this.THEME_KEY);
-    if (storedTheme === 'dark' || storedTheme === 'light') {
-      return storedTheme;
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  /**
+   * Mengganti tema antara 'light' dan 'dark'.
+   */
+  toggleTheme(): void {
+    this.currentTheme.update(current => (current === 'light' ? 'dark' : 'light'));
   }
 }

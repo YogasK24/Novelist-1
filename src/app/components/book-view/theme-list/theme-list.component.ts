@@ -28,19 +28,23 @@ import { AddThemeModalComponent } from '../add-theme-modal/add-theme-modal.compo
             <!-- Daftar Tema -->
             <div class="space-y-3">
               @for (theme of themes; track theme.id) {
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-start">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start hover:bg-gray-100 dark:hover:bg-gray-700/80 transition duration-150">
                   <!-- Info Tema -->
                   <div class="mr-4">
-                     <h3 class="text-lg font-semibold text-slate-800 dark:text-white">{{ theme.name }}</h3>
-                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-wrap">{{ theme.description || 'Tidak ada deskripsi.' }}</p>
+                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ theme.name }}</h3>
+                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap">{{ theme.description || 'Tidak ada deskripsi.' }}</p>
                   </div>
                   <!-- Tombol Aksi (Edit/Hapus) -->
-                  <div class="flex-shrink-0 space-x-2">
-                     <button (click)="openEditModal(theme)" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 p-1" aria-label="Edit Tema">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /> </svg>
+                  <div class="flex-shrink-0 space-x-2 flex items-center">
+                     <button (click)="openEditModal(theme)" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1" aria-label="Edit Tema">
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                         <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                       </svg>
                      </button>
-                     <button (click)="deleteTheme(theme.id!, theme.name)" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-1" aria-label="Hapus Tema">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> </svg>
+                     <button (click)="deleteTheme(theme.id!, theme.name)" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1" aria-label="Hapus Tema">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                          <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193v-.443A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.84 0a.75.75 0 01-1.5.06l-.3 7.5a.75.75 0 111.5-.06l.3-7.5z" clip-rule="evenodd" />
+                        </svg>
                      </button>
                   </div>
                 </div>
@@ -48,7 +52,7 @@ import { AddThemeModalComponent } from '../add-theme-modal/add-theme-modal.compo
             </div>
          } @else {
            <!-- Pesan jika daftar kosong -->
-           <p class="text-center text-slate-500 py-6">Belum ada tema. Klik tombol di atas untuk menambah!</p>
+           <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada tema. Klik tombol di atas untuk menambah!</p>
          }
       }
 
