@@ -1,11 +1,10 @@
 // src/app/state/current-book-state.service.ts
-// REFACTORED TO SIGNALS
 
 import { Injectable, inject, signal, effect, WritableSignal, computed } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { BookStateService } from './book-state.service';
 import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
-import { NotificationService } from './notification.service'; // <-- Import BARU
+import { NotificationService } from './notification.service'; 
 
 @Injectable({
   providedIn: 'root'
@@ -13,12 +12,12 @@ import { NotificationService } from './notification.service'; // <-- Import BARU
 export class CurrentBookStateService {
   private readonly dbService = inject(DatabaseService);
   private readonly bookStateService = inject(BookStateService);
-  private readonly notificationService = inject(NotificationService); // <-- Inject BARU
+  private readonly notificationService = inject(NotificationService); 
 
   // --- STATE PRIMER (Writable Signals) ---
   readonly currentBookId = signal<number | null>(null);
-  readonly isLoadingBook = signal<boolean>(false); // Digunakan untuk pemuatan buku utama
-  readonly isLoadingChildren = signal({ // Pemuatan data anak yang terpisah
+  readonly isLoadingBook = signal<boolean>(false); 
+  readonly isLoadingChildren = signal({ 
       characters: false,
       locations: false,
       plotEvents: false,
@@ -35,7 +34,66 @@ export class CurrentBookStateService {
   readonly chapters = signal<IChapter[]>([]);
   readonly themes = signal<ITheme[]>([]);
   readonly props = signal<IProp[]>([]);
-  readonly writingLogs = signal<IWritingLog[]>([]);
+  readonly writingLogs = signal<IWritingLog[]>([]); 
+
+  // --- BARU: State untuk Pencarian Kontekstual ---
+  readonly contextualSearchTerm = signal('');
+
+  // --- BARU: Computed Signals untuk Filtering ---
+
+  readonly filteredCharacters = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.characters();
+    return this.characters().filter(char =>
+      char.name.toLowerCase().includes(term) ||
+      char.description.toLowerCase().includes(term)
+    );
+  });
+
+  readonly filteredLocations = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.locations();
+    return this.locations().filter(loc =>
+      loc.name.toLowerCase().includes(term) ||
+      loc.description.toLowerCase().includes(term)
+    );
+  });
+  
+  readonly filteredPlotEvents = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.plotEvents();
+    return this.plotEvents().filter(event =>
+      event.title.toLowerCase().includes(term) ||
+      event.summary.toLowerCase().includes(term)
+    );
+  });
+
+  readonly filteredChapters = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.chapters();
+    return this.chapters().filter(chap =>
+      chap.title.toLowerCase().includes(term)
+    );
+  });
+
+  readonly filteredThemes = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.themes();
+    return this.themes().filter(theme =>
+      theme.name.toLowerCase().includes(term) ||
+      theme.description.toLowerCase().includes(term)
+    );
+  });
+
+  readonly filteredProps = computed(() => {
+    const term = this.contextualSearchTerm().toLowerCase();
+    if (!term) return this.props();
+    return this.props().filter(prop =>
+      prop.name.toLowerCase().includes(term) ||
+      prop.description.toLowerCase().includes(term)
+    );
+  });
+
 
   // Helper untuk mendapatkan tanggal hari ini (YYYY-MM-DD)
   private getTodayDateString(): string {
@@ -131,7 +189,8 @@ export class CurrentBookStateService {
     this.chapters.set([]);
     this.themes.set([]);
     this.props.set([]);
-    this.writingLogs.set([]);
+    this.writingLogs.set([]); 
+    this.contextualSearchTerm.set(''); // <-- Reset search term
   }
 
   /** Metode Private: Memuat data buku utama saja */
@@ -180,6 +239,15 @@ export class CurrentBookStateService {
 
   clearBookData(): void {
     this.currentBookId.set(null);
+  }
+
+  // --- BARU: Aksi untuk Pencarian Kontekstual ---
+  setContextualSearchTerm(term: string): void {
+    this.contextualSearchTerm.set(term);
+  }
+
+  clearContextualSearch(): void {
+    this.contextualSearchTerm.set('');
   }
 
   // --- Actions Publik untuk Lazy Loading Data Anak ---
@@ -579,44 +647,45 @@ export class CurrentBookStateService {
           }, 0);
         }
       }
-    } catch(e) { /* Fallback to plain text */ }
-
+    } catch (e) {
+      /* Fallback to plain text */
+    }
     return content.trim().split(/\s+/).filter(Boolean).length;
   }
 
   private async _recalculateAndUpdateWordCount(): Promise<void> {
-    const book = this.currentBook();
     const bookId = this.currentBookId();
-    if (!book || !bookId) return;
+    const chapters = this.chapters();
+    if (!bookId) return;
 
-    const oldTotalWordCount = book.wordCount;
-    const allChapters = this.chapters();
-    const newTotalWordCount = allChapters.reduce((total, chap) => total + this._countWordsInChapterContent(chap.content), 0);
-    
-    const wordCountChange = newTotalWordCount - oldTotalWordCount;
+    try {
+      // 1. Hitung total kata dari semua bab
+      const totalWordCount = chapters.reduce((total, chapter) => {
+        return total + this._countWordsInChapterContent(chapter.content);
+      }, 0);
 
-    if (wordCountChange !== 0) {
-      try {
-        // 1. Update total kata di database
-        await this.dbService.updateBookStats(bookId, { wordCount: newTotalWordCount });
-        
-        // 2. Update state buku saat ini secara optimis
-        this.currentBook.update(current => current ? { ...current, wordCount: newTotalWordCount } : null);
-
-        // 3. Update state buku di daftar utama (dashboard)
-        this.bookStateService.updateBookInList(bookId, { wordCount: newTotalWordCount });
-
-        // 4. Catat perubahan ke log harian
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      // 2. Hitung perubahan kata dari state buku saat ini
+      const previousTotalWordCount = this.currentBook()?.wordCount ?? 0;
+      const wordCountChange = totalWordCount - previousTotalWordCount;
+      
+      // 3. Update log penulisan HANYA jika ada perubahan
+      if (wordCountChange !== 0) {
+        const today = this.getTodayDateString();
         await this.dbService.upsertWritingLog(bookId, today, wordCountChange);
-        
-        // 5. Muat ulang log untuk memperbarui UI
-        await this.loadWritingLogs(bookId);
-
-      } catch (error) {
-        console.error("Gagal update jumlah kata dan log:", error);
-        this.notificationService.error("Gagal memperbarui statistik jumlah kata.");
+        await this.loadWritingLogs(bookId); // Muat ulang log
       }
+      
+      // 4. Update state buku saat ini & di daftar buku global
+      if (totalWordCount !== previousTotalWordCount) {
+          this.currentBook.update(book => book ? { ...book, wordCount: totalWordCount } : null);
+          this.bookStateService.updateBookInList(bookId, { wordCount: totalWordCount });
+          // Simpan ke DB
+          await this.dbService.updateBookStats(bookId, { wordCount: totalWordCount });
+      }
+
+    } catch(error) {
+      console.error("Gagal menghitung ulang word count:", error);
+      this.notificationService.error("Gagal memperbarui jumlah kata.");
     }
   }
 

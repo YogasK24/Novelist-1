@@ -45,7 +45,8 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
 })
 export class BookViewComponent implements OnInit, OnDestroy {
   // Inject services
-  private route = inject(ActivatedRoute);
+  // FIX: Property 'params' does not exist on type 'unknown'. Explicitly type the injected ActivatedRoute.
+  private route: ActivatedRoute = inject(ActivatedRoute);
   // Buat state service jadi public agar bisa diakses di template
   public bookState = inject(CurrentBookStateService); 
 

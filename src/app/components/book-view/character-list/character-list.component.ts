@@ -22,7 +22,7 @@ import { CharacterDetailModalComponent } from '../character-detail-modal/charact
         <div class="flex justify-center items-center py-6">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-500 dark:border-slate-400"></div>
         </div>
-      } @else if (bookState.characters(); as characters) {
+      } @else if (bookState.filteredCharacters(); as characters) {
          @if (characters.length > 0) {
             <div class="space-y-3">
               @for (char of characters; track char.id) {
@@ -63,7 +63,11 @@ import { CharacterDetailModalComponent } from '../character-detail-modal/charact
               }
             </div>
          } @else {
-           <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada karakter. Klik tombol di atas untuk menambah!</p>
+            @if (bookState.contextualSearchTerm()) {
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Tidak ada karakter yang cocok dengan pencarian Anda.</p>
+            } @else {
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada karakter. Klik tombol di atas untuk menambah!</p>
+            }
          }
       }
 

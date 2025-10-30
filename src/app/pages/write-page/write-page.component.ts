@@ -115,8 +115,10 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
   `
 })
 export class WritePageComponent implements OnInit, OnDestroy {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  // FIX: Property 'params' does not exist on type 'unknown'. Explicitly type the injected ActivatedRoute.
+  private route: ActivatedRoute = inject(ActivatedRoute);
+  // FIX: Property 'params' does not exist on type 'unknown'. Explicitly type the injected Router.
+  private router: Router = inject(Router);
   public bookState = inject(CurrentBookStateService); 
 
   private routeSub: Subscription | undefined;

@@ -66,8 +66,7 @@ export class DashboardComponent {
 
   handleCloseModal(): void {
     this.showModal.set(false);
-    // Opsional: delay reset agar transisi mulus
-    setTimeout(() => this.editingBook.set(null), 300); 
+    this.editingBook.set(null);
   }
 
   handleOpenSetTargetModal(book: IBook): void {
@@ -77,6 +76,6 @@ export class DashboardComponent {
 
   handleCloseSetTargetModal(): void {
     this.showSetTargetModal.set(false);
-    setTimeout(() => this.bookForTarget.set(null), 300);
+    this.bookForTarget.set(null);
   }
 }

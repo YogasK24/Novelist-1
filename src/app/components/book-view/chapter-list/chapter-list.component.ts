@@ -30,10 +30,10 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
              <span class="ml-3 text-slate-400 dark:text-slate-500">Menyimpan urutan...</span>
           }
         </div>
-      } @else if (bookState.chapters(); as chapters) {
+      } @else if (bookState.filteredChapters(); as chapters) {
          @if (chapters.length > 0) {
             <div cdkDropList 
-                 [cdkDropListDisabled]="isReordering()" 
+                 [cdkDropListDisabled]="isReordering() || bookState.contextualSearchTerm().length > 0" 
                  (cdkDropListDropped)="onDrop($event)" 
                  #chapterList="cdkDropList" 
                  class="space-y-3 p-1 -mx-1 rounded-lg">
@@ -42,12 +42,16 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
                      [cdkDragData]="chap" 
                      tabindex="0" 
                      (keydown)="onMoveItem(chap, $event)"
-                     class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex items-start group hover:bg-slate-100 dark:hover:bg-slate-700/80 transition cursor-grab focus:outline-none focus:ring-2 focus:ring-purple-500"
+                     class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex items-start group hover:bg-slate-100 dark:hover:bg-slate-700/80 transition"
+                     [class.cursor-grab]="!isReordering() && bookState.contextualSearchTerm().length === 0"
+                     [class.cursor-not-allowed]="isReordering() || bookState.contextualSearchTerm().length > 0"
+                     [class.focus:ring-purple-500]="!isReordering() && bookState.contextualSearchTerm().length === 0"
                      [class.opacity-50]="isReordering()"
                      aria-grabbed="false"
                      [attr.aria-label]="'Chapter ' + chap.order + ': ' + chap.title + '. Tekan panah atas/bawah untuk menyusun ulang.'">
                   
-                  <div class="p-4 text-slate-500" cdkDragHandle>
+                  <div class="p-4 text-slate-500" cdkDragHandle
+                       [class.cursor-not-allowed]="isReordering() || bookState.contextualSearchTerm().length > 0">
                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
                        <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
                      </svg>
@@ -86,7 +90,13 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
               }
             </div>
          } @else {
-           <p class="text-center text-slate-500 py-6">Belum ada bab. Klik tombol di atas untuk memulai naskahmu!</p>
+           @if (bookState.contextualSearchTerm()) {
+             <p class="text-center text-gray-500 dark:text-gray-400 py-6">
+               Tidak ada bab ditemukan untuk "{{ bookState.contextualSearchTerm() }}".
+             </p>
+           } @else {
+             <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada bab. Klik tombol di atas untuk memulai naskahmu!</p>
+           }
          }
       }
 
@@ -103,7 +113,8 @@ import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal
 })
 export class ChapterListComponent {
   public bookState = inject(CurrentBookStateService); 
-  private router = inject(Router);
+  // FIX: Property 'navigate' does not exist on type 'unknown'. Explicitly type the injected Router.
+  private router: Router = inject(Router);
   
   @ViewChild('chapterList') chapterList!: CdkDropList<IChapter[]>;
 
@@ -169,7 +180,7 @@ export class ChapterListComponent {
   }
 
   onMoveItem(chapter: IChapter, event: KeyboardEvent): void {
-      if (this.isReordering()) return;
+      if (this.isReordering() || this.bookState.contextualSearchTerm().length > 0) return;
 
       const direction = event.key;
       const chapters = this.bookState.chapters();
@@ -212,9 +223,23 @@ export class ChapterListComponent {
   onDrop(event: CdkDragDrop<IChapter[]>): void {
     if (this.isReordering()) return; // Cegah double drop
 
+    // Penting: Gunakan daftar asli untuk pengurutan, bukan daftar yang difilter
     const currentChapters = [...this.bookState.chapters()];
     
-    moveItemInArray(currentChapters, event.previousIndex, event.currentIndex);
+    // Temukan item yang sebenarnya di daftar asli berdasarkan ID
+    const movedItem = this.bookState.filteredChapters()[event.previousIndex];
+    const previousIndexInFull = currentChapters.findIndex(c => c.id === movedItem.id);
+    
+    // Pindahkan item dari posisi lama
+    currentChapters.splice(previousIndexInFull, 1);
+    
+    // Tentukan posisi baru di daftar asli
+    // Jika pindah ke bawah, indeks target bisa lebih kecil
+    const nextItemInFiltered = this.bookState.filteredChapters()[event.currentIndex];
+    const currentIndexInFull = nextItemInFiltered ? currentChapters.findIndex(c => c.id === nextItemInFiltered.id) : currentChapters.length;
+
+    // Sisipkan item di posisi baru
+    currentChapters.splice(currentIndexInFull, 0, movedItem);
 
     const reorderedChapters = currentChapters.map((chapter, index) => ({
       ...chapter,

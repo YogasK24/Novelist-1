@@ -69,3 +69,16 @@ export interface IWritingLog { // <-- BARU: Log harian
   date: string;              // Format YYYY-MM-DD
   wordCountAdded: number;    // Jumlah kata yang ditambahkan hari itu
 }
+
+// --- BARU: Tipe Data untuk Pencarian Global ---
+
+export type SearchResultType = 'Book' | 'Character' | 'Location' | 'Chapter' | 'PlotEvent' | 'Theme' | 'Prop';
+
+export interface ISearchResult {
+  type: SearchResultType;
+  name: string;         // Nama/Judul yang cocok (e.g., "Andra" or "Bab 1: Permulaan")
+  description: string;  // Snippet deskripsi/ringkasan
+  path: string;         // Konteks (e.g., "Novel: The Dragon's Lair")
+  bookId: number;
+  entityId: number;     // ID dari item itu sendiri (e.g., character.id or chapter.id)
+}

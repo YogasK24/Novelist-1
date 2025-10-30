@@ -23,7 +23,7 @@ import { AddLocationModalComponent } from '../add-location-modal/add-location-mo
         <div class="flex justify-center items-center py-6">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-500 dark:border-slate-400"></div>
         </div>
-      } @else if (bookState.locations(); as locations) {
+      } @else if (bookState.filteredLocations(); as locations) {
          @if (locations.length > 0) {
             <!-- Daftar Lokasi -->
             <div class="space-y-3">
@@ -52,7 +52,11 @@ import { AddLocationModalComponent } from '../add-location-modal/add-location-mo
             </div>
          } @else {
            <!-- Pesan jika daftar kosong -->
-           <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada lokasi. Klik tombol di atas untuk menambah!</p>
+            @if (bookState.contextualSearchTerm()) {
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Tidak ada lokasi yang cocok dengan pencarian Anda.</p>
+            } @else {
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada lokasi. Klik tombol di atas untuk menambah!</p>
+            }
          }
       }
 

@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { Subscription, combineLatest, map } from 'rxjs';
 import { CurrentBookStateService } from '../../state/current-book-state.service';
 import type { IChapter } from '../../../types/data';
-import { NotificationService } from '../../state/notification.service';
 
 declare var Quill: any;
 
@@ -24,13 +23,46 @@ declare var Quill: any;
           <h2 class="truncate text-2xl font-bold text-gray-900 dark:text-gray-200" [title]="currentChapter.title">
             {{ currentChapter.title }}
           </h2>
-          <div class="flex-shrink-0 text-right">
-            <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline" [class.opacity-100]="isDirty()" [class.opacity-0]="!isDirty()">Unsaved changes</span>
+          <div class="flex-shrink-0 text-right flex items-center">
+            
+            @if (isSaving()) {
+              <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity sm:inline mr-3">
+                Menyimpan...
+              </span>
+            } @else if (showSavedConfirmation()) {
+              <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity sm:inline mr-3">
+                Tersimpan
+              </span>
+            } @else if (isDirty()) {
+              <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline mr-3">
+                Perubahan belum disimpan
+              </span>
+            } @else {
+               <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline mr-3">
+                Semua tersimpan
+              </span>
+            }
+
             <button 
               (click)="saveContent()" 
-              [disabled]="!isDirty() || isSaving()"
-              class="ml-2 rounded-md bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50">
-              {{ isSaving() ? 'Saving...' : 'Save' }}
+              [disabled]="!isDirty() || isSaving() || showSavedConfirmation()"
+              class="ml-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 
+                     w-28 flex items-center justify-center
+                     disabled:cursor-not-allowed"
+              [class.bg-purple-600]="!showSavedConfirmation()" [class.hover:bg-purple-700]="!showSavedConfirmation()"
+              [class.bg-green-600]="showSavedConfirmation()"
+              [class.opacity-50]="!isDirty()"
+              [class.opacity-100]="isDirty()">
+              
+              @if (isSaving()) {
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              } @else if (showSavedConfirmation()) {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              } @else {
+                <span>Save</span>
+              }
             </button>
           </div>
         </div>
@@ -111,13 +143,14 @@ declare var Quill: any;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorPageComponent implements OnInit, OnDestroy {
-  private route = inject(ActivatedRoute);
+  // FIX: Property 'parent'/'params' does not exist on type 'unknown'. Explicitly type the injected ActivatedRoute.
+  private route: ActivatedRoute = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
-  private notificationService = inject(NotificationService);
   
   editorEl = viewChild<ElementRef>('editor');
   private quillInstance: any;
   private contentUpdateTimer: any;
+  private savedConfirmationTimer: any;
 
   private routeSub?: Subscription;
 
@@ -127,6 +160,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   isLoading = signal(true);
   isSaving = signal(false);
   isDirty = signal(false);
+  showSavedConfirmation = signal(false);
 
   chapter = computed(() => {
     const chapId = this.chapterId();
@@ -227,28 +261,46 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     }
 
     this.quillInstance.on('text-change', () => {
+      // Hapus konfirmasi "Tersimpan" jika pengguna mulai mengetik lagi
+      clearTimeout(this.savedConfirmationTimer);
+      this.showSavedConfirmation.set(false);
+
       if (!this.isDirty()) {
           this.isDirty.set(true);
       }
       // Debounce saving
       clearTimeout(this.contentUpdateTimer);
-      this.contentUpdateTimer = setTimeout(() => this.saveContent(), 1500); // Auto-save after 1.5s of inactivity
+      this.contentUpdateTimer = setTimeout(() => this.saveContent(), 1500); // Auto-save
     });
   }
 
   async saveContent(): Promise<void> {
     const chap = this.chapter();
-    if (!chap || !this.quillInstance || !this.isDirty()) return;
+    // Cegah penyimpanan jika tidak ada perubahan atau sedang menyimpan
+    if (!chap || !this.quillInstance || !this.isDirty() || this.isSaving()) return;
 
+    // Hapus timer sebelumnya jika ada
+    clearTimeout(this.contentUpdateTimer);
+    clearTimeout(this.savedConfirmationTimer);
+    
     this.isSaving.set(true);
+    this.isDirty.set(false); // Anggap bersih saat proses simpan dimulai
+    
     try {
       const content = JSON.stringify(this.quillInstance.getContents());
       await this.bookState.updateChapterContent(chap.id!, content);
-      this.isDirty.set(false);
-      this.notificationService.info('Perubahan disimpan otomatis.', 2000);
+      
+      // Sukses: Tampilkan konfirmasi "Tersimpan"
+      this.showSavedConfirmation.set(true);
+      
+      // Atur timer untuk menyembunyikan konfirmasi "Tersimpan"
+      this.savedConfirmationTimer = setTimeout(() => {
+          this.showSavedConfirmation.set(false);
+      }, 2000); // Tampilkan selama 2 detik
+
     } catch(e) {
       console.error("Failed to save content", e);
-      this.notificationService.error('Gagal menyimpan perubahan.');
+      this.isDirty.set(true); // Jika gagal, set kotor lagi
     } finally {
       this.isSaving.set(false);
     }
@@ -256,6 +308,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearTimeout(this.contentUpdateTimer);
+    clearTimeout(this.savedConfirmationTimer);
     this.routeSub?.unsubscribe();
   }
 }

@@ -1,10 +1,9 @@
-// FIX: Updated file path in comment to be consistent with actual file location.
 // src/app/state/database.service.ts
 
 import { Injectable } from '@angular/core'; // Import Injectable decorator
 import Dexie, { type Table } from 'dexie';
 // Pastikan path impor ini benar
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog, ISearchResult, SearchResultType } from '../../types/data'; // <-- Tambah ISearchResult
 
 // --- DEFINE DATABASE SHAPE WITH AN INTERFACE ---
 // This avoids subclassing issues with TypeScript's type inference for Dexie.
@@ -23,9 +22,8 @@ interface INovelistDB {
   writingLogs: Table<IWritingLog, number>; // <-- BARU
 }
 
-// --- BUAT ANGULAR SERVICE ---
 @Injectable({
-  providedIn: 'root' // Service ini akan tersedia di seluruh aplikasi
+  providedIn: 'root' 
 })
 export class DatabaseService {
   // Instance Dexie database
@@ -33,9 +31,6 @@ export class DatabaseService {
   private db: Dexie & INovelistDB;
 
   constructor() {
-    // FIX: Refactored to use a Dexie instance typed with an interface instead of subclassing.
-    // This resolves TypeScript errors where methods like `version()` and `transaction()` were not found.
-    // The cast is updated to match the new intersection type.
     this.db = new Dexie('NovelistDB_Angular') as Dexie & INovelistDB;
     this.db.version(5).stores({
       books: '++id, title, lastModified',
@@ -46,7 +41,7 @@ export class DatabaseService {
       themes: '++id, bookId, name',
       props: '++id, bookId, name'
     });
-    // <-- VERSI BARU
+    
     this.db.version(6).stores({
       books: '++id, title, lastModified',
       characters: '++id, bookId, name, *relationships.targetId',
@@ -55,7 +50,19 @@ export class DatabaseService {
       chapters: '++id, bookId, order, *characterIds',
       themes: '++id, bookId, name',
       props: '++id, bookId, name',
-      writingLogs: '++id, bookId, date, &[bookId+date]' // <-- SKEMA BARU
+      writingLogs: '++id, bookId, date, &[bookId+date]' 
+    });
+    
+    // --- BARU: Versi 7 -> Tambahkan Indeks Pencarian ---
+    this.db.version(7).stores({
+      books: '++id, title, lastModified',
+      characters: '++id, bookId, name, *relationships.targetId',
+      locations: '++id, bookId, name',
+      plotEvents: '++id, bookId, order, title, locationId, *characterIds', // <-- Tambah 'title'
+      chapters: '++id, bookId, order, title, *characterIds', // <-- Tambah 'title'
+      themes: '++id, bookId, name',
+      props: '++id, bookId, name',
+      writingLogs: '++id, bookId, date, &[bookId+date]'
     });
   }
 
@@ -264,4 +271,113 @@ export class DatabaseService {
       throw error; 
     }
   }
+
+  // --- BARU: FUNGSI PENCARIAN GLOBAL ---
+  
+  /**
+   * Mencari di semua entitas di semua novel.
+   * Menggunakan startsWithIgnoreCase yang sangat cepat berkat indeks di v7.
+   */
+  async searchAllEntities(query: string): Promise<ISearchResult[]> {
+    if (query.trim().length === 0) {
+      return [];
+    }
+    
+    // 1. Ambil semua judul buku ke dalam Map untuk efisiensi
+    const allBooks = await this.db.books.toArray();
+    const bookMap = new Map<number, string>(allBooks.map(b => [b.id!, b.title]));
+
+    // Helper untuk mengambil judul buku
+    const getBookTitle = (bookId: number) => bookMap.get(bookId) || 'Novel Tidak Ditemukan';
+
+    // 2. Lakukan semua kueri pencarian secara paralel
+    const [
+      books, 
+      characters, 
+      locations, 
+      chapters, 
+      plotEvents, 
+      themes, 
+      props
+    ] = await Promise.all([
+      // Buku
+      this.db.books.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Karakter
+      this.db.characters.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Lokasi
+      this.db.locations.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Bab
+      this.db.chapters.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Plot Events
+      this.db.plotEvents.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Tema
+      this.db.themes.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
+      // Properti
+      this.db.props.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
+    ]);
+
+    // 3. Ubah hasil menjadi format ISearchResult
+    const results: ISearchResult[] = [
+      ...books.map((item): ISearchResult => ({
+        type: 'Book',
+        name: item.title,
+        description: `Novel dengan ${item.wordCount} kata`,
+        path: 'Novel',
+        bookId: item.id!,
+        entityId: item.id!,
+      })),
+      ...characters.map((item): ISearchResult => ({
+        type: 'Character',
+        name: item.name,
+        description: item.description.substring(0, 50) + '...',
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+      ...locations.map((item): ISearchResult => ({
+        type: 'Location',
+        name: item.name,
+        description: item.description.substring(0, 50) + '...',
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+      ...chapters.map((item): ISearchResult => ({
+        type: 'Chapter',
+        name: item.title,
+        description: `Bab ${item.order}`,
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+      ...plotEvents.map((item): ISearchResult => ({
+        type: 'PlotEvent',
+        name: item.title,
+        description: item.summary.substring(0, 50) + '...',
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+      ...themes.map((item): ISearchResult => ({
+        type: 'Theme',
+        name: item.name,
+        description: item.description.substring(0, 50) + '...',
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+      ...props.map((item): ISearchResult => ({
+        type: 'Prop',
+        name: item.name,
+        description: item.description.substring(0, 50) + '...',
+        path: `Novel: ${getBookTitle(item.bookId)}`,
+        bookId: item.bookId,
+        entityId: item.id!,
+      })),
+    ];
+
+    // 4. Urutkan hasil (misalnya berdasarkan nama)
+    return results.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
 }

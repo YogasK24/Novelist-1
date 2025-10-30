@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ICharacter } from '../../../../types/data';
 import * as d3 from 'd3';
-import { CharacterDetailModalComponent } from '../character-detail-modal/character-detail-modal.component'; // <-- Import Modal Detail
-import { FormsModule } from '@angular/forms'; // <-- Import Forms Module untuk ngModel di select
+import { CharacterDetailModalComponent } from '../character-detail-modal/character-detail-modal.component'; 
+import { FormsModule } from '@angular/forms'; 
 
 // Definisikan tipe data untuk node dan link D3
 interface Node extends d3.SimulationNodeDatum {
@@ -19,16 +19,18 @@ type Link = d3.SimulationLinkDatum<Node> & {
 
 @Component({
   selector: 'app-character-map',
-  imports: [CommonModule, CharacterDetailModalComponent, FormsModule], // <-- Daftarkan Modal & FormsModule
+  standalone: true,
+  imports: [CommonModule, CharacterDetailModalComponent, FormsModule], 
   template: `
-    <div class="p-4 rounded-lg bg-white dark:bg-slate-800 min-h-[60vh] relative border border-slate-200 dark:border-slate-700">
-      
-      <div class="mb-4 flex-shrink-0">
-          <label for="filterChar" class="text-sm font-medium text-slate-700 dark:text-slate-300 mr-2">Sorot Karakter:</label>
+    <div class="p-4 rounded-lg bg-white dark:bg-gray-800/50 min-h-[60vh] relative overflow-hidden">
+      <div class="mb-4 flex-shrink-0 relative z-10">
+          <label for="filterChar" class="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Sorot Karakter:</label>
           <select id="filterChar" 
                   [ngModel]="selectedNodeId()" 
                   (ngModelChange)="selectNode($event)"
-                  class="px-3 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  class="px-3 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
+                         text-gray-900 dark:text-gray-200 text-sm 
+                         focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500">
              <option [ngValue]="null">-- Semua Karakter --</option>
              @for (char of bookState.characters(); track char.id) {
                <option [ngValue]="char.id">{{ char.name }}</option>
@@ -36,15 +38,15 @@ type Link = d3.SimulationLinkDatum<Node> & {
           </select>
       </div>
 
-      <div #container class="w-full h-full min-h-[60vh]"></div>
+      <div #container class="w-full h-full min-h-[60vh] absolute top-0 left-0"></div>
       
       @if (bookState.isLoadingChildren().characters) {
-        <div class="absolute inset-0 flex justify-center items-center bg-white/50 dark:bg-slate-800/50">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-400"></div>
+        <div class="absolute inset-0 flex justify-center items-center bg-white/50 dark:bg-gray-800/50 z-20">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 dark:border-purple-400"></div>
         </div>
       } @else if (bookState.characters().length === 0) {
-         <div class="absolute inset-0 flex justify-center items-center">
-            <p class="text-center text-slate-500">
+         <div class="absolute inset-0 flex justify-center items-center z-20">
+            <p class="text-center text-gray-500">
                 Tambah karakter untuk melihat visualisasi hubungan mereka.
             </p>
          </div>
@@ -63,6 +65,12 @@ type Link = d3.SimulationLinkDatum<Node> & {
     :host {
       display: block;
     }
+    /* Pastikan SVG mengisi kontainer div */
+    :host ::ng-deep svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -71,36 +79,34 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
 
   @ViewChild('container') private container!: ElementRef<HTMLDivElement>;
   private svg: any;
+  private viewport: any; // <-- BARU: Grup <g> untuk menampung zoom/pan
+  private zoom: any; // <-- BARU: Behavior D3 Zoom
   private simulation: d3.Simulation<Node, Link> | undefined;
   
   private resizeObserver!: ResizeObserver;
-  private linkedByIndex: { [key: string]: boolean } = {}; // Untuk highlighting
-  private textColor = signal('#e2e8f0'); // slate-200 (dark mode)
-  private nodeColor = signal('#c084fc'); // purple-400 (dark mode)
+  private linkedByIndex: { [key: string]: boolean } = {}; 
 
   // State Modal
   showDetailModal = signal(false);
   viewingCharacter = signal<ICharacter | null>(null);
 
-  // State Filter BARU
+  // State Filter
   selectedNodeId = signal<number | null>(null);
 
   constructor() {
+    // Effect ini SEKARANG HANYA bereaksi terhadap perubahan daftar karakter
     effect(() => {
       const characters = this.bookState.characters();
-      const selectedId = this.selectedNodeId(); 
       if (this.container && this.container.nativeElement.clientWidth > 0) {
           if (characters.length > 0) {
             this.createGraph(characters);
-            if (this.simulation) {
-              this.updateHighlight(selectedId); 
-            }
+            // Terapkan highlight yang mungkin sudah dipilih
+            this.updateHighlight(this.selectedNodeId()); 
           } else {
             this.clearGraph();
           }
       }
     });
-
   }
   
   ngAfterViewInit(): void {
@@ -109,6 +115,7 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
     });
     this.resizeObserver.observe(this.container.nativeElement);
     
+    // Panggilan manual awal
     const characters = this.bookState.characters();
     if (this.container.nativeElement.clientWidth > 0) {
       if (characters.length > 0) {
@@ -133,6 +140,12 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
     
     this.svg.attr('width', width).attr('height', height);
     this.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+    
+    // Atur ulang zoom transform ke posisi awal saat ukuran layar berubah
+    if (this.zoom) {
+      this.svg.call(this.zoom.transform, d3.zoomIdentity);
+    }
+    
     this.simulation.alpha(0.3).restart(); 
   }
 
@@ -140,10 +153,12 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
     if (!this.container) return;
     d3.select(this.container.nativeElement).selectAll('*').remove();
     this.svg = null;
+    this.viewport = null; // <-- Reset viewport
     this.simulation = undefined;
     this.linkedByIndex = {};
   }
   
+  // Metode untuk menentukan warna link berdasarkan tipe relasi
   private getLinkColor(type: string): string {
     const colorMap: { [key: string]: string } = {
         'Rival': '#ef4444', // Red-500
@@ -156,14 +171,18 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
         'Kekasih': '#ec4899',
         'Mentor': '#f59e0b', // Amber-500
     };
-    return colorMap[type] || '#475569'; // slate-600
+    // Default color: abu-abu
+    return colorMap[type] || (this.bookState.currentBook()?.lastModified.getMilliseconds() % 2 === 0 ? '#9ca3af' : '#6b7280'); 
   }
 
+  // Metode untuk menangani pemilihan karakter dari dropdown (filter)
   selectNode(nodeId: number | null): void {
       this.selectedNodeId.set(nodeId);
+      // Panggil updateHighlight secara manual saat dropdown berubah
       this.updateHighlight(nodeId);
   }
 
+  // Metode untuk membuka Modal Detail
   viewCharacterDetails(nodeId: number): void {
       const character = this.bookState.characters().find(c => c.id === nodeId);
       if (character) {
@@ -176,21 +195,25 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
       this.showDetailModal.set(false);
   }
   
+  // Helper untuk D3 Highlighting
   private isConnected(a: number, b: number): boolean {
     return this.linkedByIndex[`${a},${b}`] || this.linkedByIndex[`${b},${a}`] || a === b;
   }
   
+  // Fungsi utama untuk Highlight/Isolasi
   private updateHighlight(selectedId: number | null): void {
-      if (!this.svg || !this.simulation) return;
+      if (!this.svg || !this.viewport) return; // Pastikan viewport ada
 
-      const link = this.svg.selectAll('.link');
-      const node = this.svg.selectAll('.node-group');
+      const link = this.viewport.selectAll('.link');
+      const node = this.viewport.selectAll('.node-group');
 
       if (selectedId === null) {
+          // Reset semua
           link.transition().duration(200).style('opacity', 0.6).attr('stroke', (d: any) => this.getLinkColor(d.type));
           node.transition().duration(200).style('opacity', 1).attr('fill-opacity', 1);
       } else {
-          link.style('opacity', (d: any) => {
+          // Sorot link
+          link.transition().duration(200).style('opacity', (d: any) => {
               const sourceId = d.source.id;
               const targetId = d.target.id;
               return (sourceId === selectedId || targetId === selectedId) ? 1.0 : 0.1;
@@ -200,7 +223,8 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
               return (sourceId === selectedId || targetId === selectedId) ? 3 : 2;
           });
           
-          node.style('opacity', (d: any) => {
+          // Sorot node
+          node.transition().duration(200).style('opacity', (d: any) => {
               return this.isConnected(d.id, selectedId) ? 1 : 0.2;
           }).attr('fill-opacity', (d: any) => {
               return this.isConnected(d.id, selectedId) ? 1 : 0.2;
@@ -213,9 +237,10 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
     
     if (characters.length === 0 || !this.container) return;
 
+    // 1. Transformasi data & Buat Map untuk isConnected
     const nodes: Node[] = characters.map(c => ({ id: c.id!, name: c.name }));
     const links: Link[] = [];
-    this.linkedByIndex = {};
+    this.linkedByIndex = {}; // Reset linked index map
     
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
@@ -230,10 +255,8 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
             };
             links.push(link);
             
-            const sourceId = c.id!;
-            const targetId = rel.targetId;
-            this.linkedByIndex[`${sourceId},${targetId}`] = true;
-            this.linkedByIndex[`${targetId},${sourceId}`] = true; 
+            this.linkedByIndex[`${c.id!},${rel.targetId}`] = true;
+            this.linkedByIndex[`${rel.targetId},${c.id!}`] = true; 
           }
         });
       }
@@ -248,12 +271,18 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
       .attr('height', height)
       .attr('viewBox', [0, 0, width, height]);
 
+    // BARU: Buat <g> viewport untuk zoom/pan
+    this.viewport = this.svg.append('g')
+      .attr('class', 'viewport');
+
+    // Konfigurasi simulasi fisika
     this.simulation = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(links).id((d: any) => d.id).distance(150))
       .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
-    const link = this.svg.append('g')
+    // Render elemen link (di dalam viewport)
+    const link = this.viewport.append('g')
       .attr('stroke-opacity', 0.6)
       .attr('class', 'links') 
       .selectAll('line')
@@ -263,7 +292,8 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
       .attr('stroke-width', 2)
       .attr('stroke', (d: any) => this.getLinkColor(d.type)); 
       
-    const node = this.svg.append('g')
+    // Render elemen node (di dalam viewport)
+    const node = this.viewport.append('g')
       .attr('class', 'nodes') 
       .selectAll('g')
       .data(nodes)
@@ -273,25 +303,36 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
       .on('click', (event: any, d: any) => { 
           this.viewCharacterDetails(d.id);
       })
+      // --- BARU: Highlight on Hover ---
+      .on('mouseover', (event: any, d: any) => {
+          this.updateHighlight(d.id);
+      })
+      .on('mouseout', () => {
+          // Saat mouse keluar, kembalikan ke highlight yang dipilih di dropdown
+          this.updateHighlight(this.selectedNodeId());
+      })
       .call(this.drag(this.simulation));
 
+    // Node circle + tooltip
     node.append('circle')
       .attr('r', 10)
-      .attr('fill', this.nodeColor())
-      .append('title')
+      .attr('fill', this.bookState.currentBook()?.lastModified.getMilliseconds() % 2 === 0 ? '#a855f7' : '#9333ea') // purple-500 / purple-700
+      .append('title') 
       .text((d: any) => {
           const char = this.bookState.characters().find(c => c.id === d.id);
-          return `${d.name}\\n\\n${char?.description || 'Tidak ada deskripsi.'}`;
+          return `${d.name}\n\n${char?.description || 'Tidak ada deskripsi.'}`;
       });
 
+    // Node text
     node.append('text')
       .text((d: any) => d.name)
       .attr('x', 15)
       .attr('y', 5)
-      .attr('fill', this.textColor()) 
-      .style('text-shadow', '0 0 3px rgba(0,0,0,0.5)')
+      .attr('fill', this.bookState.currentBook()?.lastModified.getMilliseconds() % 2 === 0 ? '#d1d5db' : '#374151') // gray-300 / gray-700
+      .style('text-shadow', this.bookState.currentBook()?.lastModified.getMilliseconds() % 2 === 0 ? '0 0 3px #000' : 'none')
       .attr('font-size', '12px');
 
+    // Update posisi elemen pada setiap "tick" simulasi
     this.simulation.on('tick', () => {
       link
         .attr('x1', (d: any) => d.source.x)
@@ -301,6 +342,15 @@ export class CharacterMapComponent implements OnDestroy, AfterViewInit {
 
       node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     });
+
+    // --- BARU: Terapkan behavior Zoom ---
+    this.zoom = d3.zoom()
+        .scaleExtent([0.1, 8]) // Batas zoom in/out
+        .on('zoom', (event) => {
+            this.viewport.attr('transform', event.transform);
+        });
+    
+    this.svg.call(this.zoom);
   }
   
   private drag(simulation: d3.Simulation<Node, Link>): any {

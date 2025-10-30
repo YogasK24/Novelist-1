@@ -90,7 +90,8 @@ export class BookCardComponent {
 
   private readonly bookState = inject(BookStateService);
   private readonly elementRef = inject(ElementRef);
-  private readonly router = inject(Router);
+  // FIX: Property 'navigate' does not exist on type 'unknown'. Explicitly type the injected Router.
+  private readonly router: Router = inject(Router);
   
   isMenuOpen = signal(false);
 

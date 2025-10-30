@@ -27,12 +27,12 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
              <span class="ml-3 text-slate-400 dark:text-slate-500">Menyimpan urutan...</span>
           }
         </div>
-      } @else if (bookState.plotEvents(); as plotEvents) {
+      } @else if (bookState.filteredPlotEvents(); as plotEvents) {
          @if (plotEvents.length > 0) {
             <!-- Timeline Container -->
             <div 
               cdkDropList 
-              [cdkDropListDisabled]="isReordering()"
+              [cdkDropListDisabled]="isReordering() || bookState.contextualSearchTerm().length > 0"
               (cdkDropListDropped)="onDrop($event)" 
               #plotEventList="cdkDropList" 
               class="relative pl-8 before:content-[''] before:absolute before:top-0 before:left-4 before:bottom-0 before:w-0.5 before:bg-slate-300 dark:before:bg-slate-700">
@@ -65,7 +65,11 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
                             </p>
                         </div>
                         
-                        <div cdkDragHandle class="p-2 -mr-2 text-slate-500 cursor-grab opacity-50 group-hover:opacity-100 transition">
+                        <div cdkDragHandle class="p-2 -mr-2 text-slate-500 transition"
+                             [class.cursor-grab]="!isReordering() && bookState.contextualSearchTerm().length === 0"
+                             [class.cursor-not-allowed]="isReordering() || bookState.contextualSearchTerm().length > 0"
+                             [class.opacity-50]="isReordering() || bookState.contextualSearchTerm().length > 0"
+                             [class.group-hover:opacity-100]="!isReordering() && bookState.contextualSearchTerm().length === 0">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
                               <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
                             </svg>
@@ -112,7 +116,11 @@ import { PlotEventDetailModalComponent } from '../plot-event-detail-modal/plot-e
               }
             </div>
          } @else {
-           <p class="text-center text-slate-500 py-6">Belum ada event plot. Klik tombol di atas untuk membangun timeline ceritamu!</p>
+            @if (bookState.contextualSearchTerm()) {
+                <p class="text-center text-slate-500 py-6">Tidak ada event yang cocok dengan pencarian Anda.</p>
+            } @else {
+                <p class="text-center text-slate-500 py-6">Belum ada event plot. Klik tombol di atas untuk membangun timeline ceritamu!</p>
+            }
          }
       }
 
@@ -185,7 +193,7 @@ export class PlotEventListComponent {
   }
 
   onMoveItem(eventData: IPlotEvent, event: KeyboardEvent): void {
-      if (this.isReordering()) return;
+      if (this.isReordering() || this.bookState.contextualSearchTerm().length > 0) return;
 
       const direction = event.key;
       const events = this.bookState.plotEvents();
