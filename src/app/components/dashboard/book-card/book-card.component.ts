@@ -1,10 +1,11 @@
 // src/app/components/dashboard/book-card/book-card.component.ts
-import { Component, ChangeDetectionStrategy, input, output, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, inject } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import type { IBook } from '../../../../types/data';
 import { BookStateService } from '../../../state/book-state.service';
 import { DropdownMenuComponent, type MenuItem } from '../../shared/dropdown-menu/dropdown-menu.component';
+import { UiStateService } from '../../../state/ui-state.service'; // <-- Import BARU
 
 // Interface dari BookStateService (untuk type hint di input)
 interface IBookWithStats extends IBook {
@@ -20,7 +21,7 @@ interface IBookWithStats extends IBook {
   template: `
     @if (book(); as currentBook) {
       <div
-        (click)="onCardClick()"
+        (click)="handleCardClick(currentBook.id!)"
         class="group relative block bg-white dark:bg-gray-800/50 rounded-lg shadow-lg 
               hover:shadow-xl dark:hover:bg-gray-800 hover:bg-gray-50 
               hover:-translate-y-1 transition-all duration-300 
@@ -51,7 +52,7 @@ interface IBookWithStats extends IBook {
             {{ currentBook.title }}
           </h3>
           
-          <button #menuTrigger (click)="toggleMenu($event)" 
+          <button #menuTrigger (click)="handleToggleMenu($event, currentBook.id!)" 
                   class="absolute top-1/2 right-2 -translate-y-1/2 p-2 rounded-full 
                          text-gray-500 dark:text-gray-400 
                          hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-20">
@@ -61,12 +62,11 @@ interface IBookWithStats extends IBook {
           </button>
         </div>
         
-        <!-- New Dropdown Menu Component -->
         <app-dropdown-menu 
-            [isOpen]="showMenu()" 
+            [isOpen]="uiState.activeMenuId() === currentBook.id" 
             [items]="getMenuItems(currentBook)"
             [triggerElement]="menuTrigger"
-            (close)="showMenu.set(false)"
+            (close)="uiState.closeAllMenus()"
             (itemClicked)="handleMenuAction($event)">
         </app-dropdown-menu>
       </div>
@@ -81,7 +81,7 @@ export class BookCardComponent {
 
   private readonly bookStateService = inject(BookStateService);
   private readonly router = inject(Router);
-  showMenu = signal(false);
+  readonly uiState = inject(UiStateService); // <-- Inject BARU
 
   getMenuItems(currentBook: IBookWithStats): MenuItem[] {
     return [
@@ -95,16 +95,14 @@ export class BookCardComponent {
     ];
   }
 
-  onCardClick(): void {
-    const currentBook = this.book();
-    if (currentBook?.id) {
-      this.router.navigate(['/book', currentBook.id]);
-    }
+  handleCardClick(bookId: number): void {
+    this.uiState.closeAllMenus();
+    this.router.navigate(['/book', bookId]);
   }
 
-  toggleMenu(event: MouseEvent): void {
+  handleToggleMenu(event: MouseEvent, bookId: number): void {
     event.stopPropagation();
-    this.showMenu.set(!this.showMenu());
+    this.uiState.toggleMenu(bookId);
   }
 
   handleMenuAction(action: string) {
@@ -131,6 +129,6 @@ export class BookCardComponent {
         break;
     }
     
-    this.showMenu.set(false);
+    // The dropdown's close event will handle closing the menu
   }
 }

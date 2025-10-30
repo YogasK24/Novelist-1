@@ -12,6 +12,7 @@ import { HelpModalComponent } from '../../components/dashboard/help-modal/help-m
 import { OptionsMenuComponent } from '../../components/dashboard/options-menu/options-menu.component';
 import { GlobalSearchInputComponent } from '../../components/shared/global-search-input/global-search-input.component';
 import { SearchService } from '../../state/search.service';
+import { UiStateService } from '../../state/ui-state.service'; // <-- Import BARU
 
 @Component({
   selector: 'app-dashboard',
@@ -85,7 +86,7 @@ import { SearchService } from '../../state/search.service';
             <!-- Other Icons Group -->
             <div class="flex items-center gap-2">
               
-              <button (click)="showHelpModal.set(true); $event.stopPropagation()"
+              <button (click)="handleHelpClick($event)"
                       class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
@@ -116,12 +117,12 @@ import { SearchService } from '../../state/search.service';
               </button>
               
               <div class="relative">
-                <button (click)="showOptionsMenu.set(!showOptionsMenu()); $event.stopPropagation()" class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                <button (click)="handleOptionsToggle($event)" class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                   </svg>
                 </button>
-                <app-options-menu [show]="showOptionsMenu()"></app-options-menu>
+                <app-options-menu [show]="uiState.activeMenuId() === 'headerOptions'"></app-options-menu>
               </div>
             </div>
           </div>
@@ -220,7 +221,7 @@ import { SearchService } from '../../state/search.service';
         </app-book-list>
       </main>
       
-      <app-add-book-button (addClicked)="handleOpenAddModal()"></app-add-book-button>
+      <app-add-book-button (click)="$event.stopPropagation()" (addClicked)="handleOpenAddModal()"></app-add-book-button>
 
       @if (showModal()) {
         <app-add-book-modal 
@@ -254,20 +255,29 @@ export class DashboardComponent {
   bookForTarget = signal<IBook | null>(null);
   
   showHelpModal = signal(false);
-  showOptionsMenu = signal(false);
   isSearchExpanded = signal(false);
   
   themeService = inject(ThemeService); 
   bookState = inject(BookStateService); 
   private readonly searchService = inject(SearchService);
+  uiState = inject(UiStateService); // <-- Inject BARU
 
   handleClickOutside(): void {
-    if (this.showOptionsMenu()) {
-      this.showOptionsMenu.set(false);
-    }
+    this.uiState.closeAllMenus();
     if (this.isSearchExpanded()) {
       this.toggleSearch();
     }
+  }
+
+  handleHelpClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.uiState.closeAllMenus(); // Tutup menu lain
+    this.showHelpModal.set(true);
+  }
+
+  handleOptionsToggle(event: MouseEvent): void {
+    event.stopPropagation();
+    this.uiState.toggleMenu('headerOptions');
   }
 
   toggleSearch(): void {
@@ -278,11 +288,13 @@ export class DashboardComponent {
   }
 
   handleOpenAddModal(): void {
+    this.uiState.closeAllMenus();
     this.editingBook.set(null);
     this.showModal.set(true);
   }
 
   handleOpenEditModal(book: IBook): void {
+    this.uiState.closeAllMenus();
     this.editingBook.set(book);
     this.showModal.set(true);
   }
@@ -293,6 +305,7 @@ export class DashboardComponent {
   }
 
   handleOpenSetTargetModal(book: IBook): void {
+    this.uiState.closeAllMenus();
     this.bookForTarget.set(book);
     this.showSetTargetModal.set(true);
   }
