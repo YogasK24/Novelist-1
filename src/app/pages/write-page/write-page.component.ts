@@ -38,7 +38,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
                        text-gray-800 dark:text-white rounded-r-lg shadow-lg 
                        transition-all duration-200
                        focus:outline-none focus:ring-2 focus:ring-purple-500"
-                aria-label="Buka Chapter List"
+                aria-label="Open Chapter List"
                 [class.hidden]="isChapterPanelOpen()">
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
@@ -53,7 +53,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
           @if (isChapterPanelOpen()) {
               <button (click)="isChapterPanelOpen.set(false)" 
                       class="absolute top-2 right-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full"
-                      aria-label="Tutup Chapter List">
+                      aria-label="Close Chapter List">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
                   </svg>
@@ -80,7 +80,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
                        text-gray-800 dark:text-white rounded-l-lg shadow-lg 
                        transition-all duration-200
                        focus:outline-none focus:ring-2 focus:ring-purple-500"
-                aria-label="Buka World Notes"
+                aria-label="Open World Notes"
                 [class.hidden]="isWorldPanelOpen()">
              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
@@ -95,7 +95,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
           @if (isWorldPanelOpen()) {
               <button (click)="isWorldPanelOpen.set(false)" 
                       class="absolute top-2 left-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full"
-                      aria-label="Tutup World Notes">
+                      aria-label="Close World Notes">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
                   </svg>
@@ -136,12 +136,12 @@ export class WritePageComponent implements OnInit, OnDestroy {
       if (!isNaN(bookId)) {
         this.bookState.loadBookData(bookId);
         this.bookState.loadWritingLogs(bookId);
-        // Pastikan juga data World Detail dimuat saat halaman tulis dibuka
+        // Also ensure World Detail data is loaded when the write page is opened
         this.bookState.loadCharacters(bookId);
         this.bookState.loadLocations(bookId);
         this.bookState.loadPlotEvents(bookId);
       } else {
-        console.error("Book ID tidak valid:", params['id']);
+        console.error("Book ID not valid:", params['id']);
       }
     });
   }
@@ -151,27 +151,27 @@ export class WritePageComponent implements OnInit, OnDestroy {
     this.bookState.clearBookData();
   }
 
-  // BARU: Buka panel chapter, tutup panel world
+  // NEW: Open chapter panel, close world panel
   openChapterPanel(): void {
     this.isChapterPanelOpen.set(true);
     this.isWorldPanelOpen.set(false);
   }
 
-  // BARU: Buka panel world, tutup panel chapter
+  // NEW: Open world panel, close chapter panel
   openWorldPanel(): void {
     this.isWorldPanelOpen.set(true);
     this.isChapterPanelOpen.set(false);
   }
   
-  // Logika toggleFocusMode BARU (Super-Focus)
+  // NEW toggleFocusMode logic (Super-Focus)
   toggleFocusMode(): void {
     const isCurrentlyFocus = !this.isChapterPanelOpen() && !this.isWorldPanelOpen();
     if (isCurrentlyFocus) {
-      // Keluar dari Focus Mode: Buka panel chapter (default)
+      // Exit Focus Mode: Open chapter panel (default)
       this.isChapterPanelOpen.set(true);
       this.isWorldPanelOpen.set(false);
     } else {
-      // Masuk ke Focus Mode: Tutup kedua panel
+      // Enter Focus Mode: Close both panels
       this.isChapterPanelOpen.set(false);
       this.isWorldPanelOpen.set(false);
     }

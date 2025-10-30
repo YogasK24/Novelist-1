@@ -22,7 +22,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
 
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
-            {{ eventToEdit() ? 'Edit Event Plot' : 'Tambah Event Plot Baru' }}
+            {{ eventToEdit() ? 'Edit Plot Event' : 'Add New Plot Event' }}
           </h2>
           <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -33,7 +33,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
 
         <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
           <div class="mb-4">
-            <label for="eventName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Judul Event/Scene</label>
+            <label for="eventName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event/Scene Title</label>
             <input
               type="text"
               id="eventName"
@@ -41,16 +41,16 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                      text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
                      focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
-              placeholder="Misal: Pertemuan Pertama, Klimaks..."
+              placeholder="e.g., The First Meeting, The Climax..."
               required
             />
             @if (eventForm.controls['title'].invalid && (eventForm.controls['title'].dirty || eventForm.controls['title'].touched)) {
-              <div class="text-red-400 text-xs mt-1"> Judul tidak boleh kosong. </div>
+              <div class="text-red-400 text-xs mt-1"> Title cannot be empty. </div>
             }
           </div>
 
           <div class="mb-4">
-             <label for="eventSummary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ringkasan (Opsional)</label>
+             <label for="eventSummary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Summary (Optional)</label>
              <textarea
                id="eventSummary"
                formControlName="summary"
@@ -58,17 +58,17 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                       text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
                       focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
-               placeholder="Apa yang terjadi di event/scene ini?"
+               placeholder="What happens in this event/scene?"
              ></textarea>
           </div>
           
           <div class="mb-4">
-             <label for="locationId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lokasi Peristiwa</label>
+             <label for="locationId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Location</label>
              <select id="locationId" formControlName="locationId"
                class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                       text-gray-900 dark:text-gray-200 
                       focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500">
-               <option [ngValue]="null">-- Pilih Lokasi (Opsional) --</option>
+               <option [ngValue]="null">-- Select Location (Optional) --</option>
                @for (loc of bookState.locations(); track loc.id) {
                  <option [ngValue]="loc.id">{{ loc.name }}</option>
                }
@@ -76,7 +76,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           </div>
 
           <div class="mb-6">
-             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Karakter Terlibat</label>
+             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Characters Involved</label>
              <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md max-h-32 overflow-y-auto">
                @for (char of bookState.characters(); track char.id) {
                  <div class="flex items-center mb-1">
@@ -90,17 +90,17 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                  </div>
                }
                @if (bookState.characters().length === 0) {
-                  <p class="text-xs text-gray-500">Tambahkan Karakter di tab Karakter terlebih dahulu.</p>
+                  <p class="text-xs text-gray-500">Add Characters in the Characters tab first.</p>
                }
              </div>
           </div>
 
           <div class="flex justify-end space-x-3">
             <button type="button" (click)="close()" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 
-                                                        text-gray-800 dark:text-gray-200 rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500"> Batal </button>
+                                                        text-gray-800 dark:text-gray-200 rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500"> Cancel </button>
             <button type="submit" [disabled]="eventForm.invalid || isLoading()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md 
                                                                                    disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"> 
-              {{ isLoading() ? 'Menyimpan...' : 'Simpan' }} 
+              {{ isLoading() ? 'Saving...' : 'Save' }} 
             </button>
           </div>
         </form>
@@ -191,7 +191,7 @@ export class AddPlotEventModalComponent {
       }
       this.close();
     } catch (error) {
-      console.error("Gagal menyimpan event plot:", error);
+      console.error("Failed to save plot event:", error);
     } finally {
       this.isLoading.set(false);
     }

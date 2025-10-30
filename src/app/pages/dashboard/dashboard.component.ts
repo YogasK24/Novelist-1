@@ -1,64 +1,134 @@
 // src/app/pages/dashboard/dashboard.component.ts
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { BookListComponent } from '../../components/dashboard/book-list/book-list.component';
 import { AddBookButtonComponent } from '../../components/dashboard/add-book-button/add-book-button.component';
 import { AddBookModalComponent } from '../../components/dashboard/add-book-modal/add-book-modal.component';
 import type { IBook } from '../../../types/data';
 import { SetTargetModalComponent } from '../../components/dashboard/set-target-modal/set-target-modal.component';
 import { ThemeService } from '../../state/theme.service';
-import { BookStateService, type SortMode, type ViewMode } from '../../state/book-state.service';
+import { BookStateService } from '../../state/book-state.service';
+import { HelpModalComponent } from '../../components/dashboard/help-modal/help-modal.component';
+import { OptionsMenuComponent } from '../../components/dashboard/options-menu/options-menu.component';
+import { GlobalSearchInputComponent } from '../../components/shared/global-search-input/global-search-input.component';
+import { SearchService } from '../../state/search.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
+    CommonModule,
     BookListComponent,
     AddBookButtonComponent,
     AddBookModalComponent,
-    SetTargetModalComponent
+    SetTargetModalComponent,
+    HelpModalComponent,
+    OptionsMenuComponent,
+    GlobalSearchInputComponent
   ],
   template: `
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors duration-500 font-sans-ui">
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors duration-500 font-sans-ui"
+         (click)="handleClickOutside()">
       
       <header class="sticky top-0 z-40 bg-gray-100 dark:bg-gray-900 shadow-md dark:shadow-black/10 transition-colors duration-500">
-        <div class="container mx-auto px-4 py-3 max-w-7xl flex justify-between items-center">
-          <h1 class="font-logo text-3xl text-purple-600 dark:text-purple-400">
-            Novelist
-          </h1>
+        <div class="container mx-auto px-4 py-3 max-w-7xl flex justify-between items-center gap-4">
           
+          <!-- Left side stage for Logo and Search -->
+          <div class="flex-1 flex items-center relative h-9">
+            
+            <!-- Logo Container -->
+            <div class="absolute inset-0 flex items-center transition-opacity duration-300 ease-in-out"
+                 [class.opacity-0]="isSearchExpanded()"
+                 [class.delay-200]="isSearchExpanded()"
+                 [class.invisible]="isSearchExpanded()">
+              <h1 class="font-logo text-3xl text-purple-600 dark:text-purple-400">
+                Novelist
+              </h1>
+            </div>
+            
+            <!-- Search Container -->
+            <div class="absolute inset-y-0 left-0 right-0 flex items-center
+                        transform transition-transform duration-500 ease-in-out origin-right"
+                 [class.scale-x-100]="isSearchExpanded()"
+                 [class.scale-x-0]="!isSearchExpanded()"
+                 [class.pointer-events-auto]="isSearchExpanded()"
+                 [class.pointer-events-none]="!isSearchExpanded()"
+                 (click)="$event.stopPropagation()">
+              <app-global-search-input class="w-full transition-opacity duration-300"
+                                       [class.opacity-100]="isSearchExpanded()"
+                                       [class.delay-200]="isSearchExpanded()"
+                                       [class.opacity-0]="!isSearchExpanded()"></app-global-search-input>
+            </div>
+
+          </div>
+          
+          <!-- Right side Action Icons -->
           <div class="flex items-center gap-2">
-            <button class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-              </svg>
+            
+            <!-- Search Toggle Button -->
+            <button (click)="toggleSearch(); $event.stopPropagation()"
+                    class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors z-10"
+                    aria-label="Toggle Search">
+              @if (isSearchExpanded()) {
+                <!-- Close Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              } @else {
+                <!-- Search Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+              }
             </button>
             
-            <button (click)="themeService.toggleTheme()" 
-                    class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" 
-                    aria-label="Toggle Dark/Light Mode">
-                 @if (themeService.currentTheme() === 'dark') {
-                   <!-- Sun icon for dark mode -->
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                   </svg>
-                 } @else {
-                   <!-- Moon icon for light mode -->
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                   </svg>
-                 }
-            </button>
-            
-            <button class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-              </svg>
-            </button>
+            <!-- Other Icons Group -->
+            <div class="flex items-center gap-2">
+              
+              <button (click)="showHelpModal.set(true); $event.stopPropagation()"
+                      class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+              </button>
+              
+              <button (click)="themeService.toggleTheme(); $event.stopPropagation()" 
+                      class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" 
+                      aria-label="Toggle Dark/Light Mode">
+                  <span class="relative block w-6 h-6">
+                    <!-- Sun icon for dark mode -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 h-6 w-6 transition-all duration-300 ease-in-out" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                         [class.opacity-100]="themeService.currentTheme() === 'dark'"
+                         [class.rotate-0]="themeService.currentTheme() === 'dark'"
+                         [class.opacity-0]="themeService.currentTheme() === 'light'"
+                         [class.-rotate-90]="themeService.currentTheme() === 'light'">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Moon icon for light mode -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 h-6 w-6 transition-all duration-300 ease-in-out" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                         [class.opacity-100]="themeService.currentTheme() === 'light'"
+                         [class.rotate-0]="themeService.currentTheme() === 'light'"
+                         [class.opacity-0]="themeService.currentTheme() === 'dark'"
+                         [class.rotate-90]="themeService.currentTheme() === 'dark'">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  </span>
+              </button>
+              
+              <div class="relative">
+                <button (click)="showOptionsMenu.set(!showOptionsMenu()); $event.stopPropagation()" class="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                  </svg>
+                </button>
+                <app-options-menu [show]="showOptionsMenu()"></app-options-menu>
+              </div>
+            </div>
           </div>
         </div>
       </header>
       
-      <main class="container mx-auto px-4 py-12 max-w-7xl"> 
+      <main class="container mx-auto px-4 pt-8 pb-12 max-w-7xl"> 
         
         <div class="flex justify-between items-center mb-6">
            <div class="flex items-center gap-2 sm:gap-4">
@@ -165,6 +235,13 @@ import { BookStateService, type SortMode, type ViewMode } from '../../state/book
           (closeModal)="handleCloseSetTargetModal()">
         </app-set-target-modal>
       }
+      
+      @if (showHelpModal()) {
+        <app-help-modal
+          [show]="showHelpModal()"
+          (closeModal)="showHelpModal.set(false)">
+        </app-help-modal>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -176,8 +253,29 @@ export class DashboardComponent {
   showSetTargetModal = signal(false);
   bookForTarget = signal<IBook | null>(null);
   
-  themeService = inject(ThemeService);
-  bookState = inject(BookStateService);
+  showHelpModal = signal(false);
+  showOptionsMenu = signal(false);
+  isSearchExpanded = signal(false);
+  
+  themeService = inject(ThemeService); 
+  bookState = inject(BookStateService); 
+  private readonly searchService = inject(SearchService);
+
+  handleClickOutside(): void {
+    if (this.showOptionsMenu()) {
+      this.showOptionsMenu.set(false);
+    }
+    if (this.isSearchExpanded()) {
+      this.toggleSearch();
+    }
+  }
+
+  toggleSearch(): void {
+    this.isSearchExpanded.update(v => !v);
+    if (!this.isSearchExpanded()) {
+      this.searchService.closeSearch();
+    }
+  }
 
   handleOpenAddModal(): void {
     this.editingBook.set(null);

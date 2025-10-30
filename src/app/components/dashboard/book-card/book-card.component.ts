@@ -1,9 +1,10 @@
 // src/app/components/dashboard/book-card/book-card.component.ts
-import { Component, ChangeDetectionStrategy, input, output, inject, signal } from '@angular/core'; // <-- Import signal
-import { DatePipe, CommonModule, DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Component, ChangeDetectionStrategy, input, output, inject, signal } from '@angular/core';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import type { IBook } from '../../../../types/data';
 import { BookStateService } from '../../../state/book-state.service';
+import { DropdownMenuComponent, type MenuItem } from '../../shared/dropdown-menu/dropdown-menu.component';
 
 // Interface dari BookStateService (untuk type hint di input)
 interface IBookWithStats extends IBook {
@@ -15,15 +16,26 @@ interface IBookWithStats extends IBook {
 @Component({
   selector: 'app-book-card',
   standalone: true,
-  imports: [DatePipe, RouterLink, CommonModule, DecimalPipe],
+  imports: [DatePipe, RouterLink, CommonModule, DecimalPipe, DropdownMenuComponent],
   template: `
     @if (book(); as currentBook) {
       <div
+        (click)="onCardClick()"
         class="group relative block bg-white dark:bg-gray-800/50 rounded-lg shadow-lg 
               hover:shadow-xl dark:hover:bg-gray-800 hover:bg-gray-50 
               hover:-translate-y-1 transition-all duration-300 
-              overflow-hidden h-full flex flex-col
+              overflow-hidden h-full flex flex-col cursor-pointer
               border border-transparent hover:border-purple-300 dark:hover:border-purple-600">
+        
+        @if (currentBook.isPinned) {
+          <div class="absolute top-2 right-2 z-10 text-purple-500 dark:text-purple-400" title="Pinned">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+              <path fill-rule="evenodd" d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l.08.195a.82.82 0 00.445.445l.195.08c.772.321.772 1.415 0 1.736l-.195.08a.82.82 0 00-.445.445l-.08.195c-.321.772-1.415.772-1.736 0l-.08-.195a.82.82 0 00-.445-.445l-.195-.08c-.772-.321-.772-1.415 0-1.736l.195-.08a.82.82 0 00.445.445l.08-.195zM12.55 5.186a.75.75 0 10-1.06-1.06l.153-.153c.321-.321.842-.321 1.163 0l.153.153a.75.75 0 10-1.06 1.06l-.153-.153z" clip-rule="evenodd" />
+              <path d="M5 6.25a.75.75 0 01.75-.75h3.5a.75.75 0 010 1.5h-3.5A.75.75 0 015 6.25zm0 3.5A.75.75 0 015.75 9h3.5a.75.75 0 010 1.5h-3.5A.75.75 0 015 9.75zM5.155 12.805a.75.75 0 00.288 1.292l1.096.547a.75.75 0 00.547-1.096l-1.096-.547a.75.75 0 00-.835-.196zM4.6 15.395a.75.75 0 01-.288-1.292l1.096-.547a.75.75 0 01.547 1.096l-1.096.547a.75.75 0 01-.259.196z" />
+              <path fill-rule="evenodd" d="M12.538 1.182a2.383 2.383 0 013.23.35l.153.153a2.383 2.383 0 01.35 3.23l-7.25 7.25a.75.75 0 11-1.06-1.06l7.25-7.25zM12.25 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+            </svg>
+          </div>
+        }
 
         <div class="h-40 w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" 
@@ -39,7 +51,7 @@ interface IBookWithStats extends IBook {
             {{ currentBook.title }}
           </h3>
           
-          <button (click)="toggleMenu($event)" 
+          <button #menuTrigger (click)="toggleMenu($event)" 
                   class="absolute top-1/2 right-2 -translate-y-1/2 p-2 rounded-full 
                          text-gray-500 dark:text-gray-400 
                          hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-20">
@@ -47,103 +59,78 @@ interface IBookWithStats extends IBook {
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
             </svg>
           </button>
-          
-          @if (showMenu()) {
-            <div class="absolute bottom-14 right-4 z-20 w-48 
-                        bg-white dark:bg-gray-700 rounded-md shadow-lg 
-                        ring-1 ring-black dark:ring-gray-600 ring-opacity-5
-                        transform transition-all duration-150 ease-out
-                        origin-bottom-right"
-                 style="opacity: 1; transform: scale(1);">
-              <div class="py-1" role="menu" aria-orientation="vertical">
-                
-                <button (click)="handleAction($event, 'target')" 
-                        class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
-                               text-gray-700 dark:text-gray-200 
-                               hover:bg-gray-100 dark:hover:bg-gray-600" 
-                        role="menuitem">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-gray-500 dark:text-gray-400">
-                    <path fill-rule="evenodd" d="M9 10a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5A.75.75 0 019 10zM8.25 10a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5A.75.75 0 018.25 10zM10 8.25a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM10 9.75a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM11.75 10a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5a.75.75 0 01-.75-.75zM10 11.75a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
-                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM.75 10a9.25 9.25 0 1018.5 0 9.25 9.25 0 00-18.5 0z" />
-                  </svg>
-                  <span>Set Target</span>
-                </button>
-                
-                <button (click)="handleAction($event, 'edit')" 
-                        class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
-                               text-gray-700 dark:text-gray-200 
-                               hover:bg-gray-100 dark:hover:bg-gray-600" 
-                        role="menuitem">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-gray-500 dark:text-gray-400">
-                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
-                  </svg>
-                  <span>Edit Title</span>
-                </button>
-                
-                <button (click)="handleAction($event, 'delete')" 
-                        class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
-                               text-red-600 dark:text-red-400 
-                               hover:bg-gray-100 dark:hover:bg-gray-600" 
-                        role="menuitem">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-red-500 dark:text-red-400">
-                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193v-.443A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.84 0a.75.75 0 01-1.5.06l-.3 7.5a.75.75 0 111.5-.06l.3-7.5z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Delete Book</span>
-                </button>
-                
-              </div>
-            </div>
-          }
         </div>
         
-        <a [routerLink]="['/book', currentBook.id]" (click)="closeMenu()" class="absolute inset-0 z-10" [attr.aria-label]="'Open ' + currentBook.title"></a>
+        <!-- New Dropdown Menu Component -->
+        <app-dropdown-menu 
+            [isOpen]="showMenu()" 
+            [items]="getMenuItems(currentBook)"
+            [triggerElement]="menuTrigger"
+            (close)="showMenu.set(false)"
+            (itemClicked)="handleMenuAction($event)">
+        </app-dropdown-menu>
       </div>
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookCardComponent {
-  book = input<IBookWithStats | null>(null); // Gunakan tipe baru
+  book = input<IBookWithStats | null>(null);
   editClicked = output<IBook>();
   setTargetClicked = output<IBook>();
 
-  private readonly bookStateService = inject(BookStateService); 
-  
-  // BARU: State untuk mengontrol menu kebab
+  private readonly bookStateService = inject(BookStateService);
+  private readonly router = inject(Router);
   showMenu = signal(false);
 
-  // BARU: Buka/Tutup menu, cegah navigasi
-  toggleMenu(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.showMenu.update(val => !val);
+  getMenuItems(currentBook: IBookWithStats): MenuItem[] {
+    return [
+      { label: currentBook.isPinned ? 'Unpin' : 'Pin', action: 'pin' },
+      { label: currentBook.isArchived ? 'Unarchive' : 'Archive', action: 'archive' },
+      { isSeparator: true },
+      { label: 'Set Target', action: 'target' },
+      { label: 'Edit Title', action: 'edit' },
+      { isSeparator: true },
+      { label: 'Delete Book', action: 'delete', isDanger: true },
+    ];
   }
 
-  // BARU: Tutup menu (jika tautan utama diklik)
-  closeMenu() {
-    this.showMenu.set(false);
-  }
-
-  // BARU: Menangani klik tombol di dalam menu
-  handleAction(event: MouseEvent, action: 'edit' | 'target' | 'delete') {
-    event.preventDefault();
-    event.stopPropagation();
-    
+  onCardClick(): void {
     const currentBook = this.book();
-    if (!currentBook) return;
+    if (currentBook?.id) {
+      this.router.navigate(['/book', currentBook.id]);
+    }
+  }
 
-    if (action === 'edit') {
-      this.editClicked.emit(currentBook as IBook);
-    } else if (action === 'target') {
-      this.setTargetClicked.emit(currentBook as IBook);
-    } else if (action === 'delete') {
-      if (window.confirm(`Yakin ingin menghapus "${currentBook.title}" dan semua datanya?`)) {
-        if (currentBook.id) {
+  toggleMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showMenu.set(!this.showMenu());
+  }
+
+  handleMenuAction(action: string) {
+    const currentBook = this.book();
+    if (!currentBook || currentBook.id === undefined) return;
+
+    switch(action) {
+      case 'edit':
+        this.editClicked.emit(currentBook as IBook);
+        break;
+      case 'target':
+        this.setTargetClicked.emit(currentBook as IBook);
+        break;
+      case 'pin':
+        this.bookStateService.pinBook(currentBook.id, !currentBook.isPinned);
+        break;
+      case 'archive':
+        this.bookStateService.archiveBook(currentBook.id, !currentBook.isArchived);
+        break;
+      case 'delete':
+        if (window.confirm(`Yakin ingin menghapus "${currentBook.title}" dan semua datanya?`)) {
           this.bookStateService.deleteBook(currentBook.id);
         }
-      }
+        break;
     }
     
-    this.showMenu.set(false); // Selalu tutup menu setelah aksi
+    this.showMenu.set(false);
   }
 }

@@ -31,8 +31,8 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
            <app-book-view-tabs></app-book-view-tabs>
         } @else {
           <div class="text-center py-10 text-red-400">
-             Buku tidak ditemukan atau gagal dimuat. 
-             <a [routerLink]="['/']" class="text-blue-400 hover:underline">Kembali ke Dashboard</a>
+             Book not found or failed to load. 
+             <a [routerLink]="['/']" class="text-blue-400 hover:underline">Back to Dashboard</a>
           </div>
         }
       </main>
@@ -53,22 +53,22 @@ export class BookViewComponent implements OnInit, OnDestroy {
   private routeSub: Subscription | undefined;
 
   ngOnInit(): void {
-    // Ambil ID buku dari parameter rute dan muat data
+    // Get book ID from route parameters and load data
     this.routeSub = this.route.params.subscribe(params => {
-      const bookId = Number(params['id']); // Konversi string ke number
+      const bookId = Number(params['id']); // Convert string to number
       if (!isNaN(bookId)) {
         this.bookState.loadBookData(bookId);
       } else {
-        console.error("Book ID tidak valid:", params['id']);
-        this.bookState.clearBookData(); // Bersihkan jika ID tidak valid
+        console.error("Book ID not valid:", params['id']);
+        this.bookState.clearBookData(); // Clear if ID is invalid
       }
     });
   }
 
   ngOnDestroy(): void {
-    // Penting: Unsubscribe dari parameter rute
+    // Important: Unsubscribe from route parameters
     this.routeSub?.unsubscribe();
-    // Penting: Bersihkan state buku saat keluar dari halaman ini
+    // Important: Clear book state when leaving this page
     this.bookState.clearBookData(); 
   }
 }

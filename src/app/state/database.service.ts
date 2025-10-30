@@ -2,8 +2,8 @@
 
 import { Injectable } from '@angular/core'; // Import Injectable decorator
 import Dexie, { type Table } from 'dexie';
-// Pastikan path impor ini benar
-import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog, ISearchResult, SearchResultType } from '../../types/data'; // <-- Tambah ISearchResult
+// Ensure this import path is correct
+import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog, ISearchResult, SearchResultType } from '../../types/data'; // <-- Add ISearchResult
 
 // --- DEFINE DATABASE SHAPE WITH AN INTERFACE ---
 // This avoids subclassing issues with TypeScript's type inference for Dexie.
@@ -19,7 +19,7 @@ interface INovelistDB {
   chapters: Table<IChapter, number>;
   themes: Table<ITheme, number>;
   props: Table<IProp, number>;
-  writingLogs: Table<IWritingLog, number>; // <-- BARU
+  writingLogs: Table<IWritingLog, number>; // <-- NEW
 }
 
 @Injectable({
@@ -53,39 +53,53 @@ export class DatabaseService {
       writingLogs: '++id, bookId, date, &[bookId+date]' 
     });
     
-    // --- BARU: Versi 7 -> Tambahkan Indeks Pencarian ---
+    // --- NEW: Version 7 -> Add Search Indexes ---
     this.db.version(7).stores({
       books: '++id, title, lastModified',
       characters: '++id, bookId, name, *relationships.targetId',
       locations: '++id, bookId, name',
-      plotEvents: '++id, bookId, order, title, locationId, *characterIds', // <-- Tambah 'title'
-      chapters: '++id, bookId, order, title, *characterIds', // <-- Tambah 'title'
+      plotEvents: '++id, bookId, order, title, locationId, *characterIds', // <-- Add 'title'
+      chapters: '++id, bookId, order, title, *characterIds', // <-- Add 'title'
+      themes: '++id, bookId, name',
+      props: '++id, bookId, name',
+      writingLogs: '++id, bookId, date, &[bookId+date]'
+    });
+
+    // --- NEW: Version 8 -> Add Pin/Archive Indexes ---
+    this.db.version(8).stores({
+      books: '++id, title, lastModified, isArchived, isPinned',
+      characters: '++id, bookId, name, *relationships.targetId',
+      locations: '++id, bookId, name',
+      plotEvents: '++id, bookId, order, title, locationId, *characterIds',
+      chapters: '++id, bookId, order, title, *characterIds',
       themes: '++id, bookId, name',
       props: '++id, bookId, name',
       writingLogs: '++id, bookId, date, &[bookId+date]'
     });
   }
 
-  // --- Wrapper Fungsi CRUD (menggunakan instance db internal) ---
+  // --- CRUD Wrapper Functions (using internal db instance) ---
 
-  // --- Operasi Buku (Books) ---
+  // --- Book Operations ---
   async getAllBooks(): Promise<IBook[]> {
     return await this.db.books.orderBy('lastModified').reverse().toArray();
   }
   async addBook(title: string): Promise<number | undefined> {
     try {
-      // <-- UPDATE: Tambahkan nilai default untuk statistik
+      // <-- UPDATE: Add default values for stats
       const newBook: Omit<IBook, 'id'> = { 
         title, 
         createdAt: new Date(), 
         lastModified: new Date(),
         wordCount: 0,
-        dailyWordTarget: 500 
+        dailyWordTarget: 500,
+        isArchived: false,
+        isPinned: false
       };
       const id = await this.db.books.add(newBook as IBook);
       return id;
     } catch (error) {
-      console.error("Gagal menambah buku:", error);
+      console.error("Failed to add book:", error);
       return undefined;
     }
   }
@@ -93,16 +107,21 @@ export class DatabaseService {
     return await this.db.books.update(id, { title, lastModified: new Date() });
   }
 
-  // <-- BARU: Update statistik buku
+  // <-- NEW: Update book stats
   async updateBookStats(id: number, stats: Partial<Pick<IBook, 'wordCount' | 'dailyWordTarget'>>): Promise<number> {
     return await this.db.books.update(id, { ...stats, lastModified: new Date() });
+  }
+
+  // <-- NEW: Update book flags (pin/archive)
+  async updateBookFlags(id: number, flags: Partial<Pick<IBook, 'isArchived' | 'isPinned'>>): Promise<number> {
+    return await this.db.books.update(id, { ...flags, lastModified: new Date() });
   }
 
   async getBookById(id: number): Promise<IBook | undefined> {
     return await this.db.books.get(id);
   }
 
-  // --- Operasi Data Anak (Relasional) ---
+  // --- Child Data Operations (Relational) ---
   async getCharactersByBookId(bookId: number): Promise<ICharacter[]> {
     return await this.db.characters.where({ bookId }).toArray();
   }
@@ -111,7 +130,7 @@ export class DatabaseService {
        const id = await this.db.characters.add(character as ICharacter);
        return id;
      } catch (error) {
-       console.error("Gagal menambah karakter:", error);
+       console.error("Failed to add character:", error);
        return undefined;
      }
   }
@@ -122,8 +141,8 @@ export class DatabaseService {
      await this.db.characters.delete(id);
   }
 
-  // (Tambahkan wrapper async/await serupa untuk Location, PlotEvent, Chapter
-  //  menggunakan this.db.locations..., this.db.plotEvents..., this.db.chapters...)
+  // (Add similar async/await wrappers for Location, PlotEvent, Chapter
+  //  using this.db.locations..., this.db.plotEvents..., this.db.chapters...)
 
   async getLocationsByBookId(bookId: number): Promise<ILocation[]> {
     return await this.db.locations.where({ bookId }).toArray();
@@ -133,7 +152,7 @@ export class DatabaseService {
        const id = await this.db.locations.add(location as ILocation);
        return id;
      } catch (error) {
-       console.error("Gagal menambah lokasi:", error);
+       console.error("Failed to add location:", error);
        return undefined;
      }
   }
@@ -152,7 +171,7 @@ export class DatabaseService {
        const id = await this.db.plotEvents.add(event as IPlotEvent);
        return id;
      } catch (error) {
-       console.error("Gagal menambah event plot:", error);
+       console.error("Failed to add plot event:", error);
        return undefined;
      }
   }
@@ -171,7 +190,7 @@ export class DatabaseService {
        const id = await this.db.chapters.add(chapter as IChapter);
        return id;
      } catch (error) {
-       console.error("Gagal menambah bab:", error);
+       console.error("Failed to add chapter:", error);
        return undefined;
      }
   }
@@ -182,7 +201,7 @@ export class DatabaseService {
      await this.db.chapters.delete(id);
   }
 
-  // --- Operasi Themes ---
+  // --- Themes Operations ---
   async getThemesByBookId(bookId: number): Promise<ITheme[]> {
     return await this.db.themes.where({ bookId }).toArray();
   }
@@ -190,7 +209,7 @@ export class DatabaseService {
      try {
        const id = await this.db.themes.add(theme as ITheme);
        return id;
-     } catch (error) { console.error("Gagal menambah theme:", error); return undefined; }
+     } catch (error) { console.error("Failed to add theme:", error); return undefined; }
   }
   async updateTheme(id: number, changes: Partial<Omit<ITheme, 'id' | 'bookId'>>): Promise<number> {
      return await this.db.themes.update(id, changes);
@@ -199,7 +218,7 @@ export class DatabaseService {
      await this.db.themes.delete(id);
   }
 
-  // --- Operasi Props ---
+  // --- Props Operations ---
    async getPropsByBookId(bookId: number): Promise<IProp[]> {
     return await this.db.props.where({ bookId }).toArray();
   }
@@ -207,7 +226,7 @@ export class DatabaseService {
      try {
        const id = await this.db.props.add(prop as IProp);
        return id;
-     } catch (error) { console.error("Gagal menambah prop:", error); return undefined; }
+     } catch (error) { console.error("Failed to add prop:", error); return undefined; }
   }
   async updateProp(id: number, changes: Partial<Omit<IProp, 'id' | 'bookId'>>): Promise<number> {
      return await this.db.props.update(id, changes);
@@ -216,7 +235,7 @@ export class DatabaseService {
      await this.db.props.delete(id);
   }
   
-  // --- FUNGSI BARU UNTUK LOG PENULISAN ---
+  // --- NEW FUNCTIONS FOR WRITING LOG ---
   async getWritingLogsByBookId(bookId: number): Promise<IWritingLog[]> {
     return await this.db.writingLogs.where({ bookId }).toArray();
   }
@@ -231,25 +250,25 @@ export class DatabaseService {
     }
   }
 
-  // <-- FUNGSI BARU UNTUK REORDERING -->
+  // <-- NEW FUNCTIONS FOR REORDERING -->
 
-  /** Menyimpan urutan baru untuk Plot Event */
+  /** Saves the new order for Plot Events */
   async updatePlotEventOrder(events: IPlotEvent[]): Promise<void> {
-    // Gunakan 'bulkPut' untuk update beberapa record dalam satu transaction
-    // Ini lebih cepat dan menjaga integritas data
+    // Use 'bulkPut' to update multiple records in one transaction
+    // This is faster and maintains data integrity
     await this.db.plotEvents.bulkPut(events as any); 
   }
 
-  /** Menyimpan urutan baru untuk Chapters */
+  /** Saves the new order for Chapters */
   async updateChapterOrder(chapters: IChapter[]): Promise<void> {
-    // Gunakan 'bulkPut' untuk update beberapa record dalam satu transaction
+    // Use 'bulkPut' to update multiple records in one transaction
     await this.db.chapters.bulkPut(chapters as any);
   }
 
-  // --- Operasi Hapus Buku Beserta Anaknya (Transaction) ---
+  // --- Delete Book and its Children Operations (Transaction) ---
   async deleteBookAndData(bookId: number): Promise<void> {
     try {
-      // Akses tabel via this.db
+      // Access tables via this.db
       // FIX: The transaction method was called with too many arguments.
       // Passing the tables as an array resolves this issue when multiple tables are involved.
       await this.db.transaction('rw', [this.db.books, this.db.characters, this.db.locations, this.db.plotEvents, this.db.chapters, this.db.themes, this.db.props, this.db.writingLogs], async () => {
@@ -260,37 +279,37 @@ export class DatabaseService {
           this.db.chapters.where({ bookId }).delete(),
           this.db.themes.where({ bookId }).delete(),
           this.db.props.where({ bookId }).delete(),
-          this.db.writingLogs.where({ bookId }).delete(), // <-- HAPUS LOG
+          this.db.writingLogs.where({ bookId }).delete(), // <-- DELETE LOGS
           this.db.books.delete(bookId) 
         ]);
       });
-      console.log(`Buku ${bookId} dan datanya berhasil dihapus.`);
+      console.log(`Book ${bookId} and its data were successfully deleted.`);
     } catch (error) {
-      console.error(`Gagal menghapus buku ${bookId} dan datanya:`, error);
-      // Mungkin lempar error lagi agar komponen bisa menangani
+      console.error(`Failed to delete book ${bookId} and its data:`, error);
+      // Maybe re-throw the error so the component can handle it
       throw error; 
     }
   }
 
-  // --- BARU: FUNGSI PENCARIAN GLOBAL ---
+  // --- NEW: GLOBAL SEARCH FUNCTION ---
   
   /**
-   * Mencari di semua entitas di semua novel.
-   * Menggunakan startsWithIgnoreCase yang sangat cepat berkat indeks di v7.
+   * Searches all entities across all novels.
+   * Uses startsWithIgnoreCase which is very fast thanks to the indexes in v7.
    */
   async searchAllEntities(query: string): Promise<ISearchResult[]> {
     if (query.trim().length === 0) {
       return [];
     }
     
-    // 1. Ambil semua judul buku ke dalam Map untuk efisiensi
+    // 1. Fetch all book titles into a Map for efficiency
     const allBooks = await this.db.books.toArray();
     const bookMap = new Map<number, string>(allBooks.map(b => [b.id!, b.title]));
 
-    // Helper untuk mengambil judul buku
-    const getBookTitle = (bookId: number) => bookMap.get(bookId) || 'Novel Tidak Ditemukan';
+    // Helper to get book title
+    const getBookTitle = (bookId: number) => bookMap.get(bookId) || 'Novel Not Found';
 
-    // 2. Lakukan semua kueri pencarian secara paralel
+    // 2. Perform all search queries in parallel
     const [
       books, 
       characters, 
@@ -300,28 +319,28 @@ export class DatabaseService {
       themes, 
       props
     ] = await Promise.all([
-      // Buku
+      // Books
       this.db.books.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
-      // Karakter
+      // Characters
       this.db.characters.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
-      // Lokasi
+      // Locations
       this.db.locations.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
-      // Bab
+      // Chapters
       this.db.chapters.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
       // Plot Events
       this.db.plotEvents.where('title').startsWithIgnoreCase(query).limit(10).toArray(),
-      // Tema
+      // Themes
       this.db.themes.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
-      // Properti
+      // Props
       this.db.props.where('name').startsWithIgnoreCase(query).limit(10).toArray(),
     ]);
 
-    // 3. Ubah hasil menjadi format ISearchResult
+    // 3. Transform results into ISearchResult format
     const results: ISearchResult[] = [
       ...books.map((item): ISearchResult => ({
         type: 'Book',
         name: item.title,
-        description: `Novel dengan ${item.wordCount} kata`,
+        description: `Novel with ${item.wordCount} words`,
         path: 'Novel',
         bookId: item.id!,
         entityId: item.id!,
@@ -345,7 +364,7 @@ export class DatabaseService {
       ...chapters.map((item): ISearchResult => ({
         type: 'Chapter',
         name: item.title,
-        description: `Bab ${item.order}`,
+        description: `Chapter ${item.order}`,
         path: `Novel: ${getBookTitle(item.bookId)}`,
         bookId: item.bookId,
         entityId: item.id!,
@@ -376,7 +395,7 @@ export class DatabaseService {
       })),
     ];
 
-    // 4. Urutkan hasil (misalnya berdasarkan nama)
+    // 4. Sort the results (e.g., by name)
     return results.sort((a, b) => a.name.localeCompare(b.name));
   }
 

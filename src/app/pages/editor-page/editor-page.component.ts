@@ -2,7 +2,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy, effect, ElementRef, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription, combineLatest, map } from 'rxjs';
+import { Subscription, map } from 'rxjs';
 import { CurrentBookStateService } from '../../state/current-book-state.service';
 import type { IChapter } from '../../../types/data';
 
@@ -27,19 +27,19 @@ declare var Quill: any;
             
             @if (isSaving()) {
               <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Menyimpan...
+                Saving...
               </span>
             } @else if (showSavedConfirmation()) {
               <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Tersimpan
+                Saved
               </span>
             } @else if (isDirty()) {
               <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Perubahan belum disimpan
+                Unsaved changes
               </span>
             } @else {
                <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Semua tersimpan
+                All saved
               </span>
             }
 
@@ -158,246 +158,172 @@ declare var Quill: any;
     .ql-toolbar .ql-active {
       background-color: #e9d5ff !important; /* purple-200 */
     }
-    .ql-toolbar .ql-active .ql-stroke { stroke: #7e22ce; } /* purple-700 */
-    .ql-toolbar .ql-active .ql-fill { fill: #7e22ce; }
-    .ql-toolbar .ql-active .ql-picker-label { color: #7e22ce; }
+    .ql-toolbar .ql-active .ql-stroke { stroke: #9333ea !important; } /* purple-600 */
+    .ql-toolbar .ql-active .ql-picker-label { color: #9333ea !important; } /* purple-600 */
 
-    /* --- DARK MODE OVERRIDES --- */
-    html.dark .quill-container .ql-editor {
+    /* --- DARK MODE STYLES --- */
+    :host-context(.dark) .quill-container .ql-editor {
       color: #d1d5db; /* gray-300 */
     }
-    html.dark .ql-toolbar {
+    :host-context(.dark) .ql-toolbar {
+      background-color: #1f2937; /* gray-800 */
+      border-bottom-color: #374151 !important; /* gray-700 */
+    }
+    :host-context(.dark) .ql-toolbar::after {
+      background: linear-gradient(to left, #1f2937, transparent);
+    }
+    :host-context(.dark) .ql-toolbar button:hover, :host-context(.dark) .ql-toolbar .ql-picker:hover {
       background-color: #374151; /* gray-700 */
-      border-color: #4b5563 !important;
     }
-    html.dark .ql-toolbar::after {
-      background: linear-gradient(to left, #374151, transparent);
+    :host-context(.dark) .ql-toolbar .ql-stroke { stroke: #9ca3af; } /* gray-400 */
+    :host-context(.dark) .ql-toolbar .ql-picker-label { color: #9ca3af; } /* gray-400 */
+    :host-context(.dark) .ql-toolbar .ql-active {
+      background-color: #581c87 !important; /* purple-900 */
     }
-    html.dark .ql-toolbar button:hover, html.dark .ql-toolbar .ql-picker:hover {
-      background-color: #4b5563; /* gray-600 */
-    }
-    html.dark .ql-toolbar .ql-stroke { stroke: #9ca3af; } /* gray-400 */
-    html.dark .ql-toolbar .ql-picker-label { color: #9ca3af; } /* gray-400 */
-    html.dark .ql-toolbar .ql-active {
-      background-color: #4c1d95 !important; /* purple-800 */
-    }
-    html.dark .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; } /* purple-300 */
-    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; }
-    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; }
-
-    /* --- TOOLTIP IMPLEMENTATION --- */
-    .ql-toolbar button, .ql-toolbar .ql-picker {
-      position: relative;
-    }
-    .ql-toolbar button::after, .ql-toolbar .ql-picker-label::after {
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%) translateY(0px);
-      background-color: #111827; /* gray-900 */
-      color: #f9fafb; /* gray-50 */
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease-in-out 0.3s, transform 0.2s ease-in-out 0.3s;
-      z-index: 20;
-    }
-    .ql-toolbar button:hover::after, .ql-toolbar .ql-picker:hover .ql-picker-label::after {
-      opacity: 1;
-      transform: translateX(-50%) translateY(-8px);
-    }
-    /* Tooltip text for each button */
-    .ql-toolbar button.ql-bold::after { content: 'Bold'; }
-    .ql-toolbar button.ql-italic::after { content: 'Italic'; }
-    .ql-toolbar button.ql-underline::after { content: 'Underline'; }
-    .ql-toolbar button.ql-strike::after { content: 'Strikethrough'; }
-    .ql-toolbar button.ql-list[value="ordered"]::after { content: 'Numbered List'; }
-    .ql-toolbar button.ql-list[value="bullet"]::after { content: 'Bulleted List'; }
-    .ql-toolbar button.ql-blockquote::after { content: 'Blockquote'; }
-    .ql-toolbar button.ql-code-block::after { content: 'Code Block'; }
-    .ql-toolbar button.ql-clean::after { content: 'Clear Formatting'; }
-    .ql-toolbar .ql-picker.ql-header .ql-picker-label::after { content: 'Heading Style'; }
-    
-    /* Improve header picker options */
-    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="1"]::before { content: 'Heading 1'; font-size: 1.25rem; font-weight: bold; }
-    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="2"]::before { content: 'Heading 2'; font-size: 1.125rem; font-weight: bold; }
-    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="3"]::before { content: 'Heading 3'; font-size: 1rem; font-weight: bold; }
-    .ql-toolbar .ql-picker.ql-header .ql-picker-item::before { content: 'Normal'; font-size: 0.875rem; }
+    :host-context(.dark) .ql-toolbar .ql-active .ql-stroke { stroke: #c084fc !important; } /* purple-400 */
+    :host-context(.dark) .ql-toolbar .ql-active .ql-picker-label { color: #c084fc !important; } /* purple-400 */
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorPageComponent implements OnInit, OnDestroy {
-  // FIX: Property 'parent'/'params' does not exist on type 'unknown'. Explicitly type the injected ActivatedRoute.
-  private route: ActivatedRoute = inject(ActivatedRoute);
+  private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
-  
-  editorEl = viewChild<ElementRef>('editor');
-  private quillInstance: any;
-  private contentUpdateTimer: any;
-  private savedConfirmationTimer: any;
 
-  private routeSub?: Subscription;
+  editorRef = viewChild.required<ElementRef>('editor');
 
-  bookId = signal<number | null>(null);
-  chapterId = signal<number | null>(null);
-
+  chapter = signal<IChapter | null>(null);
   isLoading = signal(true);
   isSaving = signal(false);
   isDirty = signal(false);
   showSavedConfirmation = signal(false);
-
-  chapter = computed(() => {
-    const chapId = this.chapterId();
-    if (chapId === null) return null;
-    return this.bookState.chapters().find(c => c.id === chapId) ?? null;
-  });
+  
+  private chapterId = signal<number | null>(null);
+  private subscriptions = new Subscription();
+  private quill: any;
+  private saveTimeout: any;
+  private savedConfirmationTimeout: any;
 
   constructor() {
     effect(() => {
-        const currentChapter = this.chapter();
-        if (this.quillInstance && currentChapter && !this.isDirty()) {
-            const editorContent = this.quillInstance.getContents();
-            try {
-              const currentContent = JSON.parse(currentChapter.content || '{"ops":[]}');
-              if (JSON.stringify(editorContent) !== JSON.stringify(currentContent)) {
-                  this.quillInstance.setContents(currentContent, 'silent');
-              }
-            } catch(e) {
-               // Handle plain text from old editor
-               this.quillInstance.setText(currentChapter.content, 'silent');
-            }
+      const chapterId = this.chapterId();
+      if (chapterId !== null) {
+        const chapters = this.bookState.chapters();
+        const foundChapter = chapters.find(c => c.id === chapterId);
+        this.chapter.set(foundChapter || null);
+        this.isLoading.set(false);
+        if (foundChapter) {
+          this.isDirty.set(false); // Reset dirty state on chapter load
+          this.setupQuill();
         }
-    });
-
-    // Inisialisasi Quill setelah elemen editor dan data chapter siap
-    effect(() => {
-      const editorElement = this.editorEl(); // Ini adalah ElementRef
-      if (this.chapter() && editorElement && !this.quillInstance) {
-        this.initQuill();
       }
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+        // This effect will run when editorRef becomes available
+        const editorEl = this.editorRef();
+        if(editorEl && this.chapter() && !this.quill) {
+            this.setupQuill();
+        }
     });
   }
 
   ngOnInit(): void {
-    const parentRoute = this.route.parent;
-    if (!parentRoute) {
-      console.error("EditorPageComponent must be used within a parent route with a book ID.");
-      this.isLoading.set(false);
-      return;
-    }
-
-    this.routeSub = combineLatest({
-      parentParams: parentRoute.params,
-      childParams: this.route.params
-    }).pipe(
-      map(({ parentParams, childParams }) => {
-        return { ...parentParams, ...childParams };
-      })
-    ).subscribe(async params => {
-      this.isLoading.set(true);
-      const bookId = Number(params['id']);
-      const chapterId = Number(params['chapterId']);
-
-      if (!isNaN(bookId) && !isNaN(chapterId)) {
-        this.bookId.set(bookId);
-        this.chapterId.set(chapterId);
-        if(this.bookState.currentBookId() !== bookId) {
-            this.bookState.loadBookData(bookId);
+    const chapterIdSub = this.route.params.pipe(
+      map(params => Number(params['chapterId']))
+    ).subscribe(id => {
+      if (!isNaN(id)) {
+        this.quill = null; // Reset quill instance when chapter changes
+        this.chapterId.set(id);
+        const chapters = this.bookState.chapters();
+        if (chapters.length === 0) {
+            const bookId = this.bookState.currentBookId();
+            if(bookId) {
+                // Eagerly load chapters if they aren't present
+                this.bookState.loadChapters(bookId);
+            }
         }
-        await this.bookState.loadChapters(bookId);
       } else {
-        console.error("Invalid Book/Chapter ID:", params);
+        this.isLoading.set(false);
+        this.chapter.set(null);
       }
-      this.isLoading.set(false);
     });
+    this.subscriptions.add(chapterIdSub);
   }
 
-  initQuill(): void {
-    const editorElement = this.editorEl()?.nativeElement;
-    if (!editorElement || this.quillInstance) return;
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    clearTimeout(this.saveTimeout);
+    clearTimeout(this.savedConfirmationTimeout);
+    if(this.quill) {
+        this.quill.off('text-change', this.onEditorChange);
+    }
+  }
 
-    this.quillInstance = new Quill(editorElement, {
+  private setupQuill(): void {
+    const editorEl = this.editorRef()?.nativeElement;
+    if (!editorEl || this.quill) return;
+
+    this.quill = new Quill(editorEl, {
       theme: 'snow',
       modules: {
         toolbar: [
           [{ 'header': [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
+          ['bold', 'italic', 'underline'],
           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['blockquote', 'code-block'],
+          ['link'],
           ['clean']
         ]
       },
-      placeholder: 'Mulai menulis...'
+      placeholder: 'Start writing your story...'
     });
 
-    try {
-        const content = this.chapter()?.content;
-        if (content && content.trim().startsWith('{')) {
-          this.quillInstance.setContents(JSON.parse(content));
-        } else if (content) {
-          this.quillInstance.setText(content); // Handle plain text legacy content
-        }
-    } catch (e) {
-        console.error("Could not parse chapter content", e);
-        if (typeof this.chapter()?.content === 'string') {
-          this.quillInstance.setText(this.chapter()!.content);
-        }
-    }
-
-    this.quillInstance.on('text-change', () => {
-      // Hapus konfirmasi "Tersimpan" jika pengguna mulai mengetik lagi
-      clearTimeout(this.savedConfirmationTimer);
-      this.showSavedConfirmation.set(false);
-
-      if (!this.isDirty()) {
-          this.isDirty.set(true);
+    const currentContent = this.chapter()?.content;
+    if (currentContent) {
+      try {
+        const delta = JSON.parse(currentContent);
+        this.quill.setContents(delta, 'silent');
+      } catch (e) {
+        this.quill.setText(currentContent, 'silent');
       }
-      // Debounce saving
-      clearTimeout(this.contentUpdateTimer);
-      this.contentUpdateTimer = setTimeout(() => this.saveContent(), 1500); // Auto-save
-    });
+    } else {
+      this.quill.setText('', 'silent');
+    }
+    
+    this.isDirty.set(false);
+    this.quill.on('text-change', this.onEditorChange);
+  }
+  
+  private onEditorChange = (delta: any, oldDelta: any, source: string): void => {
+    if (source === 'user') {
+      this.isDirty.set(true);
+      this.showSavedConfirmation.set(false);
+      clearTimeout(this.savedConfirmationTimeout);
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = setTimeout(() => this.saveContent(), 1500);
+    }
   }
 
   async saveContent(): Promise<void> {
-    const chap = this.chapter();
-    // Cegah penyimpanan jika tidak ada perubahan atau sedang menyimpan
-    if (!chap || !this.quillInstance || !this.isDirty() || this.isSaving()) return;
+    if (!this.isDirty() || this.isSaving() || !this.quill) return;
 
-    // Hapus timer sebelumnya jika ada
-    clearTimeout(this.contentUpdateTimer);
-    clearTimeout(this.savedConfirmationTimer);
-    
     this.isSaving.set(true);
-    this.isDirty.set(false); // Anggap bersih saat proses simpan dimulai
+    clearTimeout(this.saveTimeout);
     
-    try {
-      const content = JSON.stringify(this.quillInstance.getContents());
-      await this.bookState.updateChapterContent(chap.id!, content);
-      
-      // Sukses: Tampilkan konfirmasi "Tersimpan"
-      this.showSavedConfirmation.set(true);
-      
-      // Atur timer untuk menyembunyikan konfirmasi "Tersimpan"
-      this.savedConfirmationTimer = setTimeout(() => {
-          this.showSavedConfirmation.set(false);
-      }, 2000); // Tampilkan selama 2 detik
-
-    } catch(e) {
-      console.error("Failed to save content", e);
-      this.isDirty.set(true); // Jika gagal, set kotor lagi
-    } finally {
-      this.isSaving.set(false);
+    const content = JSON.stringify(this.quill.getContents());
+    const chapterId = this.chapter()?.id;
+    
+    if (chapterId) {
+      try {
+        await this.bookState.updateChapterContent(chapterId, content);
+        this.isDirty.set(false);
+        this.showSavedConfirmation.set(true);
+        clearTimeout(this.savedConfirmationTimeout);
+        this.savedConfirmationTimeout = setTimeout(() => this.showSavedConfirmation.set(false), 2000);
+      } catch (error) {
+        console.error("Failed to save content", error);
+      } finally {
+        this.isSaving.set(false);
+      }
     }
-  }
-
-  ngOnDestroy(): void {
-    clearTimeout(this.contentUpdateTimer);
-    clearTimeout(this.savedConfirmationTimer);
-    this.routeSub?.unsubscribe();
   }
 }

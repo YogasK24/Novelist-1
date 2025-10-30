@@ -7,11 +7,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { AppComponent } from './src/app.component';
 import { routes } from './src/app/app.routes';
 
-// Tambahkan fungsi untuk mendaftarkan Service Worker
+// Add function to register the Service Worker
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      // Nama Service Worker yang umum digunakan di proyek Angular/Vite
+      // Common Service Worker name used in Angular/Vite projects
       // FIX: Use a relative path for the service worker to prevent cross-origin errors
       // in sandboxed environments. The leading '/' caused it to resolve to the
       // wrong origin.
@@ -31,8 +31,8 @@ bootstrapApplication(AppComponent, {
     // which resolves the "Property 'group' does not exist on type 'unknown'" error.
     importProvidersFrom(ReactiveFormsModule),
   ],
-}).then(() => { // Gunakan .then() untuk mendaftarkan SW setelah bootstrap berhasil
-    // Panggil pendaftaran setelah aplikasi di-bootstrap
+}).then(() => { // Use .then() to register the SW after successful bootstrap
+    // Call registration after the application is bootstrapped
     registerServiceWorker(); 
 }).catch((err) => console.error(err));
 

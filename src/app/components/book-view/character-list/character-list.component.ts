@@ -16,7 +16,7 @@ import { CharacterListItemComponent } from '../character-list-item/character-lis
       <button 
         (click)="openAddModal()"
         class="mb-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-offset-gray-900">
-        + Tambah Karakter
+        + Add Character
       </button>
 
       @if (bookState.isLoadingCharacters()) {
@@ -37,9 +37,9 @@ import { CharacterListItemComponent } from '../character-list-item/character-lis
             </div>
          } @else {
             @if (bookState.contextualSearchTerm()) {
-              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Tidak ada karakter yang cocok dengan pencarian Anda.</p>
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">No characters match your search.</p>
             } @else {
-              <p class="text-center text-gray-500 dark:text-gray-500 py-6">Belum ada karakter. Klik tombol di atas untuk menambah!</p>
+              <p class="text-center text-gray-500 dark:text-gray-500 py-6">No characters yet. Click the button above to add one!</p>
             }
          }
       }
@@ -90,7 +90,7 @@ export class CharacterListComponent {
   }
 
   onDeleteCharacter(character: ICharacter): void {
-    if (window.confirm(`Yakin ingin menghapus karakter "${character.name}"?`) && character.id) {
+    if (window.confirm(`Are you sure you want to delete the character "${character.name}"?`) && character.id) {
       this.bookState.deleteCharacter(character.id);
     }
   }

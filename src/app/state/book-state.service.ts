@@ -5,14 +5,14 @@ import { DatabaseService } from './database.service';
 import type { IBook, IWritingLog } from '../../types/data';
 import { NotificationService } from './notification.service'; 
 
-// BARU: Definisikan tipe IBook dengan properti tambahan untuk UI
+// NEW: Define IBook type with additional properties for UI
 interface IBookWithStats extends IBook {
   chapterCount?: number;
   characterCount?: number;
-  dailyProgressPercentage?: number; // <-- Tambah progress harian
+  dailyProgressPercentage?: number; // <-- Add daily progress
 }
 
-// BARU: Definisikan Tipe untuk Sorting
+// NEW: Define Type for Sorting
 export type SortMode = 'title' | 'lastModified';
 export type SortDirection = 'asc' | 'desc';
 export interface SortConfig {
@@ -20,7 +20,7 @@ export interface SortConfig {
   direction: SortDirection;
 }
 
-// BARU: Definisikan Tipe untuk View
+// NEW: Define Type for View
 export type ViewMode = 'grid' | 'list';
 
 
@@ -31,30 +31,40 @@ export class BookStateService {
   private readonly dbService = inject(DatabaseService);
   private readonly notificationService = inject(NotificationService); 
 
-  // --- STATE PRIMER (Gunakan Tipe BARU) ---
-  readonly books = signal<IBookWithStats[]>([]); // <-- Gunakan IBookWithStats
+  // --- PRIMARY STATE (Use NEW Type) ---
+  readonly books = signal<IBookWithStats[]>([]); // <-- Use IBookWithStats
   readonly isLoading = signal<boolean>(false);
+  readonly showArchived = signal<boolean>(false); // <-- NEW
 
-  // --- BARU: State untuk Sorting ---
+  // --- NEW: State for Sorting ---
   readonly sortConfig = signal<SortConfig>({
-    mode: 'lastModified', // Default urutkan berdasarkan terbaru
+    mode: 'lastModified', // Default sort by most recent
     direction: 'desc'
   });
 
-  // --- BARU: State untuk View ---
+  // --- NEW: State for View ---
   readonly viewMode = signal<ViewMode>('grid');
 
-  // --- BARU: Computed Signal untuk Menampilkan Buku Terurut ---
+  // --- NEW: Computed Signal for Displaying Sorted Books ---
   readonly sortedBooks = computed(() => {
     const books = this.books();
     const config = this.sortConfig();
+    const showArchived = this.showArchived();
 
-    // Buat salinan array agar tidak mengubah sinyal asli
-    return [...books].sort((a, b) => {
+    // 1. Filter out archived books if not shown
+    const filteredBooks = books.filter(book => showArchived || !book.isArchived);
+    
+    // 2. Sort the filtered books
+    return [...filteredBooks].sort((a, b) => {
+      // Primary Sort: Pinned books always come first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
+      // Secondary Sort: Based on user selection
       let valA: string | number | Date;
       let valB: string | number | Date;
 
-      // Tentukan nilai yang akan diurutkan
+      // Determine the value to be sorted
       if (config.mode === 'title') {
         valA = a.title.toLowerCase();
         valB = b.title.toLowerCase();
@@ -64,7 +74,7 @@ export class BookStateService {
         valB = b.lastModified;
       }
 
-      // Tentukan arah pengurutan
+      // Determine the sorting direction
       if (config.direction === 'asc') {
         return valA < valB ? -1 : valA > valB ? 1 : 0;
       } else {
@@ -77,35 +87,40 @@ export class BookStateService {
     this.fetchBooks(); 
   }
 
-  // --- BARU: Method untuk Mengubah View ---
+  // --- NEW: Method to Change View ---
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
   }
+  
+  // --- NEW: Method to toggle archived visibility ---
+  toggleShowArchived(): void {
+    this.showArchived.update(v => !v);
+  }
 
-  // --- BARU: Method untuk Mengubah Sorting ---
+  // --- NEW: Method to Change Sorting ---
   setSort(mode: SortMode) {
     this.sortConfig.update(currentConfig => {
       if (currentConfig.mode === mode) {
-        // Jika mode sama, balik arahnya
+        // If the mode is the same, reverse the direction
         return { ...currentConfig, direction: currentConfig.direction === 'asc' ? 'desc' : 'asc' };
       } else {
-        // Jika mode baru, set default direction
+        // If it's a new mode, set the default direction
         return {
           mode: mode,
-          direction: mode === 'title' ? 'asc' : 'desc' // Judul A-Z, Tanggal Terbaru
+          direction: mode === 'title' ? 'asc' : 'desc' // Title A-Z, Newest Date
         };
       }
     });
   }
 
-  // --- Actions (Metode Publik) ---
+  // --- Actions (Public Methods) ---
 
   async fetchBooks(): Promise<void> {
     this.isLoading.set(true); 
     try {
       const basicBooks = await this.dbService.getAllBooks();
       
-      // BARU: Ambil statistik tambahan untuk setiap buku
+      // NEW: Fetch additional stats for each book
       const booksWithStats: IBookWithStats[] = await Promise.all(
         basicBooks.map(async (book) => {
           if (book.id === undefined) return book; // Safety check
@@ -114,10 +129,10 @@ export class BookStateService {
             const [chapters, characters, logs] = await Promise.all([
               this.dbService.getChaptersByBookId(book.id),
               this.dbService.getCharactersByBookId(book.id),
-              this.dbService.getWritingLogsByBookId(book.id) // Ambil log harian
+              this.dbService.getWritingLogsByBookId(book.id) // Fetch daily logs
             ]);
 
-            // Hitung progress harian
+            // Calculate daily progress
             const today = new Date().toISOString().slice(0, 10);
             const todayLog = logs.find(log => log.date === today);
             const wordsToday = todayLog ? todayLog.wordCountAdded : 0;
@@ -128,20 +143,20 @@ export class BookStateService {
               ...book,
               chapterCount: chapters.length,
               characterCount: characters.length,
-              dailyProgressPercentage: dailyProgress // Simpan progress
+              dailyProgressPercentage: dailyProgress // Save progress
             };
           } catch (statError) {
-            console.error(`Gagal mengambil statistik untuk buku ID ${book.id}:`, statError);
-            return book; // Kembalikan buku dasar jika gagal ambil statistik
+            console.error(`Failed to fetch stats for book ID ${book.id}:`, statError);
+            return book; // Return the basic book if fetching stats fails
           }
         })
       );
 
-      this.books.set(booksWithStats); // Update state buku dengan statistik
+      this.books.set(booksWithStats); // Update book state with stats
       
     } catch (error) {
-      console.error("Gagal fetch books:", error);
-      this.notificationService.error("Gagal memuat daftar novel."); 
+      console.error("Failed to fetch books:", error);
+      this.notificationService.error("Failed to load novel list."); 
       this.books.set([]); 
     } finally {
       this.isLoading.set(false); 
@@ -153,14 +168,14 @@ export class BookStateService {
     try {
       const newBookId = await this.dbService.addBook(title);
       if (newBookId !== undefined) {
-        this.notificationService.success(`Novel "${title}" berhasil dibuat!`); 
-        await this.fetchBooks(); // Muat ulang daftar (akan otomatis mengambil stats)
+        this.notificationService.success(`Novel "${title}" created successfully!`); 
+        await this.fetchBooks(); // Reload the list (will automatically fetch stats)
       } else {
-        throw new Error("ID buku tidak terdefinisi.");
+        throw new Error("Book ID is not defined.");
       }
     } catch (error) {
-      console.error("Gagal menambah buku:", error);
-      this.notificationService.error("Gagal membuat novel baru."); 
+      console.error("Failed to add book:", error);
+      this.notificationService.error("Failed to create new novel."); 
     } finally {
        this.isLoading.set(false);
     }
@@ -170,16 +185,16 @@ export class BookStateService {
     this.isLoading.set(true); 
     try {
       const bookToDelete = this.books().find(b => b.id === bookId);
-      const title = bookToDelete?.title ?? 'Buku';
+      const title = bookToDelete?.title ?? 'Book';
 
       await this.dbService.deleteBookAndData(bookId);
-      // Update state secara optimis (hapus dari daftar)
+      // Optimistically update state (remove from list)
       this.books.update(currentBooks => currentBooks.filter(book => book.id !== bookId));
-      this.notificationService.success(`Novel "${title}" berhasil dihapus.`); 
+      this.notificationService.success(`Novel "${title}" was deleted successfully.`); 
     } catch (error) {
-      console.error("Gagal menghapus buku:", error);
-      this.notificationService.error("Gagal menghapus novel."); 
-      await this.fetchBooks(); // Fetch ulang jika gagal (termasuk stats)
+      console.error("Failed to delete book:", error);
+      this.notificationService.error("Failed to delete novel."); 
+      await this.fetchBooks(); // Re-fetch if it fails (including stats)
     } finally {
       this.isLoading.set(false);
     }
@@ -189,7 +204,7 @@ export class BookStateService {
      this.isLoading.set(true);
     try {
       await this.dbService.updateBookTitle(bookId, newTitle);
-      // Update state secara optimis (hanya judul dan lastModified)
+      // Optimistically update state (only title and lastModified)
       this.books.update(currentBooks =>
         currentBooks.map(book => 
           book.id === bookId 
@@ -197,11 +212,11 @@ export class BookStateService {
             : book
         )
       );
-      this.notificationService.success(`Judul novel diubah menjadi "${newTitle}".`); 
+      this.notificationService.success(`Novel title changed to "${newTitle}".`); 
     } catch (error) {
-      console.error("Gagal update judul buku:", error);
-      this.notificationService.error("Gagal memperbarui judul novel."); 
-      await this.fetchBooks(); // Fetch ulang jika gagal (termasuk stats)
+      console.error("Failed to update book title:", error);
+      this.notificationService.error("Failed to update novel title."); 
+      await this.fetchBooks(); // Re-fetch if it fails (including stats)
     } finally {
         this.isLoading.set(false);
     }
@@ -210,14 +225,14 @@ export class BookStateService {
   async updateBookStats(bookId: number, data: Partial<Pick<IBook, 'dailyWordTarget' | 'wordCount'>>): Promise<void> {
    try {
      await this.dbService.updateBookStats(bookId, data);
-     // Update state secara optimis (termasuk hitung ulang progress jika target berubah)
+     // Optimistically update state (including recalculating progress if target changes)
      this.books.update(currentBooks =>
        currentBooks.map(book => {
          if (book.id === bookId) {
            const updatedBook = { ...book, ...data, lastModified: new Date() };
-           // Hitung ulang progress jika target berubah
+           // Recalculate progress if target changes
            if (data.dailyWordTarget !== undefined) {
-             const wordsToday = book.dailyProgressPercentage !== undefined ? ( (book.dailyProgressPercentage/100) * (book.dailyWordTarget || 0)) : 0; // Perkirakan kata hari ini
+             const wordsToday = book.dailyProgressPercentage !== undefined ? ( (book.dailyProgressPercentage/100) * (book.dailyWordTarget || 0)) : 0; // Estimate today's words
              const newTarget = updatedBook.dailyWordTarget ?? 0;
              updatedBook.dailyProgressPercentage = newTarget <= 0 ? 0 : Math.min(100, Math.floor((wordsToday / newTarget) * 100));
            }
@@ -229,18 +244,50 @@ export class BookStateService {
      );
      
      if (data.dailyWordTarget !== undefined) {
-         this.notificationService.success(`Target harian berhasil disimpan.`);
+         this.notificationService.success(`Daily target saved successfully.`);
      }
    } catch (error) {
-     console.error("Gagal update statistik buku:", error);
-     this.notificationService.error("Gagal menyimpan target/statistik."); 
-     await this.fetchBooks(); // Fetch ulang jika gagal (termasuk stats)
+     console.error("Failed to update book stats:", error);
+     this.notificationService.error("Failed to save target/stats."); 
+     await this.fetchBooks(); // Re-fetch if it fails (including stats)
    }
  }
  
+  // --- NEW: Methods for Pinning and Archiving ---
+
+  async pinBook(bookId: number, pin: boolean): Promise<void> {
+    try {
+      await this.dbService.updateBookFlags(bookId, { isPinned: pin });
+      this.books.update(currentBooks =>
+        currentBooks.map(book =>
+          book.id === bookId ? { ...book, isPinned: pin, lastModified: new Date() } : book
+        )
+      );
+      this.notificationService.success(pin ? "Novel pinned." : "Novel unpinned.");
+    } catch (error) {
+      console.error("Failed to update pin status:", error);
+      this.notificationService.error("Failed to update pin status.");
+    }
+  }
+
+  async archiveBook(bookId: number, archive: boolean): Promise<void> {
+    try {
+      await this.dbService.updateBookFlags(bookId, { isArchived: archive });
+      this.books.update(currentBooks =>
+        currentBooks.map(book =>
+          book.id === bookId ? { ...book, isArchived: archive, lastModified: new Date() } : book
+        )
+      );
+      this.notificationService.success(archive ? "Novel archived." : "Novel unarchived.");
+    } catch (error) {
+      console.error("Failed to update archive status:", error);
+      this.notificationService.error("Failed to update archive status.");
+    }
+  }
+
   /**
-   * Memperbarui buku dalam daftar state secara optimis.
-   * Digunakan untuk sinkronisasi dari service lain (misal: CurrentBookStateService).
+   * Optimistically updates a book in the state list.
+   * Used for synchronization from other services (e.g., CurrentBookStateService).
    */
   updateBookInList(bookId: number, data: Partial<Pick<IBook, 'wordCount' | 'dailyWordTarget'>>): void {
     this.books.update(currentBooks =>

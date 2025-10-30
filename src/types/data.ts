@@ -6,13 +6,15 @@ export interface IBook {
   title: string;
   createdAt: Date;
   lastModified: Date;
-  wordCount: number;         // <-- BARU: Total jumlah kata di buku ini
-  dailyWordTarget: number;   // <-- BARU: Target kata per hari (misal: 500)
+  wordCount: number;         // <-- NEW: Total word count in this book
+  dailyWordTarget: number;   // <-- NEW: Daily word target (e.g., 500)
+  isArchived?: boolean;      // <-- NEW: To hide book from main view
+  isPinned?: boolean;        // <-- NEW: To keep book at the top
 }
 
-export interface IRelationship { // <-- BARU: Interface Relasi
-  targetId: number; // ID Karakter lain
-  type: string;     // Jenis hubungan, misal: 'Rival', 'Ally', 'Family'
+export interface IRelationship { // <-- NEW: Relationship Interface
+  targetId: number; // ID of the other Character
+  type: string;     // Type of relationship, e.g., 'Rival', 'Ally', 'Family'
 }
 
 export interface ICharacter {
@@ -20,7 +22,7 @@ export interface ICharacter {
   bookId: number; 
   name: string;
   description: string;
-  relationships: IRelationship[]; // <-- BARU: Daftar hubungan
+  relationships: IRelationship[]; // <-- NEW: List of relationships
 }
 
 export interface ILocation {
@@ -36,8 +38,8 @@ export interface IPlotEvent {
   title: string;
   summary: string;
   order: number; 
-  locationId: number | null; // <-- BARU: Hubungan Many-to-One ke Lokasi
-  characterIds: number[];    // <-- BARU: Hubungan Many-to-Many ke Karakter
+  locationId: number | null; // <-- NEW: Many-to-One relationship to Location
+  characterIds: number[];    // <-- NEW: Many-to-Many relationship to Character
 }
 
 export interface IChapter {
@@ -46,39 +48,39 @@ export interface IChapter {
   title: string;
   content: string; 
   order: number; 
-  characterIds: number[]; // <-- BARU: Hubungan Many-to-Many ke Karakter
+  characterIds: number[]; // <-- NEW: Many-to-Many relationship to Character
 }
 
 export interface ITheme {
   id?: number; 
   bookId: number; 
-  name: string; // Nama tema, misal: "Keberanian", "Pengkhianatan"
-  description: string; // Deskripsi singkat
+  name: string; // Theme name, e.g., "Courage", "Betrayal"
+  description: string; // Short description
 }
 
-export interface IProp { // Prop bisa berarti item penting dalam cerita
+export interface IProp { // Prop can mean an important item in the story
   id?: number; 
   bookId: number; 
-  name: string; // Nama prop, misal: "Pedang Legendaris", "Surat Wasiat"
-  description: string; // Deskripsi/catatan tentang prop
+  name: string; // Prop name, e.g., "Legendary Sword", "Last Will"
+  description: string; // Description/notes about the prop
 }
 
-export interface IWritingLog { // <-- BARU: Log harian
+export interface IWritingLog { // <-- NEW: Daily Log
   id?: number;
   bookId: number;
-  date: string;              // Format YYYY-MM-DD
-  wordCountAdded: number;    // Jumlah kata yang ditambahkan hari itu
+  date: string;              // YYYY-MM-DD Format
+  wordCountAdded: number;    // Number of words added that day
 }
 
-// --- BARU: Tipe Data untuk Pencarian Global ---
+// --- NEW: Data Types for Global Search ---
 
 export type SearchResultType = 'Book' | 'Character' | 'Location' | 'Chapter' | 'PlotEvent' | 'Theme' | 'Prop';
 
 export interface ISearchResult {
   type: SearchResultType;
-  name: string;         // Nama/Judul yang cocok (e.g., "Andra" or "Bab 1: Permulaan")
-  description: string;  // Snippet deskripsi/ringkasan
-  path: string;         // Konteks (e.g., "Novel: The Dragon's Lair")
+  name: string;         // Matching name/title (e.g., "Andra" or "Chapter 1: The Beginning")
+  description: string;  // Description/summary snippet
+  path: string;         // Context (e.g., "Novel: The Dragon's Lair")
   bookId: number;
-  entityId: number;     // ID dari item itu sendiri (e.g., character.id or chapter.id)
+  entityId: number;     // ID of the item itself (e.g., character.id or chapter.id)
 }

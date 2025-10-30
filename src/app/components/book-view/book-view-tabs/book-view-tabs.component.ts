@@ -106,7 +106,7 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
          @case ('events') { <app-plot-event-list></app-plot-event-list> }
          @case ('themes') { <app-theme-list></app-theme-list> }
          @case ('props') { <app-prop-list></app-prop-list> }
-         @default { <div class="p-4 text-gray-500">Pilih tab</div> }
+         @default { <div class="p-4 text-gray-500">Select a tab</div> }
       }
     </div>
   `
@@ -132,24 +132,24 @@ export class BookViewTabsComponent implements OnInit {
   dynamicPlaceholder = computed(() => {
     switch(this.activeTab) {
       case 'characters':
-        return `Cari di ${this.bookState.characters().length} karakter...`;
+        return `Search in ${this.bookState.characters().length} characters...`;
       case 'locations':
-        return `Cari di ${this.bookState.locations().length} lokasi...`;
+        return `Search in ${this.bookState.locations().length} locations...`;
       case 'chapters':
-        return `Cari di ${this.bookState.chapters().length} bab...`;
+        return `Search in ${this.bookState.chapters().length} chapters...`;
       case 'events':
-        return `Cari di ${this.bookState.plotEvents().length} event...`;
+        return `Search in ${this.bookState.plotEvents().length} events...`;
       case 'themes':
-        return `Cari di ${this.bookState.themes().length} tema...`;
+        return `Search in ${this.bookState.themes().length} themes...`;
       case 'props':
-        return `Cari di ${this.bookState.props().length} properti...`;
+        return `Search in ${this.bookState.props().length} props...`;
       default:
-        return 'Cari...';
+        return 'Search...';
     }
   });
 
   ngOnInit(): void {
-    // Muat data untuk tab default saat komponen dibuat
+    // Load data for the default tab when the component is created
     this.loadTabData(this.activeTab);
   }
 
@@ -159,7 +159,7 @@ export class BookViewTabsComponent implements OnInit {
     this.loadTabData(key);
   }
 
-  // BARU: Helper untuk mendapatkan jumlah item
+  // NEW: Helper to get item count
   getItemCount(key: string): number {
     switch(key) {
       case 'characters': return this.bookState.filteredCharacters().length;
@@ -175,10 +175,10 @@ export class BookViewTabsComponent implements OnInit {
   private loadTabData(key: string): void {
     const bookId = this.bookState.currentBookId();
     if (bookId === null || this.loadedTabs.has(key)) {
-      return; // Sudah dimuat atau belum ada ID buku
+      return; // Already loaded or no book ID yet
     }
 
-    // Panggil action pemuatan spesifik berdasarkan tab
+    // Call specific loading action based on the tab
     switch (key) {
       case 'connections':
         this.bookState.loadCharacters(bookId);
@@ -191,11 +191,11 @@ export class BookViewTabsComponent implements OnInit {
         break;
       case 'chapters':
         this.bookState.loadChapters(bookId);
-        // Chapter list membutuhkan data karakter untuk menampilkan nama
+        // Chapter list needs character data to display names
         this.bookState.loadCharacters(bookId);
         break;
       case 'events':
-        // Detail event membutuhkan data karakter dan lokasi
+        // Event details need character and location data
         this.bookState.loadPlotEvents(bookId);
         this.bookState.loadCharacters(bookId);
         this.bookState.loadLocations(bookId);
@@ -208,6 +208,6 @@ export class BookViewTabsComponent implements OnInit {
         break;
     }
 
-    this.loadedTabs.add(key); // Tandai sebagai sudah dimuat
+    this.loadedTabs.add(key); // Mark as loaded
   }
 }
