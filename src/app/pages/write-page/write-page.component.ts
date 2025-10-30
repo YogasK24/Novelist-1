@@ -31,7 +31,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
       
       <main class="flex-grow flex overflow-hidden relative"> 
         
-        <button (click)="isChapterPanelOpen.set(true)" 
+        <button (click)="openChapterPanel()" 
                 class="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 
                        bg-gray-200/90 dark:bg-gray-800/90 
                        hover:bg-gray-300 dark:hover:bg-gray-700 
@@ -73,7 +73,7 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
           <router-outlet></router-outlet>
         </div>
 
-        <button (click)="isWorldPanelOpen.set(true)" 
+        <button (click)="openWorldPanel()" 
                 class="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 
                        bg-gray-200/90 dark:bg-gray-800/90 
                        hover:bg-gray-300 dark:hover:bg-gray-700 
@@ -125,12 +125,10 @@ export class WritePageComponent implements OnInit, OnDestroy {
 
   private routeSub: Subscription | undefined;
   
-  // State BARU untuk kontrol sidebar individual (default BUKA)
+  // State BARU untuk kontrol sidebar (default: Chapter terbuka, World tertutup)
   isChapterPanelOpen = signal(true); 
-  isWorldPanelOpen = signal(true);
+  isWorldPanelOpen = signal(false);
   
-  // Hapus isFocusMode lama
-
   ngOnInit(): void {
     // Logic pemuatan ID buku tetap dipertahankan
     this.routeSub = this.route.params.subscribe(params => {
@@ -152,14 +150,26 @@ export class WritePageComponent implements OnInit, OnDestroy {
     this.routeSub?.unsubscribe();
     this.bookState.clearBookData();
   }
+
+  // BARU: Buka panel chapter, tutup panel world
+  openChapterPanel(): void {
+    this.isChapterPanelOpen.set(true);
+    this.isWorldPanelOpen.set(false);
+  }
+
+  // BARU: Buka panel world, tutup panel chapter
+  openWorldPanel(): void {
+    this.isWorldPanelOpen.set(true);
+    this.isChapterPanelOpen.set(false);
+  }
   
   // Logika toggleFocusMode BARU (Super-Focus)
   toggleFocusMode(): void {
     const isCurrentlyFocus = !this.isChapterPanelOpen() && !this.isWorldPanelOpen();
     if (isCurrentlyFocus) {
-      // Keluar dari Focus Mode: Buka kedua panel
+      // Keluar dari Focus Mode: Buka panel chapter (default)
       this.isChapterPanelOpen.set(true);
-      this.isWorldPanelOpen.set(true);
+      this.isWorldPanelOpen.set(false);
     } else {
       // Masuk ke Focus Mode: Tutup kedua panel
       this.isChapterPanelOpen.set(false);

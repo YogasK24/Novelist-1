@@ -9,7 +9,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
   imports: [CommonModule],
   template: `
     <div class="h-full flex flex-col">
-      <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex-shrink-0">World Notes</h2>
+      <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex-shrink-0 pl-8">World Notes</h2>
       
       <div class="border-b border-gray-300 dark:border-gray-700 mb-4 flex-shrink-0">
         <nav class="flex space-x-4" aria-label="Tabs">

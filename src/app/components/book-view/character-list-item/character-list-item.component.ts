@@ -13,7 +13,15 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
       <div (click)="viewDetails.emit(char)"
            tabindex="0"
            (keydown.enter)="viewDetails.emit(char)"
-           class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+           class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-start cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+        
+        <div class="flex-shrink-0 mr-4 mt-1">
+            <div [style.background-color]="getAvatarColor(char.name)" 
+                 class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-lg">
+                 {{ getInitials(char.name) }}
+            </div>
+        </div>
+
         <div class="mr-4 flex-grow">
            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ char.name }}</h3>
            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap line-clamp-2">{{ char.description || 'Tidak ada deskripsi.' }}</p>
@@ -67,5 +75,31 @@ export class CharacterListItemComponent {
   onDelete(event: MouseEvent): void {
     event.stopPropagation();
     this.delete.emit(this.character());
+  }
+
+  getInitials(name: string): string {
+    if (!name) return '?';
+    const words = name.trim().split(/\s+/);
+    if (words.length > 1) {
+        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    } else if (words.length === 1 && words[0].length > 0) {
+        return words[0][0].toUpperCase();
+    }
+    return '?';
+  }
+
+  getAvatarColor(name: string): string {
+    if (!name) return 'hsl(200, 70%, 50%)'; // Default color
+    
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const h = hash % 360; // Hue (0-359)
+    const s = 60 + (hash % 10); // Saturation (60-70%) - Hindari warna terlalu pucat/terlalu jenuh
+    const l = 40 + (hash % 10); // Lightness (40-50%) - Hindari warna terlalu gelap/terlalu terang
+    
+    return `hsl(${h}, ${s}%, ${l}%)`;
   }
 }

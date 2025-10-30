@@ -42,8 +42,27 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           </div>
 
         <button (click)="toggleFocusMode.emit()" 
-                class="px-3 py-1 text-sm bg-gray-700 dark:bg-gray-200 hover:bg-gray-600 dark:hover:bg-gray-300 rounded w-28 text-center text-gray-200 dark:text-gray-800 transition-colors duration-150">
-          {{ isFocusMode() ? 'Exit Focus' : 'Focus Mode' }}
+                class="px-3 py-1 text-sm rounded w-28 text-center transition-colors duration-150
+                       flex items-center justify-center gap-1.5"
+                [class.bg-gray-700]="!isFocusMode()" [class.dark:bg-gray-200]="!isFocusMode()" 
+                [class.hover:bg-gray-600]="!isFocusMode()" [class.dark:hover:bg-gray-300]="!isFocusMode()"
+                [class.text-gray-200]="!isFocusMode()" [class.dark:text-gray-800]="!isFocusMode()"
+                
+                [class.bg-purple-600]="isFocusMode()" [class.dark:bg-purple-500]="isFocusMode()" 
+                [class.hover:bg-purple-700]="isFocusMode()" [class.dark:hover:bg-purple-600]="isFocusMode()"
+                [class.text-white]="isFocusMode()">
+                
+          @if (isFocusMode()) {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+            <span>Exit Focus</span>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+             <span>Focus Mode</span>
+          }
         </button>
       </div>
     </header>

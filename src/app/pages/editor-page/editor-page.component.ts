@@ -26,19 +26,19 @@ declare var Quill: any;
           <div class="flex-shrink-0 text-right flex items-center">
             
             @if (isSaving()) {
-              <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity sm:inline mr-3">
+              <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
                 Menyimpan...
               </span>
             } @else if (showSavedConfirmation()) {
-              <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity sm:inline mr-3">
+              <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
                 Tersimpan
               </span>
             } @else if (isDirty()) {
-              <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline mr-3">
+              <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
                 Perubahan belum disimpan
               </span>
             } @else {
-               <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity sm:inline mr-3">
+               <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
                 Semua tersimpan
               </span>
             }
@@ -88,58 +88,146 @@ declare var Quill: any;
       height: 100%;
       overflow: hidden; 
     }
-    /* Base styles (Light Mode Default) */
+    /* Base Editor styles */
     .quill-container .ql-editor {
-      /* UPDATE: Gunakan font Lora untuk konten */
       font-family: 'Lora', 'ui-serif', 'Georgia', 'Cambria', 'serif'; 
       font-size: 1.125rem; 
-      line-height: 1.75;
+      line-height: 1.8;
+      padding: 1.5rem 2rem;
       color: #1f2937; /* gray-900 */
       height: 100%;
-      padding: 1rem 2rem; 
-      
-      /* --- PERUBAHAN UTAMA: Batasi Lebar Teks --- */
       max-width: 48rem; /* 3xl (768px) */
       margin: 0 auto;
     }
+    .ql-snow.ql-container {
+      border: none !important;
+      height: calc(100% - 55px); /* Adjusted height for new toolbar */
+    }
+
+    /* --- TOOLBAR REDESIGN (LIGHT MODE) --- */
     .ql-toolbar {
-      /* UPDATE: Toolbar juga menempel di max-width editor */
-      max-width: 48rem; /* 3xl */
+      max-width: 48rem;
       margin: 0 auto;
-      
       background-color: #f3f4f6; /* gray-100 */
-      border-color: #d1d5db !important; /* gray-300 */
-      border-left: 0 !important;
-      border-right: 0 !important;
-      border-top: 0 !important;
-      padding: 8px !important;
+      border-bottom: 1px solid #d1d5db !important;
+      border-top: 0 !important; border-left: 0 !important; border-right: 0 !important;
       position: sticky;
       top: 0;
       z-index: 10;
+      
+      /* Single-line scrollable styles */
+      display: flex !important;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 8px 12px !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+      position: relative;
     }
-    .ql-toolbar .ql-stroke { stroke: #6b7280; } /* gray-500 */
-    .ql-toolbar .ql-picker-label { color: #6b7280; } /* gray-500 */
-    .ql-toolbar .ql-active .ql-stroke { stroke: #9333ea; } /* purple-700 */
-    .ql-toolbar .ql-active .ql-fill { fill: #9333ea; } /* purple-700 */
-    .ql-toolbar .ql-active .ql-picker-label { color: #9333ea; } /* purple-700 */
-    .ql-snow.ql-container {
-      border: none !important;
-      height: calc(100% - 49px); 
+    .ql-toolbar::-webkit-scrollbar {
+      display: none; /* WebKit */
     }
+    /* Gradient fade effect to indicate more content */
+    .ql-toolbar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(to left, #f3f4f6, transparent);
+      pointer-events: none;
+    }
+    .ql-toolbar .ql-formats {
+      display: flex !important;
+      margin-right: 12px !important;
+      white-space: nowrap;
+    }
+    .ql-toolbar button, .ql-toolbar .ql-picker {
+      border-radius: 6px;
+      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      margin: 0 2px;
+      padding: 4px 8px; /* Added padding */
+    }
+    .ql-toolbar button:hover, .ql-toolbar .ql-picker:hover {
+      background-color: #e5e7eb; /* gray-200 */
+    }
+    .ql-toolbar .ql-stroke { stroke: #4b5563; } /* gray-600 */
+    .ql-toolbar .ql-picker-label { color: #4b5563; } /* gray-600 */
+    .ql-toolbar .ql-active {
+      background-color: #e9d5ff !important; /* purple-200 */
+    }
+    .ql-toolbar .ql-active .ql-stroke { stroke: #7e22ce; } /* purple-700 */
+    .ql-toolbar .ql-active .ql-fill { fill: #7e22ce; }
+    .ql-toolbar .ql-active .ql-picker-label { color: #7e22ce; }
 
-    /* DARK MODE OVERRIDES */
+    /* --- DARK MODE OVERRIDES --- */
     html.dark .quill-container .ql-editor {
       color: #d1d5db; /* gray-300 */
     }
     html.dark .ql-toolbar {
       background-color: #374151; /* gray-700 */
-      border-color: #4b5563 !important; /* gray-600 */
+      border-color: #4b5563 !important;
+    }
+    html.dark .ql-toolbar::after {
+      background: linear-gradient(to left, #374151, transparent);
+    }
+    html.dark .ql-toolbar button:hover, html.dark .ql-toolbar .ql-picker:hover {
+      background-color: #4b5563; /* gray-600 */
     }
     html.dark .ql-toolbar .ql-stroke { stroke: #9ca3af; } /* gray-400 */
     html.dark .ql-toolbar .ql-picker-label { color: #9ca3af; } /* gray-400 */
+    html.dark .ql-toolbar .ql-active {
+      background-color: #4c1d95 !important; /* purple-800 */
+    }
     html.dark .ql-toolbar .ql-active .ql-stroke { stroke: #c4b5fd; } /* purple-300 */
-    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; } /* purple-300 */
-    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; } /* purple-300 */
+    html.dark .ql-toolbar .ql-active .ql-fill { fill: #c4b5fd; }
+    html.dark .ql-toolbar .ql-active .ql-picker-label { color: #c4b5fd; }
+
+    /* --- TOOLTIP IMPLEMENTATION --- */
+    .ql-toolbar button, .ql-toolbar .ql-picker {
+      position: relative;
+    }
+    .ql-toolbar button::after, .ql-toolbar .ql-picker-label::after {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(0px);
+      background-color: #111827; /* gray-900 */
+      color: #f9fafb; /* gray-50 */
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out 0.3s, transform 0.2s ease-in-out 0.3s;
+      z-index: 20;
+    }
+    .ql-toolbar button:hover::after, .ql-toolbar .ql-picker:hover .ql-picker-label::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
+    }
+    /* Tooltip text for each button */
+    .ql-toolbar button.ql-bold::after { content: 'Bold'; }
+    .ql-toolbar button.ql-italic::after { content: 'Italic'; }
+    .ql-toolbar button.ql-underline::after { content: 'Underline'; }
+    .ql-toolbar button.ql-strike::after { content: 'Strikethrough'; }
+    .ql-toolbar button.ql-list[value="ordered"]::after { content: 'Numbered List'; }
+    .ql-toolbar button.ql-list[value="bullet"]::after { content: 'Bulleted List'; }
+    .ql-toolbar button.ql-blockquote::after { content: 'Blockquote'; }
+    .ql-toolbar button.ql-code-block::after { content: 'Code Block'; }
+    .ql-toolbar button.ql-clean::after { content: 'Clear Formatting'; }
+    .ql-toolbar .ql-picker.ql-header .ql-picker-label::after { content: 'Heading Style'; }
+    
+    /* Improve header picker options */
+    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="1"]::before { content: 'Heading 1'; font-size: 1.25rem; font-weight: bold; }
+    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="2"]::before { content: 'Heading 2'; font-size: 1.125rem; font-weight: bold; }
+    .ql-toolbar .ql-picker.ql-header .ql-picker-item[data-value="3"]::before { content: 'Heading 3'; font-size: 1rem; font-weight: bold; }
+    .ql-toolbar .ql-picker.ql-header .ql-picker-item::before { content: 'Normal'; font-size: 0.875rem; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
