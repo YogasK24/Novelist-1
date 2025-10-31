@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { IProp } from '../../../../types/data';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-add-prop-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   template: `
     <div 
       class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 transition-opacity duration-300"
@@ -29,10 +30,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
             {{ propToEdit() ? 'Edit Properti' : 'Tambah Properti Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
+            <app-icon name="outline-x-mark-24" class="w-6 h-6" />
           </button>
         </div>
 
@@ -47,7 +46,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               formControlName="name" 
               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                      text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
-                     focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+                     focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
               placeholder="Misal: Pedang Legendaris, Surat Wasiat..."
               required
             />
@@ -66,7 +65,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                rows="3"
                class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                       text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
-                      focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+                      focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
                placeholder="Deskripsi, fungsi, atau catatan penting..."
              ></textarea>
           </div>
@@ -83,8 +82,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             <button
               type="submit"
               [disabled]="propForm.invalid || isLoading()" 
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md 
-                     disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md 
+                     disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
             >
               {{ isLoading() ? 'Menyimpan...' : 'Simpan' }}
             </button>

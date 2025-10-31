@@ -16,16 +16,16 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
           @for (tab of tabs; track tab.key) {
             <button 
               (click)="activeTab.set(tab.key)"
-              [class.text-purple-600]="activeTab() === tab.key"
-              [class.dark:text-purple-400]="activeTab() === tab.key"
-              [class.border-purple-600]="activeTab() === tab.key"
-              [class.dark:border-purple-400]="activeTab() === tab.key"
+              [class.text-accent-600]="activeTab() === tab.key"
+              [class.dark:text-accent-400]="activeTab() === tab.key"
+              [class.border-accent-600]="activeTab() === tab.key"
+              [class.dark:border-accent-400]="activeTab() === tab.key"
               
               [class.text-gray-600]="activeTab() !== tab.key"
               [class.dark:text-gray-400]="activeTab() !== tab.key"
               [class.border-transparent]="activeTab() !== tab.key"
               
-              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-gray-900 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-t-md"
+              class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm hover:text-gray-900 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-accent-400 rounded-t-md"
             >
               {{ tab.label }}
             </button>

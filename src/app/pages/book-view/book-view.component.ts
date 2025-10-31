@@ -25,7 +25,7 @@ import { BottomNavComponent } from '../../components/book-view/bottom-nav/bottom
       <main class="flex-grow container mx-auto px-4 py-10 max-w-7xl"> 
         @if (bookState.isLoadingBook()) {
           <div class="flex justify-center items-center py-10">
-             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 dark:border-purple-600"></div>
+             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-400 dark:border-accent-600"></div>
           </div>
         } @else if (bookState.currentBook()) { 
            <app-book-view-tabs></app-book-view-tabs>

@@ -2,7 +2,7 @@ import '@angular/compiler';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideZonelessChangeDetection, importProvidersFrom } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AppComponent } from './src/app.component';
 import { routes } from './src/app/app.routes';
@@ -29,7 +29,7 @@ bootstrapApplication(AppComponent, {
     // FIX: Provide services from ReactiveFormsModule application-wide.
     // This ensures FormBuilder is available for dependency injection,
     // which resolves the "Property 'group' does not exist on type 'unknown'" error.
-    importProvidersFrom(ReactiveFormsModule),
+    importProvidersFrom(ReactiveFormsModule, FormsModule),
   ],
 }).then(() => { // Use .then() to register the SW after successful bootstrap
     // Call registration after the application is bootstrapped

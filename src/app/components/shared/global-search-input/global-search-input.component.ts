@@ -30,7 +30,7 @@ import { SearchService } from '../../../state/search.service';
                text-gray-800 dark:text-gray-200
                border border-transparent
                placeholder-gray-500 dark:placeholder-gray-400
-               focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+               focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
       />
     </div>
   `,

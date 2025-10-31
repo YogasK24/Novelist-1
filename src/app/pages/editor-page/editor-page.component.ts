@@ -4,18 +4,20 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription, map } from 'rxjs';
 import { CurrentBookStateService } from '../../state/current-book-state.service';
+import { SettingsService } from '../../state/settings.service';
 import type { IChapter } from '../../../types/data';
+import { IconComponent } from '../../components/shared/icon/icon.component';
 
 declare var Quill: any;
 
 @Component({
   selector: 'app-editor-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   template: `
     @if (isLoading()) {
       <div class="flex h-full w-full items-center justify-center">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400 dark:border-purple-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-400 dark:border-accent-600"></div>
       </div>
     } @else if (chapter(); as currentChapter) {
       <div class="flex h-full flex-col p-4 sm:p-6 bg-white dark:bg-gray-800 transition-colors duration-500">
@@ -49,8 +51,8 @@ declare var Quill: any;
               class="ml-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 
                      w-28 flex items-center justify-center
                      disabled:cursor-not-allowed
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500"
-              [class.bg-purple-600]="!showSavedConfirmation()" [class.hover:bg-purple-700]="!showSavedConfirmation()"
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500"
+              [class.bg-accent-600]="!showSavedConfirmation()" [class.hover:bg-accent-700]="!showSavedConfirmation()"
               [class.bg-green-600]="showSavedConfirmation()"
               [class.opacity-50]="!isDirty()"
               [class.opacity-100]="isDirty()">
@@ -58,9 +60,7 @@ declare var Quill: any;
               @if (isSaving()) {
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               } @else if (showSavedConfirmation()) {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
+                <app-icon name="outline-check-24" class="w-5 h-5" />
               } @else {
                 <span>Save</span>
               }
@@ -77,7 +77,7 @@ declare var Quill: any;
       <div class="m-auto p-4 text-center text-gray-500 dark:text-gray-400">
         <h3 class="text-xl">Chapter not found.</h3>
         @if(bookState.currentBookId(); as bookId) {
-            <a [routerLink]="['/book', bookId, 'write']" class="text-purple-600 dark:text-purple-400 hover:underline">Back to chapters</a>
+            <a [routerLink]="['/book', bookId, 'write']" class="text-accent-600 dark:text-accent-400 hover:underline">Back to chapters</a>
         }
       </div>
     }
@@ -90,9 +90,9 @@ declare var Quill: any;
     }
     /* Base Editor styles */
     .quill-container .ql-editor {
-      font-family: 'Lora', 'ui-serif', 'Georgia', 'Cambria', 'serif'; 
-      font-size: 1.125rem; 
-      line-height: 1.8;
+      font-family: var(--editor-font-family);
+      font-size: var(--editor-font-size);
+      line-height: var(--editor-line-height);
       padding: 1.5rem 2rem;
       color: #1f2937; /* gray-900 */
       height: 100%;
@@ -156,10 +156,10 @@ declare var Quill: any;
     .ql-toolbar .ql-stroke { stroke: #4b5563; } /* gray-600 */
     .ql-toolbar .ql-picker-label { color: #4b5563; } /* gray-600 */
     .ql-toolbar .ql-active {
-      background-color: #e9d5ff !important; /* purple-200 */
+      background-color: var(--accent-200) !important;
     }
-    .ql-toolbar .ql-active .ql-stroke { stroke: #9333ea !important; } /* purple-600 */
-    .ql-toolbar .ql-active .ql-picker-label { color: #9333ea !important; } /* purple-600 */
+    .ql-toolbar .ql-active .ql-stroke { stroke: var(--accent-600) !important; }
+    .ql-toolbar .ql-active .ql-picker-label { color: var(--accent-600) !important; }
 
     /* --- DARK MODE STYLES --- */
     :host-context(.dark) .quill-container .ql-editor {
@@ -178,16 +178,17 @@ declare var Quill: any;
     :host-context(.dark) .ql-toolbar .ql-stroke { stroke: #9ca3af; } /* gray-400 */
     :host-context(.dark) .ql-toolbar .ql-picker-label { color: #9ca3af; } /* gray-400 */
     :host-context(.dark) .ql-toolbar .ql-active {
-      background-color: #581c87 !important; /* purple-900 */
+      background-color: var(--accent-900) !important;
     }
-    :host-context(.dark) .ql-toolbar .ql-active .ql-stroke { stroke: #c084fc !important; } /* purple-400 */
-    :host-context(.dark) .ql-toolbar .ql-active .ql-picker-label { color: #c084fc !important; } /* purple-400 */
+    :host-context(.dark) .ql-toolbar .ql-active .ql-stroke { stroke: var(--accent-400) !important; }
+    :host-context(.dark) .ql-toolbar .ql-active .ql-picker-label { color: var(--accent-400) !important; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
+  private settingsService = inject(SettingsService);
 
   editorRef = viewChild.required<ElementRef>('editor');
 
@@ -202,6 +203,9 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   private quill: any;
   private saveTimeout: any;
   private savedConfirmationTimeout: any;
+
+  // --- Tambahan untuk Typewriter Mode ---
+  private typewriterScrollHandler: any = null; 
 
   constructor() {
     effect(() => {
@@ -224,6 +228,25 @@ export class EditorPageComponent implements OnInit, OnDestroy {
         if(editorEl && this.chapter() && !this.quill) {
             this.setupQuill();
         }
+    });
+
+    // --- Effect BARU untuk Toggling Typewriter Mode ---
+    effect(() => {
+      if (!this.quill) return; // Jangan lakukan apa-apa jika editor belum siap
+
+      const isTypewriterOn = this.settingsService.typewriterMode();
+      
+      if (isTypewriterOn && !this.typewriterScrollHandler) {
+        // Mode diaktifkan: Buat listener dan subscribe ke event Quill
+        this.typewriterScrollHandler = (range: any) => this.handleTypewriterScroll(range);
+        this.quill.on('selection-change', this.typewriterScrollHandler);
+        // Panggil sekali untuk scroll ke posisi awal
+        this.handleTypewriterScroll(this.quill.getSelection());
+      } else if (!isTypewriterOn && this.typewriterScrollHandler) {
+        // Mode dimatikan: Unsubscribe dan hapus listener
+        this.quill.off('selection-change', this.typewriterScrollHandler);
+        this.typewriterScrollHandler = null;
+      }
     });
   }
 
@@ -256,6 +279,10 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     clearTimeout(this.savedConfirmationTimeout);
     if(this.quill) {
         this.quill.off('text-change', this.onEditorChange);
+        // --- Pastikan listener typewriter juga dihapus ---
+        if (this.typewriterScrollHandler) {
+          this.quill.off('selection-change', this.typewriterScrollHandler);
+        }
     }
   }
 
@@ -270,60 +297,94 @@ export class EditorPageComponent implements OnInit, OnDestroy {
           [{ 'header': [1, 2, 3, false] }],
           ['bold', 'italic', 'underline'],
           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['link'],
+          ['blockquote', 'code-block'],
           ['clean']
         ]
       },
-      placeholder: 'Start writing your story...'
+      placeholder: 'Mulai menulis ceritamu di sini...',
     });
 
+    // Set initial content
     const currentContent = this.chapter()?.content;
     if (currentContent) {
       try {
         const delta = JSON.parse(currentContent);
-        this.quill.setContents(delta, 'silent');
-      } catch (e) {
-        this.quill.setText(currentContent, 'silent');
+        this.quill.setContents(delta);
+      } catch(e) {
+        this.quill.setText(currentContent);
       }
-    } else {
-      this.quill.setText('', 'silent');
     }
-    
-    this.isDirty.set(false);
+
+    this.quill.focus();
     this.quill.on('text-change', this.onEditorChange);
   }
-  
-  private onEditorChange = (delta: any, oldDelta: any, source: string): void => {
+
+  private onEditorChange = (delta: any, oldDelta: any, source: string) => {
     if (source === 'user') {
       this.isDirty.set(true);
       this.showSavedConfirmation.set(false);
-      clearTimeout(this.savedConfirmationTimeout);
       clearTimeout(this.saveTimeout);
-      this.saveTimeout = setTimeout(() => this.saveContent(), 1500);
+      this.saveTimeout = setTimeout(() => {
+        this.saveContent();
+      }, 2500); // Auto-save after 2.5s of inactivity
+    }
+  };
+  
+  async saveContent(): Promise<void> {
+    if (!this.quill || !this.isDirty() || this.isSaving()) {
+      return;
+    }
+
+    const currentChapter = this.chapter();
+    if (!currentChapter || currentChapter.id === undefined) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.isDirty.set(false);
+    clearTimeout(this.saveTimeout);
+
+    try {
+      const content = JSON.stringify(this.quill.getContents());
+      await this.bookState.updateChapterContent(currentChapter.id, content);
+
+      // Show "Saved" confirmation
+      this.showSavedConfirmation.set(true);
+      clearTimeout(this.savedConfirmationTimeout);
+      this.savedConfirmationTimeout = setTimeout(() => {
+        this.showSavedConfirmation.set(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error("Failed to save content:", error);
+      this.isDirty.set(true); // Re-set dirty flag if save failed
+    } finally {
+      this.isSaving.set(false);
     }
   }
 
-  async saveContent(): Promise<void> {
-    if (!this.isDirty() || this.isSaving() || !this.quill) return;
+  // --- Fungsi BARU untuk menangani scroll typewriter ---
+  private handleTypewriterScroll(range: any): void {
+    if (range == null || !this.quill) return; // Jangan scroll jika editor tidak fokus
 
-    this.isSaving.set(true);
-    clearTimeout(this.saveTimeout);
-    
-    const content = JSON.stringify(this.quill.getContents());
-    const chapterId = this.chapter()?.id;
-    
-    if (chapterId) {
-      try {
-        await this.bookState.updateChapterContent(chapterId, content);
-        this.isDirty.set(false);
-        this.showSavedConfirmation.set(true);
-        clearTimeout(this.savedConfirmationTimeout);
-        this.savedConfirmationTimeout = setTimeout(() => this.showSavedConfirmation.set(false), 2000);
-      } catch (error) {
-        console.error("Failed to save content", error);
-      } finally {
-        this.isSaving.set(false);
-      }
+    try {
+      const bounds = this.quill.getBounds(range.index);
+      const container = this.quill.scrollingContainer as HTMLElement;
+      
+      if (!container) return;
+
+      const containerHeight = container.clientHeight;
+      
+      // Hitung posisi scroll yang diinginkan:
+      // (posisi cursor dari atas editor) - (setengah tinggi container) + (setengah tinggi baris)
+      const desiredTop = bounds.top - (containerHeight / 2) + (bounds.height / 2);
+      
+      container.scrollTo({
+        top: desiredTop,
+        behavior: 'smooth' // Scroll dengan mulus!
+      });
+    } catch (e) {
+      // Kadang getBounds error jika editor belum siap, abaikan saja
     }
   }
 }

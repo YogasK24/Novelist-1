@@ -1,18 +1,20 @@
 // src/app/components/shared/dropdown-menu/dropdown-menu.component.ts
-import { Component, ChangeDetectionStrategy, input, output, effect, ElementRef, viewChild, HostListener } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, effect, ElementRef, viewChild, signal, inject, Renderer2, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../icon/icon.component';
 
 export interface MenuItem {
   label?: string;
   action?: string;
   isDanger?: boolean;
   isSeparator?: boolean;
+  icon?: string;
 }
 
 @Component({
   selector: 'app-dropdown-menu',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     @if (isOpen()) {
       <div #menuElement
@@ -21,8 +23,8 @@ export interface MenuItem {
                   transform transition-all duration-100 ease-out"
            [style.top.px]="position.top"
            [style.left.px]="position.left"
-           [style.opacity]="isVisible ? 1 : 0"
-           [style.transform]="isVisible ? 'scale(1)' : 'scale(0.95)'"
+           [style.opacity]="isVisible() ? 1 : 0"
+           [style.transform]="isVisible() ? 'scale(1)' : 'scale(0.95)'"
            (click)="$event.stopPropagation()">
         <div class="py-1" role="menu" aria-orientation="vertical">
           @for (item of items(); track $index) {
@@ -40,7 +42,12 @@ export interface MenuItem {
                       [class.dark:hover:bg-gray-600]="!item.isDanger"
                       class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm transition-colors" 
                       role="menuitem">
-                {{ item.label }}
+                @if (item.icon) {
+                  <app-icon [name]="item.icon" class="w-5 h-5" 
+                            [class.text-red-500]="item.isDanger" [class.dark:text-red-400]="item.isDanger"
+                            [class.text-gray-500]="!item.isDanger" [class.dark:text-gray-400]="!item.isDanger" />
+                }
+                <span>{{ item.label }}</span>
               </button>
             }
           }
@@ -50,7 +57,7 @@ export interface MenuItem {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DropdownMenuComponent {
+export class DropdownMenuComponent implements OnDestroy {
   isOpen = input.required<boolean>();
   items = input.required<MenuItem[]>();
   triggerElement = input.required<HTMLElement | undefined>();
@@ -60,37 +67,55 @@ export class DropdownMenuComponent {
 
   private menuElementRef = viewChild<ElementRef<HTMLDivElement>>('menuElement');
   position = { top: 0, left: 0 };
-  isVisible = false;
-
+  isVisible = signal(false);
+  private renderer = inject(Renderer2);
+  private unlisten: (() => void) | null = null;
+  
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
       if (this.isOpen()) {
-        // Gunakan timeout agar elemen dirender sebelum dihitung posisinya
-        setTimeout(() => this.calculatePosition(), 0);
+        // Delay attaching the listener to avoid the same click event that opened the menu
+        // from immediately closing it.
+        const timerId = setTimeout(() => {
+          this.calculatePosition();
+          // Ensure we don't attach multiple listeners.
+          if (!this.unlisten) {
+            this.unlisten = this.renderer.listen('document', 'click', this.handleGlobalClick);
+          }
+        }, 0);
+        
+        onCleanup(() => {
+            clearTimeout(timerId);
+        });
+
       } else {
-        this.isVisible = false;
+        this.isVisible.set(false);
+        this.removeGlobalListener();
       }
     });
   }
-  
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const menuEl = this.menuElementRef()?.nativeElement;
-    // Jika menu tidak terbuka atau elemen belum ada, jangan lakukan apa-apa.
-    if (!this.isOpen() || !menuEl) {
-      return;
-    }
-    
-    const triggerEl = this.triggerElement();
 
-    // Periksa apakah klik terjadi di luar elemen pemicu DAN di luar elemen menu.
-    const isClickOutsideTrigger = triggerEl ? !triggerEl.contains(event.target as Node) : true;
-    const isClickOutsideMenu = !menuEl.contains(event.target as Node);
+  ngOnDestroy(): void {
+    this.removeGlobalListener();
+  }
 
-    if (isClickOutsideTrigger && isClickOutsideMenu) {
-      this.close.emit();
+  private removeGlobalListener(): void {
+    if (this.unlisten) {
+      this.unlisten();
+      this.unlisten = null;
     }
   }
+  
+  // Using an arrow function to preserve the `this` context for the listener
+  private handleGlobalClick = (event: MouseEvent): void => {
+    const trigger = this.triggerElement();
+    const menu = this.menuElementRef()?.nativeElement;
+
+    // If the click is outside the trigger AND outside the menu, it's a "click outside"
+    if (trigger && !trigger.contains(event.target as Node) && menu && !menu.contains(event.target as Node)) {
+      this.close.emit();
+    }
+  };
 
   onItemClick(action: string): void {
     this.itemClicked.emit(action);
@@ -103,32 +128,46 @@ export class DropdownMenuComponent {
 
     if (!trigger || !menu) return;
 
+    // Get the position of the trigger element relative to the viewport.
     const triggerRect = trigger.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
     
+    // Get the dimensions of the menu itself.
+    const menuWidth = menu.offsetWidth;
+    const menuHeight = menu.offsetHeight;
+    
+    // Define screen boundaries and a small margin.
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const margin = 8; // Jarak dari trigger
+    const margin = 8;
 
+    // --- POSITIONING LOGIC ---
+
+    // Default position: Below the trigger, with their right edges aligned.
     let top = triggerRect.bottom + margin;
-    let left = triggerRect.right - menuRect.width;
+    let left = triggerRect.right - menuWidth;
 
-    // Cek jika menu keluar dari bawah layar, jika iya, letakkan di atas
-    if (top + menuRect.height > viewportHeight) {
-      top = triggerRect.top - menuRect.height - margin;
+    // 1. Vertical Collision: Check if the menu overflows the bottom of the viewport.
+    if (top + menuHeight > viewportHeight - margin) {
+      // If it overflows, flip it to appear *above* the trigger.
+      top = triggerRect.top - menuHeight - margin;
     }
 
-    // Cek jika menu keluar dari kiri layar
+    // 2. Top Collision: After potentially flipping, ensure it doesn't overflow the top.
+    if (top < margin) {
+      top = margin;
+    }
+
+    // 3. Horizontal Collision: Ensure the menu doesn't overflow the left or right edges.
     if (left < margin) {
-      left = margin;
+      left = margin; // Prevent left overflow.
     }
-    
-    // Cek jika menu keluar dari kanan layar
-    if (left + menuRect.width > viewportWidth - margin) {
-        left = viewportWidth - menuRect.width - margin;
+    if (left + menuWidth > viewportWidth - margin) {
+      left = viewportWidth - menuWidth - margin; // Prevent right overflow.
     }
 
+    // Apply the calculated position.
     this.position = { top, left };
-    this.isVisible = true; // Tampilkan setelah posisi dihitung
+    // Set visibility to true to trigger the show animation.
+    this.isVisible.set(true);
   }
 }

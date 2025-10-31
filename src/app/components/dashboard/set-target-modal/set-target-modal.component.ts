@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BookStateService } from '../../../state/book-state.service';
 import type { IBook } from '../../../../types/data';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-set-target-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   template: `
     <div 
       class="fixed inset-0 bg-black/70 flex justify-center items-center z-50
@@ -30,10 +31,8 @@ import { CommonModule } from '@angular/common';
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
             Set Daily Word Target
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
+            <app-icon name="outline-x-mark-24" class="w-6 h-6"></app-icon>
           </button>
         </div>
 
@@ -48,7 +47,7 @@ import { CommonModule } from '@angular/common';
               type="number"
               id="dailyTarget"
               formControlName="target"
-              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+              class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
               placeholder="e.g., 500"
               min="0"
             />
@@ -69,7 +68,7 @@ import { CommonModule } from '@angular/common';
             <button
               type="submit"
               [disabled]="targetForm.invalid || isLoading()"
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
             >
               {{ isLoading() ? 'Menyimpan...' : 'Simpan Target' }}
             </button>

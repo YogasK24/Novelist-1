@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import type { ICharacter, IRelationship } from '../../../../types/data';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-add-character-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   template: `
     <div 
       class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 transition-opacity duration-300"
@@ -29,10 +30,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
             {{ characterToEdit() ? 'Edit Character' : 'Add New Character' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
+            <app-icon name="outline-x-mark-24" class="w-6 h-6" />
           </button>
         </div>
 
@@ -47,7 +46,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               formControlName="name" 
               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                      text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
-                     focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+                     focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
               placeholder="e.g., Andra, Bima..."
               required
             />
@@ -66,7 +65,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                rows="3"
                class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                       text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
-                      focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+                      focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
                placeholder="Traits, role, or short notes..."
              ></textarea>
           </div>
@@ -81,7 +80,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                   
                   <select formControlName="targetId" class="flex-1 px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md 
                                                             text-gray-900 dark:text-white text-sm 
-                                                            focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500">
+                                                            focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500">
                     <option [ngValue]="null" disabled>Select Character</option>
                     @for (target of availableTargets(); track target.id) {
                       <option [ngValue]="target.id">{{ target.name }}</option>
@@ -91,12 +90,10 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                   <input type="text" formControlName="type" placeholder="Type (Rival, Friend, etc.)" 
                          class="flex-1 px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md 
                                 text-gray-900 dark:text-white text-sm placeholder-gray-400 dark:placeholder-gray-500
-                                focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500">
+                                focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500">
                   
                   <button type="button" (click)="removeRelationship($index)" class="text-red-400 hover:text-red-300 p-1 flex-shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Delete Relationship">
-                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                       <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193v-.443A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.84 0a.75.75 0 01-1.5.06l-.3 7.5a.75.75 0 111.5-.06l.3-7.5z" clip-rule="evenodd" />
-                     </svg>
+                     <app-icon name="solid-trash-20" class="w-5 h-5" />
                   </button>
                 </div>
               }
@@ -126,9 +123,9 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
             <button
               type="submit"
               [disabled]="characterForm.invalid || isLoading()" 
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md 
+              class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md 
                      disabled:opacity-50 disabled:cursor-not-allowed transition duration-150
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
             >
               {{ isLoading() ? 'Saving...' : (characterToEdit() ? 'Save Changes' : 'Save') }}
             </button>

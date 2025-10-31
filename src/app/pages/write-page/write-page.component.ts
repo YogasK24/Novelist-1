@@ -1,6 +1,4 @@
 // src/app/pages/write-page/write-page.component.ts
-// GANTI SELURUH ISI FILE INI
-
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink, Router, RouterOutlet } from '@angular/router'; 
 import { CommonModule, DecimalPipe } from '@angular/common'; 
@@ -9,6 +7,7 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
 import { ChapterListComponent } from '../../components/book-view/chapter-list/chapter-list.component'; 
 import { WorldDetailComponent } from '../../components/world-detail/world-detail.component'; 
 import { WritePageHeaderComponent } from '../../components/write-page/write-page-header/write-page-header.component'; 
+import { IconComponent } from '../../components/shared/icon/icon.component';
 
 @Component({
   selector: 'app-write-page',
@@ -19,7 +18,8 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
     RouterOutlet,
     ChapterListComponent, 
     WorldDetailComponent, 
-    WritePageHeaderComponent 
+    WritePageHeaderComponent,
+    IconComponent
   ],
   template: `
    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500 font-sans-ui"> 
@@ -37,12 +37,10 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
                        hover:bg-gray-300 dark:hover:bg-gray-700 
                        text-gray-800 dark:text-white rounded-r-lg shadow-lg 
                        transition-all duration-200
-                       focus:outline-none focus:ring-2 focus:ring-purple-500"
+                       focus:outline-none focus:ring-2 focus:ring-accent-500"
                 aria-label="Open Chapter List"
                 [class.hidden]="isChapterPanelOpen()">
-           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-           </svg>
+           <app-icon name="outline-chevron-double-right-24" class="w-5 h-5"></app-icon>
         </button>
         
         <div class="border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative 
@@ -52,11 +50,9 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
           
           @if (isChapterPanelOpen()) {
               <button (click)="isChapterPanelOpen.set(false)" 
-                      class="absolute top-2 right-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full"
+                      class="absolute top-2 right-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-accent-500 rounded-full"
                       aria-label="Close Chapter List">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-                  </svg>
+                  <app-icon name="outline-chevron-double-left-24" class="w-5 h-5"></app-icon>
               </button>
           }
           
@@ -79,12 +75,10 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
                        hover:bg-gray-300 dark:hover:bg-gray-700 
                        text-gray-800 dark:text-white rounded-l-lg shadow-lg 
                        transition-all duration-200
-                       focus:outline-none focus:ring-2 focus:ring-purple-500"
+                       focus:outline-none focus:ring-2 focus:ring-accent-500"
                 aria-label="Open World Notes"
                 [class.hidden]="isWorldPanelOpen()">
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-             </svg>
+             <app-icon name="outline-chevron-double-left-24" class="w-5 h-5"></app-icon>
         </button>
         
         <div class="border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative 
@@ -94,11 +88,9 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
 
           @if (isWorldPanelOpen()) {
               <button (click)="isWorldPanelOpen.set(false)" 
-                      class="absolute top-2 left-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full"
+                      class="absolute top-2 left-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-accent-500 rounded-full"
                       aria-label="Close World Notes">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-                  </svg>
+                  <app-icon name="outline-chevron-double-right-24" class="w-5 h-5"></app-icon>
               </button>
           }
 
@@ -117,26 +109,21 @@ import { WritePageHeaderComponent } from '../../components/write-page/write-page
   `
 })
 export class WritePageComponent implements OnInit, OnDestroy {
-  // FIX: Property 'params' does not exist on type 'unknown'. Explicitly type the injected ActivatedRoute.
   private route: ActivatedRoute = inject(ActivatedRoute);
-  // FIX: Property 'params' does not exist on type 'unknown'. Explicitly type the injected Router.
   private router: Router = inject(Router);
   public bookState = inject(CurrentBookStateService); 
 
   private routeSub: Subscription | undefined;
   
-  // State BARU untuk kontrol sidebar (default: Chapter terbuka, World tertutup)
   isChapterPanelOpen = signal(true); 
   isWorldPanelOpen = signal(false);
   
   ngOnInit(): void {
-    // Logic pemuatan ID buku tetap dipertahankan
     this.routeSub = this.route.params.subscribe(params => {
       const bookId = Number(params['id']); 
       if (!isNaN(bookId)) {
         this.bookState.loadBookData(bookId);
         this.bookState.loadWritingLogs(bookId);
-        // Also ensure World Detail data is loaded when the write page is opened
         this.bookState.loadCharacters(bookId);
         this.bookState.loadLocations(bookId);
         this.bookState.loadPlotEvents(bookId);
@@ -151,27 +138,22 @@ export class WritePageComponent implements OnInit, OnDestroy {
     this.bookState.clearBookData();
   }
 
-  // NEW: Open chapter panel, close world panel
   openChapterPanel(): void {
     this.isChapterPanelOpen.set(true);
     this.isWorldPanelOpen.set(false);
   }
 
-  // NEW: Open world panel, close chapter panel
   openWorldPanel(): void {
     this.isWorldPanelOpen.set(true);
     this.isChapterPanelOpen.set(false);
   }
   
-  // NEW toggleFocusMode logic (Super-Focus)
   toggleFocusMode(): void {
     const isCurrentlyFocus = !this.isChapterPanelOpen() && !this.isWorldPanelOpen();
     if (isCurrentlyFocus) {
-      // Exit Focus Mode: Open chapter panel (default)
       this.isChapterPanelOpen.set(true);
       this.isWorldPanelOpen.set(false);
     } else {
-      // Enter Focus Mode: Close both panels
       this.isChapterPanelOpen.set(false);
       this.isWorldPanelOpen.set(false);
     }

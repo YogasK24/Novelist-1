@@ -1,12 +1,16 @@
 // src/app/components/dashboard/options-menu/options-menu.component.ts
-import { Component, ChangeDetectionStrategy, input, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, inject, OnDestroy, Renderer2, ElementRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { BookStateService } from '../../../state/book-state.service';
+import { SettingsService } from '../../../state/settings.service';
+import { UiStateService } from '../../../state/ui-state.service';
+import { NotificationService } from '../../../state/notification.service';
 
 @Component({
   selector: 'app-options-menu',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     @if (show()) {
       <div class="absolute top-12 right-0 z-30 w-56 
@@ -17,37 +21,40 @@ import { BookStateService } from '../../../state/book-state.service';
            style="opacity: 1; transform: scale(1);">
         <div class="py-1" role="menu" aria-orientation="vertical" (click)="$event.stopPropagation()">
           
-          <button (click)="bookState.toggleShowArchived()"
+          <button (click)="onToggleArchived()"
                   class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
                          text-gray-700 dark:text-gray-200 
                          hover:bg-gray-100 dark:hover:bg-gray-600" 
                   role="menuitem">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-500 dark:text-gray-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-            </svg>
+            <app-icon name="outline-archive-box-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
             <span>{{ bookState.showArchived() ? 'Hide Archived' : 'Show Archived' }}</span>
           </button>
 
-          <a href="#" (click)="$event.preventDefault()" 
+          <button (click)="onOpenSettings()"
                   class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
                          text-gray-700 dark:text-gray-200 
                          hover:bg-gray-100 dark:hover:bg-gray-600" 
                   role="menuitem">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-500 dark:text-gray-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <span>Export Data (soon)</span>
+            <app-icon name="outline-settings-sliders-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span>Settings & Display</span>
+          </button>
+
+          <a href="#" (click)="onPlaceholderClick($event)" 
+                  class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
+                         text-gray-700 dark:text-gray-200 
+                         hover:bg-gray-100 dark:hover:bg-gray-600" 
+                  role="menuitem">
+            <app-icon name="outline-export-data-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span>Ekspor Data (soon)</span>
           </a>
 
-          <a href="#" (click)="$event.preventDefault()" 
+          <a href="#" (click)="onPlaceholderClick($event)" 
                   class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
                          text-gray-700 dark:text-gray-200 
                          hover:bg-gray-100 dark:hover:bg-gray-600" 
                   role="menuitem">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-500 dark:text-gray-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>About App (soon)</span>
+            <app-icon name="outline-info-circle-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span>Tentang Aplikasi (soon)</span>
           </a>
           
         </div>
@@ -56,7 +63,80 @@ import { BookStateService } from '../../../state/book-state.service';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OptionsMenuComponent {
+export class OptionsMenuComponent implements OnDestroy {
   show = input.required<boolean>();
+  triggerElement = input<HTMLElement | undefined>();
+
   bookState = inject(BookStateService);
+  settingsService = inject(SettingsService);
+  private uiState = inject(UiStateService);
+  private renderer = inject(Renderer2);
+  private elementRef = inject(ElementRef);
+  private notificationService = inject(NotificationService);
+  
+  private unlisten: (() => void) | null = null;
+
+  constructor() {
+    effect((onCleanup) => {
+      if (this.show()) {
+        // Tunda pemasangan listener untuk menghindari event klik yang sama yang membuka menu
+        // agar tidak langsung menutupnya kembali.
+        const timerId = setTimeout(() => {
+          if (!this.unlisten) {
+            this.unlisten = this.renderer.listen('document', 'click', this.handleGlobalClick);
+          }
+        }, 0);
+        
+        onCleanup(() => {
+            clearTimeout(timerId);
+        });
+
+      } else {
+        this.removeGlobalListener();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.removeGlobalListener();
+  }
+
+  onToggleArchived(): void {
+    this.bookState.toggleShowArchived();
+    this.uiState.closeAllMenus();
+  }
+
+  onOpenSettings(): void {
+    this.settingsService.openModal();
+    this.uiState.closeAllMenus();
+  }
+
+  onPlaceholderClick(event: MouseEvent): void {
+    event.preventDefault();
+    this.notificationService.info('Fitur ini akan segera tersedia!');
+    this.uiState.closeAllMenus();
+  }
+
+  private removeGlobalListener(): void {
+    if (this.unlisten) {
+      this.unlisten();
+      this.unlisten = null;
+    }
+  }
+  
+  // Menggunakan arrow function untuk menjaga konteks `this` untuk listener
+  private handleGlobalClick = (event: MouseEvent): void => {
+    const trigger = this.triggerElement();
+    const menu = this.elementRef.nativeElement;
+
+    // Jika klik terjadi di luar trigger DAN di luar menu, itu adalah "klik di luar"
+    const wasClickOutside = trigger 
+      && menu
+      && !trigger.contains(event.target as Node) 
+      && !menu.contains(event.target as Node);
+
+    if (wasClickOutside) {
+      this.uiState.closeAllMenus();
+    }
+  };
 }

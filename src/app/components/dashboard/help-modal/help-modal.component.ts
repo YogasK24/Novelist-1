@@ -1,11 +1,12 @@
 // src/app/components/dashboard/help-modal/help-modal.component.ts
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-help-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div 
       class="fixed inset-0 bg-black/70 flex justify-center items-center z-50
@@ -27,18 +28,13 @@ import { CommonModule } from '@angular/common';
       >
         <div class="flex justify-between items-center mb-4">
           <div class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" 
-                 class="w-6 h-6 text-purple-600 dark:text-purple-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-            </svg>
+            <app-icon name="outline-help-question-24" class="w-6 h-6 text-accent-600 dark:text-accent-400" />
             <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
-              Help & Information
+              Bantuan & Informasi
             </h2>
           </div>
           <button (click)="closeModal.emit()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <app-icon name="outline-x-mark-24" class="w-6 h-6" />
           </button>
         </div>
 

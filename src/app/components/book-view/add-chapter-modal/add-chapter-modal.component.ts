@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormArray, FormControl } from '@angular/forms';
 import type { IChapter } from '../../../../types/data';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-add-chapter-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   template: `
     <div 
       class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 transition-opacity duration-300"
@@ -24,10 +25,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
             {{ chapterToEdit() ? 'Edit Chapter Title' : 'Create New Chapter' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-purple-500 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
+            <app-icon name="outline-x-mark-24" class="w-6 h-6" />
           </button>
         </div>
 
@@ -40,7 +39,7 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
               formControlName="title"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
                      text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
-                     focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-500"
+                     focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
               placeholder="e.g., Chapter 1: The Beginning"
               required
             />
@@ -58,8 +57,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
                      [id]="'chap-char-' + char.id" 
                      [checked]="characterIds.value.includes(char.id!)"
                      (change)="onCharacterCheck(char.id!, $event)"
-                     class="h-4 w-4 text-purple-600 bg-gray-200 dark:bg-gray-900 border-gray-400 dark:border-gray-600 rounded 
-                            focus:ring-purple-600 dark:focus:ring-purple-500">
+                     class="h-4 w-4 text-accent-600 bg-gray-200 dark:bg-gray-900 border-gray-400 dark:border-gray-600 rounded 
+                            focus:ring-accent-600 dark:focus:ring-accent-500">
                    <label [for]="'chap-char-' + char.id" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ char.name }}</label>
                  </div>
                }
@@ -72,8 +71,8 @@ import { CurrentBookStateService } from '../../../state/current-book-state.servi
           <div class="flex justify-end space-x-3">
             <button type="button" (click)="close()" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 
                                                         text-gray-800 dark:text-gray-200 rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500"> Cancel </button>
-            <button type="submit" [disabled]="chapterForm.invalid || isLoading()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md 
-                                                                                   disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"> 
+            <button type="submit" [disabled]="chapterForm.invalid || isLoading()" class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md 
+                                                                                   disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"> 
               {{ isLoading() ? 'Saving...' : 'Save' }} 
             </button>
           </div>
