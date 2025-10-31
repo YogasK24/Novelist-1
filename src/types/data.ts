@@ -12,6 +12,15 @@ export interface IBook {
   isPinned?: boolean;        // <-- NEW: To keep book at the top
 }
 
+// --- TAMBAHKAN INTERFACE BARU DI SINI ---
+// (Ini adalah tipe yang kita pindahkan)
+export interface IBookWithStats extends IBook {
+  chapterCount?: number;
+  characterCount?: number;
+  dailyProgressPercentage?: number;
+}
+// --- AKHIR TAMBAHAN ---
+
 export interface IRelationship { // <-- NEW: Relationship Interface
   targetId: number; // ID of the other Character
   type: string;     // Type of relationship, e.g., 'Rival', 'Ally', 'Family'

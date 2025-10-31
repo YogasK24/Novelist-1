@@ -14,6 +14,9 @@ export type IconMap = Map<string, string[]>;
  */
 export const ICONS: IconMap = new Map<string, string[]>([
   // --- Ikon Solid (viewBox="0 0 20 20") ---
+  ['solid-arrow-down-circle-20', [
+    'M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.7a.75.75 0 00-1.1 1.02l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75z'
+  ]],
   ['solid-pencil-20', [
     'M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z'
   ]],

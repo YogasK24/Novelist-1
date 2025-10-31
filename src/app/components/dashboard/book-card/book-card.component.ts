@@ -2,19 +2,12 @@
 import { Component, ChangeDetectionStrategy, input, output, inject } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import type { IBook } from '../../../../types/data';
+import type { IBook, IBookWithStats } from '../../../../types/data';
 import { BookStateService } from '../../../state/book-state.service';
 import { DropdownMenuComponent, type MenuItem } from '../../shared/dropdown-menu/dropdown-menu.component';
 import { UiStateService } from '../../../state/ui-state.service';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { ConfirmationService } from '../../../state/confirmation.service';
-
-// Interface dari BookStateService (untuk type hint di input)
-interface IBookWithStats extends IBook {
-  chapterCount?: number;
-  characterCount?: number;
-  dailyProgressPercentage?: number;
-}
 
 @Component({
   selector: 'app-book-card',

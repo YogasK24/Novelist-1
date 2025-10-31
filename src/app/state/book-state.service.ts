@@ -2,16 +2,9 @@
 
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { DatabaseService } from './database.service'; 
-import type { IBook, IWritingLog } from '../../types/data';
+import type { IBook, IWritingLog, IBookWithStats } from '../../types/data';
 import { NotificationService } from './notification.service'; 
 import { SettingsService } from './settings.service'; // <-- 1. IMPORT
-
-// NEW: Define IBook type with additional properties for UI
-interface IBookWithStats extends IBook {
-  chapterCount?: number;
-  characterCount?: number;
-  dailyProgressPercentage?: number; // <-- Add daily progress
-}
 
 // NEW: Define Type for Sorting
 export type SortMode = 'title' | 'lastModified';
@@ -46,17 +39,20 @@ export class BookStateService {
   // State untuk View
   readonly viewMode = signal<ViewMode>(this.settingsService.dashboardViewMode());
 
+  // --- NEW: Computed Signal for Filtering ---
+  readonly filteredBooks = computed(() => {
+    const books = this.books();
+    const showArchived = this.showArchived();
+    return books.filter(book => showArchived || !book.isArchived);
+  });
+
   // --- NEW: Computed Signal for Displaying Sorted Books ---
   readonly sortedBooks = computed(() => {
-    const books = this.books();
+    const booksToSort = this.filteredBooks();
     const config = this.sortConfig();
-    const showArchived = this.showArchived();
-
-    // 1. Filter out archived books if not shown
-    const filteredBooks = books.filter(book => showArchived || !book.isArchived);
     
     // 2. Sort the filtered books
-    return [...filteredBooks].sort((a, b) => {
+    return [...booksToSort].sort((a, b) => {
       // Primary Sort: Pinned books always come first
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -142,7 +138,7 @@ export class BookStateService {
       // NEW: Fetch additional stats for each book
       const booksWithStats: IBookWithStats[] = await Promise.all(
         basicBooks.map(async (book) => {
-          if (book.id === undefined) return book; // Safety check
+          if (book.id === undefined) return book as IBookWithStats; // Safety check
           
           try {
             const [chapters, characters, logs] = await Promise.all([
@@ -166,7 +162,7 @@ export class BookStateService {
             };
           } catch (statError) {
             console.error(`Failed to fetch stats for book ID ${book.id}:`, statError);
-            return book; // Return the basic book if fetching stats fails
+            return book as IBookWithStats; // Return the basic book if fetching stats fails
           }
         })
       );

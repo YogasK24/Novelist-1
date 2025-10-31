@@ -8,6 +8,8 @@ import type { IChapter } from '../../../../types/data';
 import { AddChapterModalComponent } from '../add-chapter-modal/add-chapter-modal.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { ConfirmationService } from '../../../state/confirmation.service';
+import { BackupService } from '../../../state/backup.service';
+import { NotificationService } from '../../../state/notification.service';
 
 @Component({
   selector: 'app-chapter-list-tab',
@@ -71,7 +73,11 @@ import { ConfirmationService } from '../../../state/confirmation.service';
                      }
                   </div>
 
-                  <div class="flex-shrink-0 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity p-4">
+                  <div class="flex-shrink-0 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 opacity-0 group-hover:opacity-100 transition-opacity p-4">
+                     <button [disabled]="isReordering()" (click)="exportChapter(chap, $event)" 
+                             class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500" aria-label="Export Chapter as .txt">
+                       <app-icon name="solid-arrow-down-circle-20" class="w-5 h-5"></app-icon>
+                     </button>
                      <button [disabled]="isReordering()" (click)="openEditModal(chap); $event.stopPropagation()" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Edit Chapter Title">
                        <app-icon name="solid-pencil-20" class="w-5 h-5"></app-icon>
                      </button>
@@ -108,6 +114,8 @@ export class ChapterListComponent {
   public bookState = inject(CurrentBookStateService); 
   private router: Router = inject(Router);
   private confirmationService = inject(ConfirmationService);
+  private backupService = inject(BackupService);
+  private notifier = inject(NotificationService);
   
   @ViewChild('chapterList') chapterList!: CdkDropList<IChapter[]>;
 
@@ -134,6 +142,12 @@ export class ChapterListComponent {
       message: `Yakin ingin menghapus bab "${name}"?`,
       onConfirm: () => this.bookState.deleteChapter(id)
     });
+  }
+
+  exportChapter(chapter: IChapter, event: MouseEvent): void {
+    event.stopPropagation(); // Hentikan klik agar tidak membuka editor
+    this.notifier.info(`Mengekspor "${chapter.title}"...`);
+    this.backupService.exportChapterAsText(chapter);
   }
 
   openEditor(chapter: IChapter): void {

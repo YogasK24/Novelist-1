@@ -1,10 +1,11 @@
 // src/app/components/shared/settings-modal/settings-modal.component.ts
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, type AutoSaveInterval } from '../../../state/settings.service';
 import { IconComponent } from '../icon/icon.component';
 import { ConfirmationService } from '../../../state/confirmation.service';
+import { BackupService } from '../../../state/backup.service';
 import { 
   TAB_OPTIONS, 
   THEME_OPTIONS, 
@@ -354,22 +355,49 @@ import {
 
                 @case ('data') {
                    <div class="space-y-6">
+                    
                     <fieldset class="space-y-2">
-                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Ekspor & Impor</legend>
-                      <p class="text-sm text-gray-600 dark:text-gray-400">Simpan cadangan data Anda atau pindahkan ke perangkat lain.</p>
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Ekspor Data</legend>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Simpan cadangan data Anda ke file di komputer.</p>
 
-                      <div class="pt-4">
-                        <button class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 
-                                       text-gray-800 dark:text-gray-200 rounded-md transition duration-150 
-                                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500
-                                       disabled:opacity-50" disabled>
-                          Ekspor Semua Data (Segera Hadir)
+                      <div class="pt-4 space-y-3">
+                        <button (click)="handleExportFull()"
+                                class="w-full sm:w-auto px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md 
+                                       font-semibold transition-colors duration-150
+                                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500">
+                          Ekspor Backup Lengkap (.json)
+                        </button>
+                        <p class="text-xs text-gray-500">Mencadangkan SEMUA novel, pengaturan, dan progres.</p>
+                        
+                        <button class="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-md 
+                                       text-gray-800 dark:text-gray-200 disabled:opacity-50 cursor-not-allowed" disabled>
+                          Ekspor Novel Tunggal (.zip) (Segera Hadir)
                         </button>
                       </div>
-                      
+                    </fieldset>
+
+                    <fieldset class="space-y-2 border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Impor Data</legend>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Pulihkan data dari file backup (.json) Novelist.</p>
+                      <p class="text-sm font-semibold text-red-500 dark:text-red-400">PERINGATAN: Ini akan menghapus dan menimpa SEMUA data yang ada saat ini.</p>
+
+                      <div class="pt-4">
+                        <button (click)="triggerImportFile()"
+                                class="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md 
+                                       font-semibold transition-colors duration-150
+                                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                          Impor dari File Backup...
+                        </button>
+                        
+                        <input type="file" #importFileInput 
+                               class="hidden" 
+                               accept="application/json,.json"
+                               (change)="handleFileImport($event)">
+                      </div>
                     </fieldset>
                    </div>
                 }
+
               }
             </div>
           </div>
@@ -398,8 +426,11 @@ import {
 export class SettingsModalComponent {
   readonly settingsService = inject(SettingsService);
   readonly confirmationService = inject(ConfirmationService);
+  private readonly backupService = inject(BackupService);
   
   activeTab = signal<'tampilan' | 'editor' | 'aksesibilitas' | 'data'>('tampilan');
+
+  @ViewChild('importFileInput') importFileInput!: ElementRef<HTMLInputElement>;
 
   readonly tabs = TAB_OPTIONS;
   readonly themeOptions = THEME_OPTIONS;
@@ -418,6 +449,37 @@ export class SettingsModalComponent {
         this.settingsService.resetToDefaults();
       }
     });
+  }
+
+  handleExportFull(): void {
+    this.backupService.exportFullBackup();
+    this.settingsService.closeModal(); // Tutup modal setelah aksi
+  }
+
+  triggerImportFile(): void {
+    // Minta konfirmasi SEBELUM memilih file
+    this.confirmationService.requestConfirmation({
+      message: 'Anda yakin? Ini akan MENIMPA SEMUA data saat ini dengan data dari file backup. Aksi ini tidak bisa dibatalkan.',
+      confirmButtonText: 'Ya, Saya Mengerti, Lanjutkan',
+      onConfirm: () => {
+        // Jika dikonfirmasi, baru klik input file
+        this.importFileInput.nativeElement.click();
+      }
+    });
+  }
+  
+  handleFileImport(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      // Serahkan file ke service untuk diproses
+      this.backupService.importFullBackup(file);
+      
+      // Reset input file agar bisa mengimpor file yang sama lagi
+      input.value = '';
+      this.settingsService.closeModal(); // Tutup modal
+    }
   }
 
   onFontSizeChange(value: string | number): void {

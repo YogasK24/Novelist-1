@@ -22,6 +22,17 @@ interface INovelistDB {
   writingLogs: Table<IWritingLog, number>; // <-- NEW
 }
 
+export interface IFullBackupDatabase {
+  books: IBook[];
+  characters: ICharacter[];
+  locations: ILocation[];
+  plotEvents: IPlotEvent[];
+  chapters: IChapter[];
+  themes: ITheme[];
+  props: IProp[];
+  writingLogs: IWritingLog[];
+}
+
 @Injectable({
   providedIn: 'root' 
 })
@@ -399,4 +410,39 @@ export class DatabaseService {
     return results.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // --- NEW: DATA BACKUP/RESTORE METHODS ---
+  async exportAllData(): Promise<IFullBackupDatabase> {
+      const [
+        books, characters, locations, plotEvents, chapters, themes, props, writingLogs
+      ] = await Promise.all([
+        this.db.books.toArray(),
+        this.db.characters.toArray(),
+        this.db.locations.toArray(),
+        this.db.plotEvents.toArray(),
+        this.db.chapters.toArray(),
+        this.db.themes.toArray(),
+        this.db.props.toArray(),
+        this.db.writingLogs.toArray(),
+      ]);
+      return { books, characters, locations, plotEvents, chapters, themes, props, writingLogs };
+  }
+
+  async importAllData(data: IFullBackupDatabase): Promise<void> {
+      await this.db.transaction('rw', this.db.tables, async () => {
+        // Hapus semua data lama
+        await Promise.all(this.db.tables.map(table => table.clear()));
+        
+        // Masukkan data baru
+        await Promise.all([
+          this.db.books.bulkAdd(data.books),
+          this.db.characters.bulkAdd(data.characters),
+          this.db.locations.bulkAdd(data.locations),
+          this.db.plotEvents.bulkAdd(data.plotEvents),
+          this.db.chapters.bulkAdd(data.chapters),
+          this.db.themes.bulkAdd(data.themes),
+          this.db.props.bulkAdd(data.props),
+          this.db.writingLogs.bulkAdd(data.writingLogs),
+        ]);
+      });
+  }
 }
