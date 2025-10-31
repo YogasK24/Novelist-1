@@ -4,6 +4,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { DatabaseService } from './database.service'; 
 import type { IBook, IWritingLog } from '../../types/data';
 import { NotificationService } from './notification.service'; 
+import { SettingsService } from './settings.service'; // <-- 1. IMPORT
 
 // NEW: Define IBook type with additional properties for UI
 interface IBookWithStats extends IBook {
@@ -30,20 +31,20 @@ export type ViewMode = 'grid' | 'list';
 export class BookStateService {
   private readonly dbService = inject(DatabaseService);
   private readonly notificationService = inject(NotificationService); 
+  private readonly settingsService = inject(SettingsService); // <-- 2. INJECT
 
   // --- PRIMARY STATE (Use NEW Type) ---
   readonly books = signal<IBookWithStats[]>([]); // <-- Use IBookWithStats
   readonly isLoading = signal<boolean>(false);
   readonly showArchived = signal<boolean>(false); // <-- NEW
 
-  // --- NEW: State for Sorting ---
-  readonly sortConfig = signal<SortConfig>({
-    mode: 'lastModified', // Default sort by most recent
-    direction: 'desc'
-  });
+  // --- 3. UBAH INISIALISASI STATE (BACA DARI SETTINGS) ---
+  
+  // State untuk Sorting
+  readonly sortConfig = signal<SortConfig>(this.getInitialSortConfig());
 
-  // --- NEW: State for View ---
-  readonly viewMode = signal<ViewMode>('grid');
+  // State untuk View
+  readonly viewMode = signal<ViewMode>(this.settingsService.dashboardViewMode());
 
   // --- NEW: Computed Signal for Displaying Sorted Books ---
   readonly sortedBooks = computed(() => {
@@ -86,10 +87,22 @@ export class BookStateService {
   constructor() {
     this.fetchBooks(); 
   }
+  
+  // 4. BUAT FUNGSI HELPER UNTUK INISIALISASI SORT
+  private getInitialSortConfig(): SortConfig {
+    const defaultMode = this.settingsService.dashboardSortMode();
+    return {
+      mode: defaultMode,
+      direction: defaultMode === 'title' ? 'asc' : 'desc'
+    };
+  }
 
-  // --- NEW: Method to Change View ---
+  // --- 5. MODIFIKASI FUNGSI SETTER (UNTUK MENYIMPAN) ---
+  
+  // Method to Change View
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
+    this.settingsService.dashboardViewMode.set(mode); // <-- SIMPAN PREFERENSI
   }
   
   // --- NEW: Method to toggle archived visibility ---
@@ -97,19 +110,25 @@ export class BookStateService {
     this.showArchived.update(v => !v);
   }
 
-  // --- NEW: Method to Change Sorting ---
+  // Method to Change Sorting
   setSort(mode: SortMode) {
     this.sortConfig.update(currentConfig => {
+      let newConfig: SortConfig;
       if (currentConfig.mode === mode) {
         // If the mode is the same, reverse the direction
-        return { ...currentConfig, direction: currentConfig.direction === 'asc' ? 'desc' : 'asc' };
+        newConfig = { ...currentConfig, direction: currentConfig.direction === 'asc' ? 'desc' : 'asc' };
       } else {
         // If it's a new mode, set the default direction
-        return {
+        newConfig = {
           mode: mode,
           direction: mode === 'title' ? 'asc' : 'desc' // Title A-Z, Newest Date
         };
       }
+      
+      // SIMPAN PREFERENSI (hanya mode-nya)
+      this.settingsService.dashboardSortMode.set(newConfig.mode);
+      
+      return newConfig;
     });
   }
 

@@ -7,70 +7,86 @@ import { CurrentBookStateService } from '../../state/current-book-state.service'
 import { SettingsService } from '../../state/settings.service';
 import type { IChapter } from '../../../types/data';
 import { IconComponent } from '../../components/shared/icon/icon.component';
+import { EditorStatusBarComponent } from '../../components/write-page/editor-status-bar/editor-status-bar.component';
 
 declare var Quill: any;
 
 @Component({
   selector: 'app-editor-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, EditorStatusBarComponent],
   template: `
     @if (isLoading()) {
       <div class="flex h-full w-full items-center justify-center">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-400 dark:border-accent-600"></div>
       </div>
     } @else if (chapter(); as currentChapter) {
-      <div class="flex h-full flex-col p-4 sm:p-6 bg-white dark:bg-gray-800 transition-colors duration-500">
-        <div class="mb-4 flex flex-shrink-0 items-center justify-between border-b border-gray-300 dark:border-gray-700 pb-3">
-          <h2 class="truncate text-2xl font-bold text-gray-900 dark:text-gray-200" [title]="currentChapter.title">
-            {{ currentChapter.title }}
-          </h2>
-          <div class="flex-shrink-0 text-right flex items-center">
-            
-            @if (isSaving()) {
-              <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Saving...
-              </span>
-            } @else if (showSavedConfirmation()) {
-              <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Saved
-              </span>
-            } @else if (isDirty()) {
-              <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                Unsaved changes
-              </span>
-            } @else {
-               <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
-                All saved
-              </span>
-            }
-
-            <button 
-              (click)="saveContent()" 
-              [disabled]="!isDirty() || isSaving() || showSavedConfirmation()"
-              class="ml-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 
-                     w-28 flex items-center justify-center
-                     disabled:cursor-not-allowed
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500"
-              [class.bg-accent-600]="!showSavedConfirmation()" [class.hover:bg-accent-700]="!showSavedConfirmation()"
-              [class.bg-green-600]="showSavedConfirmation()"
-              [class.opacity-50]="!isDirty()"
-              [class.opacity-100]="isDirty()">
+      <div class="flex h-full flex-col bg-white dark:bg-gray-800 transition-colors duration-500">
+        
+        <div class="flex-shrink-0 p-4 sm:p-6">
+          <div class="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 pb-3">
+            <h2 class="truncate text-2xl font-bold text-gray-900 dark:text-gray-200" [title]="currentChapter.title">
+              {{ currentChapter.title }}
+            </h2>
+            <div class="flex-shrink-0 text-right flex items-center">
               
               @if (isSaving()) {
-                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span class="hidden text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
+                  Saving...
+                </span>
               } @else if (showSavedConfirmation()) {
-                <app-icon name="outline-check-24" class="w-5 h-5" />
+                <span class="hidden text-sm text-green-600 dark:text-green-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
+                  Saved
+                </span>
+              } @else if (isDirty()) {
+                <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
+                  Unsaved changes
+                </span>
               } @else {
-                <span>Save</span>
+                 <span class="hidden text-sm text-gray-600 dark:text-gray-400 transition-opacity duration-300 ease-in-out sm:inline mr-3">
+                  All saved
+                </span>
               }
-            </button>
+
+              <button 
+                (click)="saveContent()" 
+                [disabled]="isSaving() || showSavedConfirmation()"
+                class="ml-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 
+                       w-28 flex items-center justify-center
+                       disabled:cursor-not-allowed
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500"
+                [class.bg-accent-600]="!showSavedConfirmation()" [class.hover:bg-accent-700]="!showSavedConfirmation()"
+                [class.bg-green-600]="showSavedConfirmation()"
+                [class.opacity-50]="!isDirty()"
+                [class.opacity-100]="isDirty()">
+                
+                @if (isSaving()) {
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                } @else if (showSavedConfirmation()) {
+                  <app-icon name="outline-check-24" class="w-5 h-5" />
+                } @else {
+                  <span>
+                    @if(settingsService.editorAutoSaveInterval() === 0) {
+                      Save
+                    } @else {
+                      Save Now
+                    }
+                  </span>
+                }
+              </button>
+            </div>
           </div>
         </div>
         
-        <div class="quill-container flex-grow overflow-y-auto relative -mx-4 -mb-4 sm:-mx-6 sm:-mb-6">
+        <div class="quill-container flex-grow overflow-y-auto relative">
           <div #editor class="h-full"></div>
         </div>
+
+        @if (settingsService.editorShowStatusBar()) {
+          <app-editor-status-bar 
+            [wordCount]="currentWordCount()">
+          </app-editor-status-bar>
+        }
 
       </div>
     } @else {
@@ -99,6 +115,38 @@ declare var Quill: any;
       max-width: 48rem; /* 3xl (768px) */
       margin: 0 auto;
     }
+
+    /* --- STYLING PARAGRAF BARU --- */
+
+    /* 1. Atur default <p> agar tidak ada margin (Quill style) */
+    .quill-container .ql-editor p {
+      margin-bottom: 0;
+      text-indent: 0;
+      transition: margin-bottom 0.2s ease-in-out, text-indent 0.2s ease-in-out;
+    }
+
+    /* 2. Terapkan Indentasi jika 'editor-indent' aktif di <html> */
+    :host-context(html.editor-indent) .ql-editor p {
+      text-indent: 2em;
+    }
+
+    /* 3. Terapkan Spasi Paragraf jika 'editor-spacing' aktif di <html> */
+    :host-context(html.editor-spacing) .ql-editor p {
+      margin-bottom: 0.85em;
+    }
+
+    /* 4. Pengecualian: JANGAN beri indentasi pada paragraf 
+           yang di-indent manual oleh user dari toolbar Quill */
+    :host-context(html.editor-indent) .ql-editor p[class*="ql-indent-"] {
+      text-indent: 0;
+    }
+
+    /* 5. Pengecualian: JANGAN beri spasi paragraf pada 
+           item list (Quill menggunakan <li>) */
+    .quill-container .ql-editor li {
+      margin-bottom: 0; 
+    }
+
     .ql-snow.ql-container {
       border: none !important;
       height: calc(100% - 55px); /* Adjusted height for new toolbar */
@@ -188,7 +236,7 @@ declare var Quill: any;
 export class EditorPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
-  private settingsService = inject(SettingsService);
+  public settingsService = inject(SettingsService);
 
   editorRef = viewChild.required<ElementRef>('editor');
 
@@ -197,6 +245,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   isSaving = signal(false);
   isDirty = signal(false);
   showSavedConfirmation = signal(false);
+  currentWordCount = signal<number>(0);
   
   private chapterId = signal<number | null>(null);
   private subscriptions = new Subscription();
@@ -286,6 +335,26 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  private countWords(content: string): number {
+    if (!content) return 0;
+    try {
+      if (content.trim().startsWith('{')) {
+        const delta = JSON.parse(content);
+        if (delta && Array.isArray(delta.ops)) {
+          return delta.ops.reduce((count: number, op: any) => {
+            if (typeof op.insert === 'string') {
+              const words = op.insert.trim().split(/\s+/).filter(Boolean);
+              return count + words.length;
+            }
+            return count;
+          }, 0);
+        }
+      }
+    } catch(e) { /* Fallback to plain text */ }
+
+    return content.trim().split(/\s+/).filter(Boolean).length;
+  }
+
   private setupQuill(): void {
     const editorEl = this.editorRef()?.nativeElement;
     if (!editorEl || this.quill) return;
@@ -309,11 +378,15 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     if (currentContent) {
       try {
         const delta = JSON.parse(currentContent);
-        this.quill.setContents(delta);
+        this.quill.setContents(delta, 'silent');
       } catch(e) {
-        this.quill.setText(currentContent);
+        this.quill.setText(currentContent, 'silent');
       }
+    } else {
+        this.quill.setText('', 'silent');
     }
+
+    this.currentWordCount.set(this.countWords(currentContent || ''));
 
     this.quill.focus();
     this.quill.on('text-change', this.onEditorChange);
@@ -323,10 +396,16 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     if (source === 'user') {
       this.isDirty.set(true);
       this.showSavedConfirmation.set(false);
+      clearTimeout(this.savedConfirmationTimeout);
       clearTimeout(this.saveTimeout);
-      this.saveTimeout = setTimeout(() => {
-        this.saveContent();
-      }, 2500); // Auto-save after 2.5s of inactivity
+
+      const content = JSON.stringify(this.quill.getContents());
+      this.currentWordCount.set(this.countWords(content));
+
+      const autoSaveInterval = this.settingsService.editorAutoSaveInterval();
+      if (autoSaveInterval > 0) { 
+        this.saveTimeout = setTimeout(() => this.saveContent(), autoSaveInterval);
+      }
     }
   };
   
@@ -341,13 +420,14 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     }
 
     this.isSaving.set(true);
-    this.isDirty.set(false);
     clearTimeout(this.saveTimeout);
 
     try {
       const content = JSON.stringify(this.quill.getContents());
+      this.currentWordCount.set(this.countWords(content));
       await this.bookState.updateChapterContent(currentChapter.id, content);
-
+      
+      this.isDirty.set(false);
       // Show "Saved" confirmation
       this.showSavedConfirmation.set(true);
       clearTimeout(this.savedConfirmationTimeout);

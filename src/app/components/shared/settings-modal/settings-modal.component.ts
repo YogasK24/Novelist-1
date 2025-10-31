@@ -2,8 +2,19 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, type EditorFont, type ThemeSetting, type AccentPalette } from '../../../state/settings.service';
+import { SettingsService, type AutoSaveInterval } from '../../../state/settings.service';
 import { IconComponent } from '../icon/icon.component';
+import { ConfirmationService } from '../../../state/confirmation.service';
+import { 
+  TAB_OPTIONS, 
+  THEME_OPTIONS, 
+  ACCENT_OPTIONS, 
+  FONT_OPTIONS,
+  UI_FONT_OPTIONS,
+  AUTO_SAVE_OPTIONS,
+  DASHBOARD_VIEW_OPTIONS,
+  DASHBOARD_SORT_OPTIONS
+} from '../../../core/settings.constants';
 
 @Component({
   selector: 'app-settings-modal',
@@ -113,13 +124,68 @@ import { IconComponent } from '../icon/icon.component';
                         }
                       </div>
                     </fieldset>
+                    
+                    <fieldset class="space-y-2 border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Font Antarmuka (UI)</legend>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Ubah font untuk seluruh aplikasi (tombol, menu, dll).</p>
+                      
+                      <div>
+                        <label for="uiFontFamily" class="sr-only">Pilih Font UI</label>
+                        <select id="uiFontFamily"
+                                [ngModel]="settingsService.uiFontFamily()"
+                                (ngModelChange)="settingsService.uiFontFamily.set($event)"
+                                class="w-full sm:w-2/3 mt-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
+                                       text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-600">
+                          @for (font of uiFontOptions; track font.value) {
+                            <option [value]="font.value">{{ font.label }}</option>
+                          }
+                        </select>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Preferensi Dashboard</legend>
+                      
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tampilan Default</label>
+                        <div class="flex gap-4">
+                          @for (opt of dashboardViewOptions; track opt.value) {
+                            <label class="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" name="dashboardView"
+                                     [value]="opt.value"
+                                     [ngModel]="settingsService.dashboardViewMode()"
+                                     (ngModelChange)="settingsService.dashboardViewMode.set($event)"
+                                     class="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-400">
+                              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ opt.label }}</span>
+                            </label>
+                          }
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Urutan Default</label>
+                         <div class="flex gap-4">
+                          @for (opt of dashboardSortOptions; track opt.value) {
+                            <label class="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" name="dashboardSort"
+                                     [value]="opt.value"
+                                     [ngModel]="settingsService.dashboardSortMode()"
+                                     (ngModelChange)="settingsService.dashboardSortMode.set($event)"
+                                     class="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-400">
+                              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ opt.label }}</span>
+                            </label>
+                          }
+                        </div>
+                      </div>
+
+                    </fieldset>
                   </div>
                 }
 
                 @case ('editor') {
                   <div class="space-y-6">
                     <fieldset class="space-y-4">
-                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Kustomisasi Editor</legend>
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Tipografi</legend>
                       
                       <div>
                         <label for="fontFamily" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jenis Font</label>
@@ -138,20 +204,111 @@ import { IconComponent } from '../icon/icon.component';
                         <label for="fontSize" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Ukuran Font ({{ settingsService.editorFontSize() }}rem)
                         </label>
-                        <input type="range" id="fontSize" min="0.875" max="1.5" step="0.125"
-                               [ngModel]="settingsService.editorFontSize()"
-                               (ngModelChange)="settingsService.editorFontSize.set(Number($event))"
-                               class="w-full sm:w-2/3 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-accent-600">
+                         <div class="flex items-center gap-3 w-full sm:w-2/3">
+                          <span class="text-xs text-gray-500 dark:text-gray-400">Kecil</span>
+                          <input type="range" id="fontSize" min="0.875" max="1.5" step="0.125"
+                                 [ngModel]="settingsService.editorFontSize()"
+                                 (ngModelChange)="onFontSizeChange($event)"
+                                 class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-accent-600">
+                          <span class="text-xs text-gray-500 dark:text-gray-400">Besar</span>
+                        </div>
                       </div>
 
                       <div>
                         <label for="lineHeight" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Jarak Baris ({{ settingsService.editorLineHeight() }}x)
                         </label>
-                        <input type="range" id="lineHeight" min="1.4" max="2.2" step="0.1"
-                               [ngModel]="settingsService.editorLineHeight()"
-                               (ngModelChange)="settingsService.editorLineHeight.set(Number($event))"
-                               class="w-full sm:w-2/3 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-accent-600">
+                        <div class="flex items-center gap-3 w-full sm:w-2/3">
+                          <span class="text-xs text-gray-500 dark:text-gray-400">Rapat</span>
+                          <input type="range" id="lineHeight" min="1.4" max="2.2" step="0.1"
+                                 [ngModel]="settingsService.editorLineHeight()"
+                                 (ngModelChange)="onLineHeightChange($event)"
+                                 class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-accent-600">
+                          <span class="text-xs text-gray-500 dark:text-gray-400">Lebar</span>
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    <div class="border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <label for="livePreview" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Pratinjau Langsung (Interaktif)
+                      </label>
+                      <textarea 
+                        id="livePreview"
+                        rows="4"
+                        class="w-full p-4 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 
+                               text-gray-900 dark:text-gray-300 resize-none
+                               focus:outline-none focus:ring-2 focus:ring-accent-500"
+                        placeholder="Ketik di sini untuk merasakan font pilihan Anda..."
+                        [style.fontFamily]="settingsService.editorFontFamily()"
+                        [style.fontSize.rem]="settingsService.editorFontSize()"
+                        [style.lineHeight]="settingsService.editorLineHeight()"
+                      ></textarea>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        * Pratinjau ini akan menerapkan Jenis Font, Ukuran, dan Jarak Baris.
+                        <br/>
+                        * Indentasi & Spasi Paragraf akan terlihat di editor yang sesungguhnya.
+                      </p>
+                    </div>
+
+                    <fieldset class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Format Paragraf</legend>
+                      
+                      <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                          <input id="indentFirstLine" type="checkbox" 
+                                 [ngModel]="settingsService.editorIndentFirstLine()"
+                                 (ngModelChange)="settingsService.editorIndentFirstLine.set($event)"
+                                 class="h-4 w-4 text-accent-600 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500">
+                        </div>
+                        <div class="ml-3 text-sm">
+                          <label for="indentFirstLine" class="font-medium text-gray-700 dark:text-gray-300">Indentasi Baris Pertama</label>
+                          <p class="text-gray-600 dark:text-gray-400">Beri jarak inden di awal setiap paragraf.</p>
+                        </div>
+                      </div>
+
+                      <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                          <input id="paragraphSpacing" type="checkbox" 
+                                 [ngModel]="settingsService.editorParagraphSpacing()"
+                                 (ngModelChange)="settingsService.editorParagraphSpacing.set($event)"
+                                 class="h-4 w-4 text-accent-600 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500">
+                        </div>
+                        <div class="ml-3 text-sm">
+                          <label for="paragraphSpacing" class="font-medium text-gray-700 dark:text-gray-300">Spasi Antar Paragraf</label>
+                          <p class="text-gray-600 dark:text-gray-400">Tambah sedikit spasi ekstra di antara paragraf.</p>
+                        </div>
+                      </div>
+
+                    </fieldset>
+
+                    <fieldset class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-6">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Perilaku Editor</legend>
+                      
+                      <div>
+                        <label for="autoSave" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interval Auto-Save</label>
+                        <select id="autoSave"
+                                [ngModel]="settingsService.editorAutoSaveInterval()"
+                                (ngModelChange)="onAutoSaveIntervalChange($event)"
+                                class="w-full sm:w-2/3 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md 
+                                       text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-600">
+                          @for (opt of autoSaveOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                          }
+                        </select>
+                      </div>
+
+                      <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                          <input id="statusBar" type="checkbox" 
+                                 [ngModel]="settingsService.editorShowStatusBar()"
+                                 (ngModelChange)="settingsService.editorShowStatusBar.set($event)"
+                                 class="h-4 w-4 text-accent-600 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500">
+                        </div>
+                        <div class="ml-3 text-sm">
+                          <label for="statusBar" class="font-medium text-gray-700 dark:text-gray-300">Tampilkan Status Bar</label>
+                          <p class="text-gray-600 dark:text-gray-400">Tampilkan jumlah kata di bawah editor.</p>
+                        </div>
                       </div>
                     </fieldset>
 
@@ -172,9 +329,66 @@ import { IconComponent } from '../icon/icon.component';
                     </fieldset>
                   </div>
                 }
+
+                @case ('aksesibilitas') {
+                  <div class="space-y-6">
+                    
+                    <fieldset class="space-y-2">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Keterbacaan</legend>
+                      <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                          <input id="highContrast" type="checkbox" 
+                                 [ngModel]="settingsService.highContrastMode()"
+                                 (ngModelChange)="settingsService.highContrastMode.set($event)"
+                                 class="h-4 w-4 text-accent-600 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500">
+                        </div>
+                        <div class="ml-3 text-sm">
+                          <label for="highContrast" class="font-medium text-gray-700 dark:text-gray-300">Mode Kontras Tinggi</label>
+                          <p class="text-gray-600 dark:text-gray-400">Gunakan palet hitam putih murni untuk kejelasan maksimal.</p>
+                        </div>
+                      </div>
+                    </fieldset>
+
+                  </div>
+                }
+
+                @case ('data') {
+                   <div class="space-y-6">
+                    <fieldset class="space-y-2">
+                      <legend class="text-lg font-semibold text-gray-900 dark:text-gray-200">Ekspor & Impor</legend>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Simpan cadangan data Anda atau pindahkan ke perangkat lain.</p>
+
+                      <div class="pt-4">
+                        <button class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 
+                                       text-gray-800 dark:text-gray-200 rounded-md transition duration-150 
+                                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500
+                                       disabled:opacity-50" disabled>
+                          Ekspor Semua Data (Segera Hadir)
+                        </button>
+                      </div>
+                      
+                    </fieldset>
+                   </div>
+                }
               }
             </div>
           </div>
+
+          <!-- FOOTER BARU -->
+          <div class="flex-shrink-0 flex justify-between items-center p-6 border-t border-gray-300 dark:border-gray-700 mt-auto bg-gray-50 dark:bg-gray-800/50">
+            <button (click)="handleReset()"
+                    class="text-sm text-red-600 dark:text-red-400 hover:underline 
+                           focus:outline-none focus:ring-2 focus:ring-red-500 rounded">
+              Reset Pengaturan ke Default
+            </button>
+            <button (click)="settingsService.closeModal()"
+                    class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md 
+                           font-semibold transition-colors duration-150
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500">
+              Tutup
+            </button>
+          </div>
+
         </div>
       </div>
     }
@@ -183,26 +397,38 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class SettingsModalComponent {
   readonly settingsService = inject(SettingsService);
-
-  activeTab = signal<'tampilan' | 'editor'>('tampilan');
-
-  readonly tabs = [
-    { id: 'tampilan', label: 'Tampilan', iconName: 'outline-settings-sliders-24' },
-    { id: 'editor', label: 'Editor', iconName: 'solid-pencil-20' }
-  ];
-
-  readonly themeOptions: { value: ThemeSetting, label: string }[] = [
-    { value: 'light', label: 'Terang' },
-    { value: 'dark', label: 'Gelap' },
-    { value: 'system', label: 'Sesuai Sistem' },
-  ];
-
-  readonly accentOptions: { value: AccentPalette, label: string, color: string }[] = [
-    { value: 'purple', label: 'Ungu (Default)', color: '#a855f7' },
-    { value: 'blue', label: 'Biru Tenang', color: '#3b82f6' },
-    { value: 'green', label: 'Hijau Hutan', color: '#22c55e' },
-    { value: 'orange', label: 'Oranye Hangat', color: '#f97316' },
-  ];
+  readonly confirmationService = inject(ConfirmationService);
   
-  readonly fontOptions: EditorFont[] = ['Lora', 'Inter', 'Merriweather', 'Source Serif Pro'];
+  activeTab = signal<'tampilan' | 'editor' | 'aksesibilitas' | 'data'>('tampilan');
+
+  readonly tabs = TAB_OPTIONS;
+  readonly themeOptions = THEME_OPTIONS;
+  readonly accentOptions = ACCENT_OPTIONS;
+  readonly fontOptions = FONT_OPTIONS;
+  readonly uiFontOptions = UI_FONT_OPTIONS;
+  readonly autoSaveOptions = AUTO_SAVE_OPTIONS;
+  readonly dashboardViewOptions = DASHBOARD_VIEW_OPTIONS;
+  readonly dashboardSortOptions = DASHBOARD_SORT_OPTIONS;
+  
+  handleReset(): void {
+    this.confirmationService.requestConfirmation({
+      message: 'Yakin ingin mereset semua pengaturan ke default? Semua kustomisasi Anda akan hilang.',
+      confirmButtonText: 'Ya, Reset',
+      onConfirm: () => {
+        this.settingsService.resetToDefaults();
+      }
+    });
+  }
+
+  onFontSizeChange(value: string | number): void {
+    this.settingsService.editorFontSize.set(Number(value));
+  }
+
+  onLineHeightChange(value: string | number): void {
+    this.settingsService.editorLineHeight.set(Number(value));
+  }
+  
+  onAutoSaveIntervalChange(value: string | number): void {
+    this.settingsService.editorAutoSaveInterval.set(Number(value) as AutoSaveInterval);
+  }
 }

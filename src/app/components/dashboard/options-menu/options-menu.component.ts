@@ -44,15 +44,6 @@ import { NotificationService } from '../../../state/notification.service';
                          text-gray-700 dark:text-gray-200 
                          hover:bg-gray-100 dark:hover:bg-gray-600" 
                   role="menuitem">
-            <app-icon name="outline-export-data-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <span>Ekspor Data (soon)</span>
-          </a>
-
-          <a href="#" (click)="onPlaceholderClick($event)" 
-                  class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
-                         text-gray-700 dark:text-gray-200 
-                         hover:bg-gray-100 dark:hover:bg-gray-600" 
-                  role="menuitem">
             <app-icon name="outline-info-circle-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
             <span>Tentang Aplikasi (soon)</span>
           </a>

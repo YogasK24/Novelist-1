@@ -10,7 +10,7 @@ import { IconComponent } from '../icon/icon.component';
   template: `
     @if (confirmationService.request(); as request) {
       <div 
-        class="fixed inset-0 bg-black/70 flex justify-center items-center z-50 
+        class="fixed inset-0 bg-black/70 flex justify-center items-center z-[60] 
                transition-opacity duration-300"
         [class.opacity-100]="isShown()"
         [class.opacity-0]="!isShown()"

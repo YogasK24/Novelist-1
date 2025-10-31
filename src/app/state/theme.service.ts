@@ -31,15 +31,27 @@ export class ThemeService {
 
     // Effect untuk Menerapkan Tema ke DOM dan mengelola event listener
     effect((onCleanup) => {
+      // 1. Cek mode kontras tinggi DULU
+      const highContrast = this.settingsService.highContrastMode();
+      
+      if (highContrast) {
+        // JIKA KONTAS TINGGI AKTIF:
+        // Hapus paksa kelas tema apa pun agar CSS di index.html bisa mengambil alih.
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('bg-slate-50', 'text-slate-700', 'bg-slate-900', 'text-slate-200');
+        return; // Selesai. Jangan lakukan apa-apa lagi.
+      }
+      
+      // 2. JIKA KONTAS TINGGI NONAKTIF (Perilaku normal):
       const theme = this.activeTheme();
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
         document.body.classList.remove('bg-slate-50', 'text-slate-700');
-        document.body.classList.add('font-sans-ui', 'bg-slate-900', 'text-slate-200');
+        document.body.classList.add('bg-slate-900', 'text-slate-200');
       } else {
         document.documentElement.classList.remove('dark');
         document.body.classList.remove('bg-slate-900', 'text-slate-200');
-        document.body.classList.add('font-sans-ui', 'bg-slate-50', 'text-slate-700');
+        document.body.classList.add('bg-slate-50', 'text-slate-700');
       }
 
       // Pasang listener di dalam effect untuk cleanup yang benar
@@ -58,13 +70,14 @@ export class ThemeService {
   }
 
   /**
-   * Memutar pilihan tema: system -> light -> dark -> system
+   * Mengganti tema antara terang dan gelap.
+   * Jika tema saat ini 'sistem', ia akan beralih ke tema yang berlawanan dari
+   * apa yang ditampilkan sistem saat ini.
    */
   toggleTheme(): void {
-    this.settingsService.theme.update(current => {
-      if (current === 'system') return 'light';
-      if (current === 'light') return 'dark';
-      return 'system';
-    });
+    const currentActiveTheme = this.activeTheme();
+    
+    // Beralih ke yang berlawanan
+    this.settingsService.theme.set(currentActiveTheme === 'light' ? 'dark' : 'light');
   }
 }
