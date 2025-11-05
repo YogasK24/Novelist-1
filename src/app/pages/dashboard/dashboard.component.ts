@@ -1,5 +1,5 @@
 // src/app/pages/dashboard/dashboard.component.ts
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BookListComponent } from '../../components/dashboard/book-list/book-list.component';
 import { AddBookButtonComponent } from '../../components/dashboard/add-book-button/add-book-button.component';
@@ -8,7 +8,6 @@ import type { IBook } from '../../../types/data';
 import { SetTargetModalComponent } from '../../components/dashboard/set-target-modal/set-target-modal.component';
 import { ThemeService } from '../../state/theme.service';
 import { BookStateService } from '../../state/book-state.service';
-import { HelpModalComponent } from '../../components/dashboard/help-modal/help-modal.component';
 import { OptionsMenuComponent } from '../../components/dashboard/options-menu/options-menu.component';
 import { GlobalSearchInputComponent } from '../../components/shared/global-search-input/global-search-input.component';
 import { SearchService } from '../../state/search.service';
@@ -19,8 +18,7 @@ import { FilterMenuComponent } from '../../components/dashboard/filter-menu/filt
 import { ClickOutsideDirective } from '../../directives/click-outside.directive';
 import { BulkActionBarComponent } from '../../components/dashboard/bulk-action-bar/bulk-action-bar.component';
 import { HideOnScrollDirective } from '../../directives/hide-on-scroll.directive';
-import { OnboardingService } from '../../state/onboarding.service';
-import { LongPressHintComponent } from '../../components/dashboard/long-press-hint/long-press-hint.component';
+import { signal } from '@angular/core';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,7 +29,6 @@ import { LongPressHintComponent } from '../../components/dashboard/long-press-hi
     AddBookButtonComponent,
     AddBookModalComponent,
     SetTargetModalComponent,
-    HelpModalComponent,
     OptionsMenuComponent,
     GlobalSearchInputComponent,
     IconComponent,
@@ -40,7 +37,6 @@ import { LongPressHintComponent } from '../../components/dashboard/long-press-hi
     ClickOutsideDirective,
     BulkActionBarComponent,
     HideOnScrollDirective,
-    LongPressHintComponent
   ],
   template: `
     <div #scrollContainer class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 
@@ -52,31 +48,53 @@ import { LongPressHintComponent } from '../../components/dashboard/long-press-hi
         <div class="container mx-auto px-4 py-3 flex justify-between items-center gap-4">
           
           <!-- Left side stage for Logo and Search -->
-          <div class="flex-1 relative" (clickOutside)="searchService.closeSearch()">
-            
-            <!-- Animation container with fixed height and overflow hidden -->
-            <div class="relative flex items-center h-9">
-              <div class="absolute inset-0 flex items-center h-9 overflow-hidden">
-                <!-- Logo Container -->
-                <div class="absolute inset-0 flex items-center transform transition-all duration-500 ease-in-out"
-                    [class]="logoContainerClasses()">
-                  <h1 class="font-logo text-3xl text-accent-600 dark:text-accent-400">
-                    Novelist
-                  </h1>
+          <div class="flex-1">
+            @if(isMobileView()) {
+              <!-- MOBILE: This wrapper is now the positioning context for search & results -->
+              <div class="relative" (clickOutside)="searchService.closeSearch()">
+                <div class="relative flex items-center h-9">
+                  <div class="absolute inset-0 flex items-center h-9 overflow-hidden">
+                    <!-- Logo Container -->
+                    <div class="absolute inset-0 flex items-center transform transition-all duration-500 ease-in-out"
+                        [class]="logoContainerClasses()">
+                      <h1 class="font-logo text-3xl text-accent-600 dark:text-accent-400">
+                        Novelist
+                      </h1>
+                    </div>
+                    
+                    <!-- Search Container -->
+                    <div class="absolute inset-y-0 left-0 right-0 flex items-center
+                                transform transition-all duration-500 ease-in-out"
+                        [class]="searchContainerClasses()"
+                        (click)="$event.stopPropagation()">
+                      <app-global-search-input class="w-full"></app-global-search-input>
+                    </div>
+                  </div>
                 </div>
+                <!-- Search Results Popover -->
+                <app-global-search-results></app-global-search-results>
+              </div>
+            } @else {
+              <!-- DESKTOP: Flexbox layout -->
+              <div class="flex items-center gap-4 h-9">
+                <!-- Logo always visible -->
+                <h1 class="font-logo text-3xl text-accent-600 dark:text-accent-400">
+                  Novelist
+                </h1>
                 
-                <!-- Search Container -->
-                <div class="absolute inset-y-0 left-0 right-0 flex items-center
-                            transform transition-all duration-500 ease-in-out"
-                    [class]="searchContainerClasses()"
-                    (click)="$event.stopPropagation()">
-                  <app-global-search-input class="w-full"></app-global-search-input>
+                <!-- This wrapper is now the positioning context for search & results -->
+                <div class="flex-1 relative" (clickOutside)="searchService.closeSearch()">
+                  @if (uiState.headerState() === 'searchActive') {
+                    <div class="transform transition-all duration-300 ease-out animate-fade-in-scale"
+                         (click)="$event.stopPropagation()">
+                       <app-global-search-input class="w-full"></app-global-search-input>
+                    </div>
+                  }
+                  <!-- Search Results Popover -->
+                  <app-global-search-results></app-global-search-results>
                 </div>
               </div>
-            </div>
-
-            <!-- Search Results Popover - Moved outside the overflow-hidden container -->
-            <app-global-search-results></app-global-search-results>
+            }
           </div>
           
           <!-- Right side Action Icons -->
@@ -251,18 +269,7 @@ import { LongPressHintComponent } from '../../components/dashboard/long-press-hi
           (closeModal)="uiState.closeSetTargetModal()">
         </app-set-target-modal>
       }
-      
-      @if (uiState.isHelpModalOpen()) {
-        <app-help-modal
-          [show]="uiState.isHelpModalOpen()"
-          (closeModal)="uiState.closeHelpModal()">
-        </app-help-modal>
-      }
 
-      <app-long-press-hint 
-        [show]="shouldShowOnboardingHint()"
-        (dismiss)="onboardingService.dismissLongPressHint()">
-      </app-long-press-hint>
     </div>
   `,
   styles: [`
@@ -277,42 +284,60 @@ import { LongPressHintComponent } from '../../components/dashboard/long-press-hi
     .animate-fade-in {
       animation: fadeIn 0.3s ease-out forwards;
     }
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in-scale {
+      animation: fadeInScale 0.3s ease-out forwards;
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit, OnDestroy {
   public readonly themeService = inject(ThemeService); 
   public readonly bookState = inject(BookStateService); 
   public readonly searchService = inject(SearchService);
   public readonly uiState = inject(UiStateService);
-  public readonly onboardingService = inject(OnboardingService);
   
   readonly headerOptionsMenuId = HEADER_OPTIONS_MENU_ID;
   readonly filterMenuId = DASHBOARD_FILTER_MENU_ID;
 
-  readonly shouldShowOnboardingHint = computed(() => {
-    return this.onboardingService.showLongPressHint() && this.bookState.sortedBooks().length > 0;
-  });
+  // --- NEW: For adaptive animation ---
+  private mediaQuery = window.matchMedia('(max-width: 767px)'); // md breakpoint
+  isMobileView = signal(this.mediaQuery.matches);
+  private mediaQueryListener = (e: MediaQueryListEvent) => this.isMobileView.set(e.matches);
 
+  ngOnInit(): void {
+    this.mediaQuery.addEventListener('change', this.mediaQueryListener);
+  }
+
+  ngOnDestroy(): void {
+    this.mediaQuery.removeEventListener('change', this.mediaQueryListener);
+  }
+  // --- END NEW ---
+
+  // --- This is now ONLY for mobile animation ---
   readonly logoContainerClasses = computed(() => {
     const isSearch = this.uiState.headerState() === 'searchActive';
     return {
-      'opacity-0': isSearch,
-      '-translate-x-full': isSearch,
-      'pointer-events-none': isSearch,
-      'opacity-100': !isSearch,
       'translate-x-0': !isSearch,
+      '-translate-x-full': isSearch,
+      'opacity-100': !isSearch,
+      'opacity-0': isSearch,
+      'pointer-events-none': isSearch,
     };
   });
 
+  // --- This is now ONLY for mobile animation ---
   readonly searchContainerClasses = computed(() => {
     const isSearch = this.uiState.headerState() === 'searchActive';
     return {
-      'opacity-100': isSearch,
       'translate-x-0': isSearch,
-      'pointer-events-auto': isSearch,
-      'opacity-0': !isSearch,
       'translate-x-full': !isSearch,
+      'opacity-100': isSearch,
+      'opacity-0': !isSearch,
+      'pointer-events-auto': isSearch,
       'pointer-events-none': !isSearch,
     };
   });
@@ -331,7 +356,7 @@ export class DashboardComponent {
 
   handleHelpClick(event: MouseEvent): void {
     event.stopPropagation();
-    this.uiState.openHelpModal();
+    this.uiState.openHelpModal('dashboard');
   }
 
   handleFilterMenuToggle(event: MouseEvent): void {

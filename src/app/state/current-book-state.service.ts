@@ -1,6 +1,6 @@
 // src/app/state/current-book-state.service.ts
 
-import { Injectable, inject, signal, effect, WritableSignal, computed } from '@angular/core';
+import { Injectable, inject, signal, effect, computed } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { BookDataSyncService } from './book-data-sync.service';
 import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
@@ -169,6 +169,9 @@ export class CurrentBookStateService {
         this.resetState();
       }
     });
+
+    // --- NEW: Subscribe to entity changes ---
+    this.subscribeToEntityChanges();
   }
   
   private resetState(): void {
@@ -189,6 +192,62 @@ export class CurrentBookStateService {
     this.props.set([]);
     this.writingLogs.set([]); 
     this.contextualSearchTerm.set(''); // <-- Reset search term
+  }
+
+  private subscribeToEntityChanges(): void {
+    // Characters
+    this.bookDataSyncService.characterAdded$.subscribe(char => {
+      if (char.bookId === this.currentBookId()) this.characters.update(list => [...list, char]);
+    });
+    this.bookDataSyncService.characterUpdated$.subscribe(char => {
+      if (char.bookId === this.currentBookId()) this.characters.update(list => list.map(c => c.id === char.id ? char : c));
+    });
+    this.bookDataSyncService.characterDeleted$.subscribe(id => this.characters.update(list => list.filter(c => c.id !== id)));
+
+    // Locations
+    this.bookDataSyncService.locationAdded$.subscribe(loc => {
+      if (loc.bookId === this.currentBookId()) this.locations.update(list => [...list, loc]);
+    });
+    this.bookDataSyncService.locationUpdated$.subscribe(loc => {
+      if (loc.bookId === this.currentBookId()) this.locations.update(list => list.map(l => l.id === loc.id ? loc : l));
+    });
+    this.bookDataSyncService.locationDeleted$.subscribe(id => this.locations.update(list => list.filter(l => l.id !== id)));
+
+    // Plot Events
+    this.bookDataSyncService.plotEventAdded$.subscribe(event => {
+      if (event.bookId === this.currentBookId()) this.plotEvents.update(list => [...list, event].sort((a, b) => a.order - b.order));
+    });
+    this.bookDataSyncService.plotEventUpdated$.subscribe(event => {
+      if (event.bookId === this.currentBookId()) this.plotEvents.update(list => list.map(e => e.id === event.id ? event : e));
+    });
+    this.bookDataSyncService.plotEventDeleted$.subscribe(id => this.plotEvents.update(list => list.filter(e => e.id !== id)));
+
+    // Chapters
+    this.bookDataSyncService.chapterAdded$.subscribe(chap => {
+      if (chap.bookId === this.currentBookId()) this.chapters.update(list => [...list, chap].sort((a, b) => a.order - b.order));
+    });
+    this.bookDataSyncService.chapterUpdated$.subscribe(chap => {
+      if (chap.bookId === this.currentBookId()) this.chapters.update(list => list.map(c => c.id === chap.id ? chap : c));
+    });
+    this.bookDataSyncService.chapterDeleted$.subscribe(id => this.chapters.update(list => list.filter(c => c.id !== id)));
+    
+    // Themes
+    this.bookDataSyncService.themeAdded$.subscribe(theme => {
+        if (theme.bookId === this.currentBookId()) this.themes.update(list => [...list, theme]);
+    });
+    this.bookDataSyncService.themeUpdated$.subscribe(theme => {
+        if (theme.bookId === this.currentBookId()) this.themes.update(list => list.map(t => t.id === theme.id ? theme : t));
+    });
+    this.bookDataSyncService.themeDeleted$.subscribe(id => this.themes.update(list => list.filter(t => t.id !== id)));
+
+    // Props
+    this.bookDataSyncService.propAdded$.subscribe(prop => {
+        if (prop.bookId === this.currentBookId()) this.props.update(list => [...list, prop]);
+    });
+    this.bookDataSyncService.propUpdated$.subscribe(prop => {
+        if (prop.bookId === this.currentBookId()) this.props.update(list => list.map(p => p.id === prop.id ? prop : p));
+    });
+    this.bookDataSyncService.propDeleted$.subscribe(id => this.props.update(list => list.filter(p => p.id !== id)));
   }
 
   /** Private Method: Loads only the main book data */
@@ -233,6 +292,7 @@ export class CurrentBookStateService {
 
   // --- Public Actions for Lazy Loading Child Data ---
   async loadCharacters(bookId: number): Promise<void> {
+    if (this.characters().length > 0 && this.characters()[0].bookId === bookId) return;
     this.isLoadingCharacters.set(true);
     try {
         const characters = await this.dbService.getCharactersByBookId(bookId);
@@ -247,6 +307,7 @@ export class CurrentBookStateService {
   }
 
   async loadLocations(bookId: number): Promise<void> {
+    if (this.locations().length > 0 && this.locations()[0].bookId === bookId) return;
     this.isLoadingLocations.set(true);
     try {
         const locations = await this.dbService.getLocationsByBookId(bookId);
@@ -261,6 +322,7 @@ export class CurrentBookStateService {
   }
 
   async loadPlotEvents(bookId: number): Promise<void> {
+    if (this.plotEvents().length > 0 && this.plotEvents()[0].bookId === bookId) return;
     this.isLoadingPlotEvents.set(true);
     try {
         const plotEvents = await this.dbService.getPlotEventsByBookId(bookId);
@@ -275,6 +337,7 @@ export class CurrentBookStateService {
   }
 
   async loadChapters(bookId: number): Promise<void> {
+    if (this.chapters().length > 0 && this.chapters()[0].bookId === bookId) return;
     this.isLoadingChapters.set(true);
     try {
         const chapters = await this.dbService.getChaptersByBookId(bookId);
@@ -289,6 +352,7 @@ export class CurrentBookStateService {
   }
 
   async loadThemes(bookId: number): Promise<void> {
+    if (this.themes().length > 0 && this.themes()[0].bookId === bookId) return;
     this.isLoadingThemes.set(true);
     try {
         const themes = await this.dbService.getThemesByBookId(bookId);
@@ -303,6 +367,7 @@ export class CurrentBookStateService {
   }
 
   async loadProps(bookId: number): Promise<void> {
+    if (this.props().length > 0 && this.props()[0].bookId === bookId) return;
     this.isLoadingProps.set(true);
     try {
         const props = await this.dbService.getPropsByBookId(bookId);
@@ -329,133 +394,123 @@ export class CurrentBookStateService {
         this.isLoadingWritingLogs.set(false);
     }
   }
-
-  // --- REFACTOR: Generic CRUD Handler ---
-  private async _handleCrud<T>(
-    action: () => Promise<any>,
-    refresh: { fetchFn: (bookId: number) => Promise<T[]>, targetSignal: WritableSignal<T[]> },
-    messages: { success: string, error: string }
-  ): Promise<boolean> {
-    const bookId = this.currentBookId();
-    if (!bookId) return false;
-    
-    try {
-      await action();
-      
-      const updatedList = await refresh.fetchFn(bookId);
-      refresh.targetSignal.set(updatedList ?? []);
-
-      this.notificationService.success(messages.success);
-      return true;
-    } catch (error) {
-      console.error(messages.error, error);
-      this.notificationService.error(messages.error);
-      return false;
-    }
-  }
-
-  // --- CRUD Actions (Refactored) ---
+  
+  // --- REFACTORED CRUD Actions ---
 
   // Character Actions
   async addCharacter(name: string, description: string, relationships: IRelationship[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    const success = await this._handleCrud(
-      () => this.dbService.addCharacter({ bookId, name, description, relationships }),
-      { fetchFn: this.dbService.getCharactersByBookId.bind(this.dbService), targetSignal: this.characters },
-      { success: `Character "${name}" was added successfully.`, error: `Failed to add character "${name}".` }
-    );
-    if (success) {
-      this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', 1);
-    }
+    try {
+      const newId = await this.dbService.addCharacter({ bookId, name, description, relationships });
+      if (newId) {
+        const newCharacter = await this.dbService.getCharacterById(newId);
+        if (newCharacter) {
+          this.bookDataSyncService.notifyCharacterAdded(newCharacter);
+          this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', 1);
+          this.notificationService.success(`Character "${name}" was added.`);
+        }
+      }
+    } catch (e) { this.notificationService.error(`Failed to add character "${name}".`); }
   }
   async updateCharacter(id: number, data: { name: string, description: string, relationships: IRelationship[] }): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updateCharacter(id, data),
-      { fetchFn: this.dbService.getCharactersByBookId.bind(this.dbService), targetSignal: this.characters },
-      { success: `Character "${data.name}" was updated successfully.`, error: `Failed to update character "${data.name}".` }
-    );
+    try {
+      await this.dbService.updateCharacter(id, data);
+      const updatedCharacter = await this.dbService.getCharacterById(id);
+      if (updatedCharacter) {
+        this.bookDataSyncService.notifyCharacterUpdate(updatedCharacter);
+        this.notificationService.success(`Character "${data.name}" was updated.`);
+      }
+    } catch (e) { this.notificationService.error(`Failed to update character "${data.name}".`); }
   }
   async deleteCharacter(id: number): Promise<void> {
      const bookId = this.currentBookId();
      if (!bookId) return;
      const charName = this.characters().find(c => c.id === id)?.name ?? 'Character';
-     const success = await this._handleCrud(
-       () => this.dbService.deleteCharacter(id),
-       { fetchFn: this.dbService.getCharactersByBookId.bind(this.dbService), targetSignal: this.characters },
-       { success: `Character "${charName}" was deleted successfully.`, error: `Failed to delete character "${charName}".` }
-     );
-     if (success) {
-      this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', -1);
-     }
+     try {
+       await this.dbService.deleteCharacter(id);
+       this.bookDataSyncService.notifyCharacterDeleted(id);
+       this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', -1);
+       this.notificationService.success(`Character "${charName}" was deleted.`);
+     } catch (e) { this.notificationService.error(`Failed to delete character "${charName}".`); }
   }
 
   // Location Actions
   async addLocation(name: string, description: string): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    await this._handleCrud(
-      () => this.dbService.addLocation({ bookId, name, description }),
-      { fetchFn: this.dbService.getLocationsByBookId.bind(this.dbService), targetSignal: this.locations },
-      { success: `Location "${name}" was added successfully.`, error: `Failed to add location "${name}".` }
-    );
+    try {
+      const newId = await this.dbService.addLocation({ bookId, name, description });
+      if (newId) {
+        const newLocation = await this.dbService.getLocationById(newId);
+        if (newLocation) {
+          this.bookDataSyncService.notifyLocationAdded(newLocation);
+          this.notificationService.success(`Location "${name}" was added.`);
+        }
+      }
+    } catch (e) { this.notificationService.error(`Failed to add location "${name}".`); }
   }
   async updateLocation(id: number, data: { name: string, description: string }): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updateLocation(id, data),
-      { fetchFn: this.dbService.getLocationsByBookId.bind(this.dbService), targetSignal: this.locations },
-      { success: `Location "${data.name}" was updated successfully.`, error: `Failed to update location "${data.name}".` }
-    );
+    try {
+      await this.dbService.updateLocation(id, data);
+      const updatedLocation = await this.dbService.getLocationById(id);
+      if (updatedLocation) {
+        this.bookDataSyncService.notifyLocationUpdate(updatedLocation);
+        this.notificationService.success(`Location "${data.name}" was updated.`);
+      }
+    } catch (e) { this.notificationService.error(`Failed to update location "${data.name}".`); }
   }
   async deleteLocation(id: number): Promise<void> {
      const locName = this.locations().find(l => l.id === id)?.name ?? 'Location';
-     await this._handleCrud(
-       () => this.dbService.deleteLocation(id),
-       { fetchFn: this.dbService.getLocationsByBookId.bind(this.dbService), targetSignal: this.locations },
-       { success: `Location "${locName}" was deleted successfully.`, error: `Failed to delete location "${locName}".` }
-     );
+     try {
+       await this.dbService.deleteLocation(id);
+       this.bookDataSyncService.notifyLocationDeleted(id);
+       this.notificationService.success(`Location "${locName}" was deleted.`);
+     } catch (e) { this.notificationService.error(`Failed to delete location "${locName}".`); }
   }
 
   // Plot Event Actions
   async addPlotEvent(title: string, summary: string, locationId: number | null, characterIds: number[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    const currentEvents = await this.dbService.getPlotEventsByBookId(bookId);
-    const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
-    const newOrder = maxOrder + 1;
-
-    await this._handleCrud(
-      () => this.dbService.addPlotEvent({ bookId, title, summary, order: newOrder, locationId, characterIds }),
-      { fetchFn: this.dbService.getPlotEventsByBookId.bind(this.dbService), targetSignal: this.plotEvents },
-      { success: `Event "${title}" was added successfully.`, error: `Failed to add event "${title}".` }
-    );
+    try {
+      const currentEvents = await this.dbService.getPlotEventsByBookId(bookId);
+      const maxOrder = currentEvents.reduce((max, event) => Math.max(max, event.order), 0);
+      const newId = await this.dbService.addPlotEvent({ bookId, title, summary, order: maxOrder + 1, locationId, characterIds });
+      if (newId) {
+        const newEvent = await this.dbService.getPlotEventById(newId);
+        if (newEvent) {
+          this.bookDataSyncService.notifyPlotEventAdded(newEvent);
+          this.notificationService.success(`Event "${title}" was added.`);
+        }
+      }
+    } catch (e) { this.notificationService.error(`Failed to add event "${title}".`); }
   }
   async updatePlotEvent(id: number, data: { title: string, summary: string, locationId: number | null, characterIds: number[] }): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updatePlotEvent(id, data),
-      { fetchFn: this.dbService.getPlotEventsByBookId.bind(this.dbService), targetSignal: this.plotEvents },
-      { success: `Event "${data.title}" was updated successfully.`, error: `Failed to update event "${data.title}".` }
-    );
+    try {
+      await this.dbService.updatePlotEvent(id, data);
+      const updatedEvent = await this.dbService.getPlotEventById(id);
+      if (updatedEvent) {
+        this.bookDataSyncService.notifyPlotEventUpdate(updatedEvent);
+        this.notificationService.success(`Event "${data.title}" was updated.`);
+      }
+    } catch (e) { this.notificationService.error(`Failed to update event "${data.title}".`); }
   }
   async deletePlotEvent(id: number): Promise<void> {
      const eventTitle = this.plotEvents().find(e => e.id === id)?.title ?? 'Plot Event';
-     await this._handleCrud(
-       () => this.dbService.deletePlotEvent(id),
-       { fetchFn: this.dbService.getPlotEventsByBookId.bind(this.dbService), targetSignal: this.plotEvents },
-       { success: `Event "${eventTitle}" was deleted successfully.`, error: `Failed to delete event "${eventTitle}".` }
-     );
+     try {
+       await this.dbService.deletePlotEvent(id);
+       this.bookDataSyncService.notifyPlotEventDeleted(id);
+       this.notificationService.success(`Event "${eventTitle}" was deleted.`);
+     } catch (e) { this.notificationService.error(`Failed to delete event "${eventTitle}".`); }
   }
-
-  // ACTIONS REORDER PLOT EVENT
   async reorderPlotEvents(reorderedEvents: IPlotEvent[]): Promise<void> {
     if (!this.currentBookId()) return;
-
     try {
         await this.dbService.updatePlotEventOrder(reorderedEvents);
         this.plotEvents.set(reorderedEvents); 
-        this.notificationService.success("Plot event order saved successfully.");
+        this.notificationService.success("Plot event order saved.");
     } catch(error) { 
-        console.error("reorderPlotEvents error:", error); 
         this.notificationService.error("Failed to save plot event order.");
         await this.loadPlotEvents(this.currentBookId()!);
     }
@@ -465,25 +520,29 @@ export class CurrentBookStateService {
   async addChapter(title: string, characterIds: number[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    const currentChapters = await this.dbService.getChaptersByBookId(bookId);
-    const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
-    const newOrder = maxOrder + 1;
-
-    const success = await this._handleCrud(
-      () => this.dbService.addChapter({ bookId, title, content: "", order: newOrder, characterIds }),
-      { fetchFn: this.dbService.getChaptersByBookId.bind(this.dbService), targetSignal: this.chapters },
-      { success: `Chapter "${title}" was created successfully.`, error: `Failed to create chapter "${title}".` }
-    );
-    if (success) {
-      this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', 1);
-    }
+    try {
+      const currentChapters = await this.dbService.getChaptersByBookId(bookId);
+      const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
+      const newId = await this.dbService.addChapter({ bookId, title, content: "", order: maxOrder + 1, characterIds });
+      if (newId) {
+        const newChapter = await this.dbService.getChapterById(newId);
+        if (newChapter) {
+          this.bookDataSyncService.notifyChapterAdded(newChapter);
+          this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', 1);
+          this.notificationService.success(`Chapter "${title}" was created.`);
+        }
+      }
+    } catch(e) { this.notificationService.error(`Failed to create chapter "${title}".`); }
   }
   async updateChapterTitle(id: number, title: string, characterIds: number[]): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updateChapter(id, { title, characterIds }),
-      { fetchFn: this.dbService.getChaptersByBookId.bind(this.dbService), targetSignal: this.chapters },
-      { success: `Chapter "${title}" was updated successfully.`, error: `Failed to update chapter "${title}".` }
-    );
+    try {
+      await this.dbService.updateChapter(id, { title, characterIds });
+      const updatedChapter = await this.dbService.getChapterById(id);
+      if (updatedChapter) {
+        this.bookDataSyncService.notifyChapterUpdate(updatedChapter);
+        this.notificationService.success(`Chapter "${title}" was updated.`);
+      }
+    } catch (e) { this.notificationService.error(`Failed to update chapter "${title}".`); }
   }
   async updateChapterContent(id: number, content: string): Promise<void> {
     if (!this.currentBookId()) return;
@@ -494,7 +553,6 @@ export class CurrentBookStateService {
           chap.id === id ? { ...chap, content: content } : chap
         )
       );
-      
       await this._recalculateAndUpdateWordCount();
     } catch(error) { 
       console.error("updateChapterContent error:", error);
@@ -506,27 +564,21 @@ export class CurrentBookStateService {
      const bookId = this.currentBookId();
      if (!bookId) return;
      const chapTitle = this.chapters().find(c => c.id === id)?.title ?? 'Chapter';
-     const success = await this._handleCrud(
-       () => this.dbService.deleteChapter(id),
-       { fetchFn: this.dbService.getChaptersByBookId.bind(this.dbService), targetSignal: this.chapters },
-       { success: `Chapter "${chapTitle}" was deleted successfully.`, error: `Failed to delete chapter "${chapTitle}".` }
-     );
-     if (success) {
-        this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', -1);
-        await this._recalculateAndUpdateWordCount();
-     }
+     try {
+       await this.dbService.deleteChapter(id);
+       this.bookDataSyncService.notifyChapterDeleted(id);
+       this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', -1);
+       this.notificationService.success(`Chapter "${chapTitle}" was deleted.`);
+       await this._recalculateAndUpdateWordCount();
+     } catch(e) { this.notificationService.error(`Failed to delete chapter "${chapTitle}".`); }
   }
-  
-  // ACTIONS REORDER CHAPTERS
   async reorderChapters(reorderedChapters: IChapter[]): Promise<void> {
     if (!this.currentBookId()) return;
-
     try {
         await this.dbService.updateChapterOrder(reorderedChapters);
         this.chapters.set(reorderedChapters);
-        this.notificationService.success("Chapter order saved successfully.");
+        this.notificationService.success("Chapter order saved.");
     } catch(error) { 
-        console.error("reorderChapters error:", error); 
         this.notificationService.error("Failed to save chapter order.");
         await this.loadChapters(this.currentBookId()!);
     }
@@ -536,56 +588,63 @@ export class CurrentBookStateService {
   async addTheme(name: string, description: string): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    await this._handleCrud(
-      () => this.dbService.addTheme({ bookId, name, description }),
-      { fetchFn: this.dbService.getThemesByBookId.bind(this.dbService), targetSignal: this.themes },
-      { success: `Theme "${name}" was added successfully.`, error: `Failed to add theme "${name}".` }
-    );
+    try {
+      const newId = await this.dbService.addTheme({ bookId, name, description });
+      if (newId) {
+        const newTheme = await this.dbService.getThemeById(newId);
+        if (newTheme) this.bookDataSyncService.notifyThemeAdded(newTheme);
+        this.notificationService.success(`Theme "${name}" added.`);
+      }
+    } catch(e) { this.notificationService.error(`Failed to add theme "${name}".`); }
   }
   async updateTheme(id: number, data: { name: string, description: string }): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updateTheme(id, data),
-      { fetchFn: this.dbService.getThemesByBookId.bind(this.dbService), targetSignal: this.themes },
-      { success: `Theme "${data.name}" was updated successfully.`, error: `Failed to update theme "${data.name}".` }
-    );
+    try {
+      await this.dbService.updateTheme(id, data);
+      const updatedTheme = await this.dbService.getThemeById(id);
+      if (updatedTheme) this.bookDataSyncService.notifyThemeUpdate(updatedTheme);
+      this.notificationService.success(`Theme "${data.name}" updated.`);
+    } catch(e) { this.notificationService.error(`Failed to update theme "${data.name}".`); }
   }
   async deleteTheme(id: number): Promise<void> {
      const themeName = this.themes().find(t => t.id === id)?.name ?? 'Theme';
-     await this._handleCrud(
-       () => this.dbService.deleteTheme(id),
-       { fetchFn: this.dbService.getThemesByBookId.bind(this.dbService), targetSignal: this.themes },
-       { success: `Theme "${themeName}" was deleted successfully.`, error: `Failed to delete theme "${themeName}".` }
-     );
+     try {
+       await this.dbService.deleteTheme(id);
+       this.bookDataSyncService.notifyThemeDeleted(id);
+       this.notificationService.success(`Theme "${themeName}" deleted.`);
+     } catch (e) { this.notificationService.error(`Failed to delete theme "${themeName}".`); }
   }
 
   // --- Props ---
    async addProp(name: string, description: string): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    await this._handleCrud(
-      () => this.dbService.addProp({ bookId, name, description }),
-      { fetchFn: this.dbService.getPropsByBookId.bind(this.dbService), targetSignal: this.props },
-      { success: `Prop "${name}" was added successfully.`, error: `Failed to add prop "${name}".` }
-    );
+    try {
+      const newId = await this.dbService.addProp({ bookId, name, description });
+      if (newId) {
+        const newProp = await this.dbService.getPropById(newId);
+        if (newProp) this.bookDataSyncService.notifyPropAdded(newProp);
+        this.notificationService.success(`Prop "${name}" added.`);
+      }
+    } catch(e) { this.notificationService.error(`Failed to add prop "${name}".`); }
   }
   async updateProp(id: number, data: { name: string, description: string }): Promise<void> {
-    await this._handleCrud(
-      () => this.dbService.updateProp(id, data),
-      { fetchFn: this.dbService.getPropsByBookId.bind(this.dbService), targetSignal: this.props },
-      { success: `Prop "${data.name}" was updated successfully.`, error: `Failed to update prop "${data.name}".` }
-    );
+    try {
+      await this.dbService.updateProp(id, data);
+      const updatedProp = await this.dbService.getPropById(id);
+      if (updatedProp) this.bookDataSyncService.notifyPropUpdate(updatedProp);
+      this.notificationService.success(`Prop "${data.name}" updated.`);
+    } catch(e) { this.notificationService.error(`Failed to update prop "${data.name}".`); }
   }
   async deleteProp(id: number): Promise<void> {
      const propName = this.props().find(p => p.id === id)?.name ?? 'Prop';
-     await this._handleCrud(
-       () => this.dbService.deleteProp(id),
-       { fetchFn: this.dbService.getPropsByBookId.bind(this.dbService), targetSignal: this.props },
-       { success: `Prop "${propName}" was deleted successfully.`, error: `Failed to delete prop "${propName}".` }
-     );
+     try {
+       await this.dbService.deleteProp(id);
+       this.bookDataSyncService.notifyPropDeleted(id);
+       this.notificationService.success(`Prop "${propName}" deleted.`);
+     } catch (e) { this.notificationService.error(`Failed to delete prop "${propName}".`); }
   }
   
-  // --- NEW FUNCTION FOR WORD COUNT ---
-
+  // --- Word Count Logic ---
   private _countWordsInChapterContent(content: string): number {
     if (!content) return 0;
     try {
@@ -601,9 +660,7 @@ export class CurrentBookStateService {
           }, 0);
         }
       }
-    } catch (e) {
-      /* Fallback to plain text */
-    }
+    } catch (e) { /* Fallback to plain text */ }
     return content.trim().split(/\s+/).filter(Boolean).length;
   }
 
@@ -613,34 +670,27 @@ export class CurrentBookStateService {
     if (!bookId) return;
 
     try {
-      // 1. Calculate total words from all chapters
       const totalWordCount = chapters.reduce((total, chapter) => {
         return total + this._countWordsInChapterContent(chapter.content);
       }, 0);
 
-      // 2. Calculate word count change from the current book state
       const previousTotalWordCount = this.currentBook()?.wordCount ?? 0;
       const wordCountChange = totalWordCount - previousTotalWordCount;
       
-      // 3. Update writing log ONLY if there is a change
       if (wordCountChange !== 0) {
         const today = this.getTodayDateString();
         await this.dbService.upsertWritingLog(bookId, today, wordCountChange);
-        await this.loadWritingLogs(bookId); // Reload logs
+        await this.loadWritingLogs(bookId); 
       }
       
-      // 4. Update current book state & notify the global book list
       if (totalWordCount !== previousTotalWordCount) {
           this.currentBook.update(book => book ? { ...book, wordCount: totalWordCount } : null);
           this.bookDataSyncService.notifyStatsUpdate(bookId, { wordCount: totalWordCount });
-          // Save to DB
           await this.dbService.updateBookStats(bookId, { wordCount: totalWordCount });
       }
-
     } catch(error) {
       console.error("Failed to recalculate word count:", error);
       this.notificationService.error("Failed to update word count.");
     }
   }
-
 }

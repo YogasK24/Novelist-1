@@ -157,7 +157,7 @@ export class BookViewTabsComponent implements OnInit {
                 this.setActiveTab(action.openTab);
             }
         }
-    }, { allowSignalWrites: true });
+    });
   }
 
   ngOnInit(): void {

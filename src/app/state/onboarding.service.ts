@@ -1,48 +1,45 @@
 // src/app/state/onboarding.service.ts
 import { Injectable, signal } from '@angular/core';
 
-const LONG_PRESS_HINT_SHOWN_KEY = 'onboarding_longPressHintShown';
+const ONBOARDING_KEY = 'novelist_hasOnboarded';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OnboardingService {
-  // Signal to control the visibility of the long-press hint.
-  readonly showLongPressHint = signal<boolean>(false);
-
-  constructor() {
-    this.checkIfHintIsNeeded();
-  }
 
   /**
-   * Checks localStorage to see if the hint has been shown before.
-   * If not, it sets the signal to true, indicating the hint should be displayed.
+   * Sinyal yang menunjukkan apakah pengguna telah menyelesaikan proses onboarding.
+   * Nilainya dimuat dari localStorage saat layanan diinisialisasi.
    */
-  private checkIfHintIsNeeded(): void {
+  readonly hasOnboarded = signal<boolean>(this.checkOnboardingStatus());
+
+  /**
+   * Memeriksa localStorage untuk melihat apakah flag onboarding sudah ada.
+   * @returns `true` jika flag ada, `false` jika tidak.
+   */
+  private checkOnboardingStatus(): boolean {
     try {
-      const hintShown = localStorage.getItem(LONG_PRESS_HINT_SHOWN_KEY);
-      if (hintShown !== 'true') {
-        this.showLongPressHint.set(true);
-      }
+      const status = localStorage.getItem(ONBOARDING_KEY);
+      return status === 'true';
     } catch (e) {
-      console.error('Could not access localStorage for onboarding state.', e);
-      // If localStorage is unavailable, just don't show the hint.
-      this.showLongPressHint.set(false);
+      console.error('Gagal mengakses localStorage untuk status onboarding:', e);
+      // Jika localStorage tidak tersedia, anggap onboarding sudah selesai
+      // untuk mencegah modal muncul berulang kali.
+      return true;
     }
   }
 
   /**
-   * Marks the long-press hint as shown in localStorage and updates the signal
-   * to hide it for the rest of the user's session and future sessions.
+   * Menandai bahwa pengguna telah menyelesaikan proses onboarding.
+   * Ini akan mengatur flag di localStorage dan memperbarui sinyal.
    */
-  dismissLongPressHint(): void {
+  markAsOnboarded(): void {
     try {
-      localStorage.setItem(LONG_PRESS_HINT_SHOWN_KEY, 'true');
-      this.showLongPressHint.set(false);
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+      this.hasOnboarded.set(true);
     } catch (e) {
-      console.error('Could not access localStorage to save onboarding state.', e);
-      // Still hide it for the current session.
-      this.showLongPressHint.set(false);
+      console.error('Gagal menyimpan status onboarding ke localStorage:', e);
     }
   }
 }

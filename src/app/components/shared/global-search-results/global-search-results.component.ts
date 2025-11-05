@@ -17,16 +17,9 @@ export interface IGroupedSearchResult {
   standalone: true,
   imports: [CommonModule, RouterLink, HighlightPipe],
   template: `
-    @if (searchService.isSearchActive()) {
+    @if (searchService.isSearchActive() && searchService.hasBeenInteractedWith()) {
       <div 
-        class="absolute top-full mt-2 w-full max-w-lg left-1/2 -translate-x-1/2 z-50
-               transform transition-all duration-200 ease-out"
-        [class.opacity-100]="searchService.isSearchActive()"
-        [class.scale-100]="searchService.isSearchActive()"
-        [class.opacity-0]="!searchService.isSearchActive()"
-        [class.scale-95]="!searchService.isSearchActive()"
-        [class.pointer-events-auto]="searchService.isSearchActive()"
-        [class.pointer-events-none]="!searchService.isSearchActive()"
+        class="animate-slide-down-fade-in absolute top-full mt-2 w-full max-w-lg left-1/2 z-50 origin-top"
         (click)="$event.stopPropagation()"
       >
         <div 
@@ -236,6 +229,21 @@ export interface IGroupedSearchResult {
     .search-result-item {
       animation: resultFadeIn 0.4s ease-out forwards;
       opacity: 0; /* Mulai tersembunyi */
+    }
+
+    /* NEW Animation for the search panel */
+    @keyframes slideDownFadeIn {
+      from { 
+        opacity: 0; 
+        transform: translateX(-50%) translateY(-8px) scale(0.98); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(-50%) translateY(0) scale(1); 
+      }
+    }
+    .animate-slide-down-fade-in {
+      animation: slideDownFadeIn 0.3s ease-out forwards;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

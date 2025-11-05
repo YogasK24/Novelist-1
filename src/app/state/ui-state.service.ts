@@ -1,5 +1,5 @@
 // src/app/state/ui-state.service.ts
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import type { IBook } from '../../types/data';
 
 export const HEADER_OPTIONS_MENU_ID = 'headerOptions';
@@ -25,7 +25,8 @@ export class UiStateService {
   readonly isSetTargetModalOpen = signal(false);
   readonly bookForTarget = signal<IBook | null>(null);
 
-  readonly isHelpModalOpen = signal(false);
+  readonly helpModalContext = signal<string | null>(null);
+  readonly isHelpModalOpen = computed(() => this.helpModalContext() !== null);
 
   // --- 1. STATE BARU UNTUK MODAL STATISTIK ---
   readonly isStatisticsModalOpen = signal(false);
@@ -167,14 +168,14 @@ export class UiStateService {
     }, 300);
   }
 
-  openHelpModal(): void {
+  openHelpModal(context: string): void {
     this._storeFocus();
     this.closeAllMenus();
-    this.isHelpModalOpen.set(true);
+    this.helpModalContext.set(context);
   }
 
   closeHelpModal(): void {
-    this.isHelpModalOpen.set(false);
+    this.helpModalContext.set(null);
     // Wait for animation before restoring focus
     setTimeout(() => this._restoreFocus(), 300);
   }

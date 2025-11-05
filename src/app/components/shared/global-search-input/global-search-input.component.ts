@@ -9,7 +9,7 @@ import { SearchService } from '../../../state/search.service';
   standalone: true,
   imports: [CommonModule, FormsModule], // <-- Daftarkan FormsModule
   template: `
-    <div class="relative w-full max-w-lg">
+    <div class="relative w-full max-w-lg mx-auto">
       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" 
              class="w-5 h-5 text-gray-400 dark:text-gray-500">

@@ -1,15 +1,16 @@
 // src/app/components/write-page/chapter-list/chapter-list.component.ts
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { AddChapterModalComponent } from '../../book-view/add-chapter-modal/add-chapter-modal.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-write-chapter-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, IconComponent, AddChapterModalComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, IconComponent, AddChapterModalComponent, FormsModule],
   template: `
     <div class="flex flex-col h-full">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -22,6 +23,19 @@ import { AddChapterModalComponent } from '../../book-view/add-chapter-modal/add-
         </button>
       </div>
 
+      <!-- NEW: Search Input -->
+      <div class="relative mb-4 flex-shrink-0">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <app-icon name="solid-magnifying-glass-20" class="w-5 h-5 text-gray-400 dark:text-gray-500" />
+        </div>
+        <input
+          type="text"
+          placeholder="Cari bab..."
+          [(ngModel)]="searchTerm"
+          class="w-full pl-10 pr-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 border border-transparent focus:outline-none focus:ring-2 focus:ring-accent-600"
+        />
+      </div>
+
       @if (bookState.isLoadingChapters()) {
         <div class="flex-grow flex justify-center items-center">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-accent-600 dark:border-accent-400"></div>
@@ -29,7 +43,7 @@ import { AddChapterModalComponent } from '../../book-view/add-chapter-modal/add-
       } @else if (bookState.chapters(); as chapters) {
         @if (chapters.length > 0) {
           <nav class="flex-grow overflow-y-auto -mr-2 pr-2 space-y-1">
-            @for (chap of chapters; track chap.id) {
+            @for (chap of filteredChapters(); track chap.id) {
               <a [routerLink]="['/book', bookState.currentBookId(), 'write', chap.id]"
                  routerLinkActive #rla="routerLinkActive"
                  [class.bg-accent-100]="rla.isActive"
@@ -45,6 +59,11 @@ import { AddChapterModalComponent } from '../../book-view/add-chapter-modal/add-
                   {{ countWords(chap.content) }} kata
                 </span>
               </a>
+            } @empty {
+              <div class="flex-grow flex flex-col justify-center items-center text-center text-gray-500 dark:text-gray-400">
+                <app-icon name="solid-magnifying-glass-20" class="w-10 h-10 mb-2" />
+                <p>Tidak ada bab ditemukan untuk "{{ searchTerm() }}".</p>
+              </div>
             }
           </nav>
         } @else {
@@ -70,6 +89,18 @@ import { AddChapterModalComponent } from '../../book-view/add-chapter-modal/add-
 export class ChapterListComponent {
   public bookState = inject(CurrentBookStateService);
   showModal = signal(false);
+  searchTerm = signal('');
+
+  filteredChapters = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const chapters = this.bookState.chapters();
+    if (!term) {
+      return chapters;
+    }
+    return chapters.filter(chap =>
+      chap.title.toLowerCase().includes(term)
+    );
+  });
 
   openAddModal(): void {
     this.showModal.set(true);

@@ -1,0 +1,62 @@
+{
+    "dashboard": [
+        {
+            "title": "Memulai",
+            "isList": true,
+            "content": [
+                "<b>Manajemen Novel:</b> Di dasbor utama ini, Anda bisa melihat semua novel Anda. Gunakan tombol melayang <span class=\"inline-flex items-center justify-center bg-accent-600 text-white w-5 h-5 rounded-full\">+</span> untuk membuat novel pertama Anda.",
+                "<b>World-Building:</b> Klik pada novel mana pun untuk masuk ke 'Tampilan Buku'. Di sini adalah pusat Anda untuk membangun dunia cerita—tambahkan Karakter, Lokasi, Alur Cerita, dan lainnya.",
+                "<b>Mode Menulis:</b> Dari 'Tampilan Buku', klik tombol 'Tulis' di navigasi bawah untuk masuk ke editor fokus. Di sana Anda bisa membuat bab dan mulai menulis naskah Anda."
+            ]
+        },
+        {
+            "title": "Pro Tips",
+            "isList": false,
+            "content": [
+                {
+                    "icon": "outline-check-circle-24",
+                    "title": "Aksi Massal dengan Tekan & Tahan",
+                    "description": "Untuk mengarsipkan atau menghapus beberapa novel sekaligus, cukup tekan dan tahan pada salah satu kartu novel untuk masuk ke 'Mode Pilih'."
+                },
+                {
+                    "icon": "solid-bars-3-20",
+                    "title": "Susun Ulang Novel yang Disematkan",
+                    "description": "Dalam 'Tampilan Daftar' (List View), Anda bisa menyematkan novel. Setelah disematkan, ikon 'drag' akan muncul. Gunakan itu untuk menyusun ulang urutan novel yang Anda sematkan."
+                },
+                {
+                    "icon": "solid-magnifying-glass-20",
+                    "title": "Pencarian Cerdas",
+                    "description": "Gunakan bilah pencarian di header untuk mencari di SEMUA novel. Saat berada di dalam 'Tampilan Buku', bilah pencarian di sana akan memfilter item HANYA di dalam tab yang sedang aktif (misalnya, mencari karakter tertentu)."
+                }
+            ]
+        }
+    ],
+    "editor": [
+        {
+            "title": "Fitur Editor",
+            "isList": false,
+            "content": [
+                {
+                    "icon": "outline-arrows-pointing-out-24",
+                    "title": "Mode Fokus",
+                    "description": "Klik tombol \"Focus Mode\" di header untuk menyembunyikan panel samping. Ini memberikan area menulis yang bebas gangguan agar Anda bisa berkonsentrasi pada cerita Anda."
+                },
+                {
+                    "icon": "solid-document-text-20",
+                    "title": "Auto-Save",
+                    "description": "Pekerjaan Anda disimpan secara otomatis setiap beberapa detik (dapat dikonfigurasi di Pengaturan). Anda juga bisa menekan tombol \"Save Now\" untuk menyimpan secara manual kapan saja."
+                },
+                {
+                    "icon": "outline-settings-sliders-24",
+                    "title": "Kustomisasi Tampilan",
+                    "description": "Tidak suka dengan font atau jarak baris? Buka Pengaturan > Editor untuk menyesuaikan tipografi, format paragraf, dan bahkan mengaktifkan \"Typewriter Mode\" agar baris tulisan Anda selalu di tengah."
+                },
+                 {
+                    "icon": "outline-universal-access-24",
+                    "title": "Catatan Dunia di Samping Anda",
+                    "description": "Gunakan tombol panah di sisi kanan editor untuk membuka panel \"World Notes\". Anda dapat dengan cepat melihat daftar karakter, lokasi, dan plot event tanpa meninggalkan editor."
+                }
+            ]
+        }
+    ]
+}

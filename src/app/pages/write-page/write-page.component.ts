@@ -22,7 +22,7 @@ import { IconComponent } from '../../components/shared/icon/icon.component';
     IconComponent
   ],
   template: `
-   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500 font-sans-ui"> 
+   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 flex flex-col transition-colors duration-500 font-sans-ui h-screen overflow-hidden"> 
       
       <app-write-page-header 
           [isFocusMode]="!isChapterPanelOpen() && !isWorldPanelOpen()"
@@ -31,77 +31,99 @@ import { IconComponent } from '../../components/shared/icon/icon.component';
       
       <main class="flex-grow flex overflow-hidden relative"> 
         
-        <button (click)="openChapterPanel()" 
-                class="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 
-                       bg-gray-200/90 dark:bg-gray-800/90 
-                       hover:bg-gray-300 dark:hover:bg-gray-700 
-                       text-gray-800 dark:text-white rounded-r-lg shadow-lg 
-                       transition-all duration-200
+        <!-- Tombol Buka/Tutup Panel Bab -->
+        <button (click)="toggleChapterPanel()" 
+                class="absolute top-1/2 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center
+                       bg-gray-200/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full shadow-md
+                       text-gray-800 dark:text-white transition-all duration-300 ease-in-out
+                       hover:scale-110 hover:bg-gray-300/80 dark:hover:bg-gray-700/80
                        focus:outline-none focus:ring-2 focus:ring-accent-500"
-                aria-label="Open Chapter List"
-                [class.hidden]="isChapterPanelOpen()">
-           <app-icon name="outline-chevron-double-right-24" class="w-5 h-5"></app-icon>
+                [class.left-2]="!isChapterPanelOpen()"
+                [class.left-64]="isChapterPanelOpen()"
+                [class.lg:left-80]="isChapterPanelOpen()"
+                [class.-ml-4]="isChapterPanelOpen()"
+                aria-label="Toggle Chapter List">
+           @if(isChapterPanelOpen()) {
+              <app-icon name="outline-chevron-double-left-24" class="w-5 h-5 transition-transform duration-300"></app-icon>
+           } @else {
+              <app-icon name="outline-chevron-double-right-24" class="w-5 h-5 transition-transform duration-300"></app-icon>
+           }
         </button>
         
-        <div class="border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative 
-                    transition-all duration-300 ease-in-out overflow-hidden shadow-2xl" 
-             [class.w-80]="isChapterPanelOpen()"
+        <!-- Panel Bab (Responsif) -->
+        <div class="fixed top-0 bottom-0 left-0 z-40 bg-white dark:bg-gray-800
+                    shadow-2xl transition-transform duration-300 ease-in-out
+                    lg:relative lg:z-auto lg:shadow-none lg:translate-x-0"
+             [class.translate-x-0]="isChapterPanelOpen()"
+             [class.-translate-x-full]="!isChapterPanelOpen()"
+             [class.w-64]="isChapterPanelOpen()"
+             [class.lg:w-80]="isChapterPanelOpen()"
              [class.w-0]="!isChapterPanelOpen()">
           
-          @if (isChapterPanelOpen()) {
-              <button (click)="isChapterPanelOpen.set(false)" 
-                      class="absolute top-2 right-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-accent-500 rounded-full"
-                      aria-label="Close Chapter List">
-                  <app-icon name="outline-chevron-double-left-24" class="w-5 h-5"></app-icon>
-              </button>
-          }
-          
           <div class="h-full overflow-y-auto"
-               [class.p-4]="isChapterPanelOpen()"
-               [class.p-0]="!isChapterPanelOpen()">
+               [class.opacity-100]="isChapterPanelOpen()"
+               [class.opacity-0]="!isChapterPanelOpen()">
              @if (isChapterPanelOpen()) { 
-                 <app-write-chapter-list></app-write-chapter-list>
+                 <div class="px-4 pb-4 h-full pt-14">
+                    <app-write-chapter-list></app-write-chapter-list>
+                 </div>
              }
           </div>
         </div>
         
-        <div class="flex-grow overflow-y-auto relative min-w-0"> 
-          <router-outlet></router-outlet>
+        <!-- Area Konten Utama (Editor) -->
+        <div class="flex-grow overflow-y-auto relative min-w-0 transition-all duration-300 ease-in-out"> 
+          <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <router-outlet></router-outlet>
+          </div>
         </div>
 
-        <button (click)="openWorldPanel()" 
-                class="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 
-                       bg-gray-200/90 dark:bg-gray-800/90 
-                       hover:bg-gray-300 dark:hover:bg-gray-700 
-                       text-gray-800 dark:text-white rounded-l-lg shadow-lg 
-                       transition-all duration-200
+        <!-- Tombol Buka/Tutup Panel Dunia -->
+        <button (click)="toggleWorldPanel()" 
+                class="absolute top-1/2 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center
+                       bg-gray-200/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full shadow-md
+                       text-gray-800 dark:text-white transition-all duration-300 ease-in-out
+                       hover:scale-110 hover:bg-gray-300/80 dark:hover:bg-gray-700/80
                        focus:outline-none focus:ring-2 focus:ring-accent-500"
-                aria-label="Open World Notes"
-                [class.hidden]="isWorldPanelOpen()">
-             <app-icon name="outline-chevron-double-left-24" class="w-5 h-5"></app-icon>
+                [class.right-2]="!isWorldPanelOpen()"
+                [class.right-64]="isWorldPanelOpen()"
+                [class.lg:right-80]="isWorldPanelOpen()"
+                [class.-mr-4]="isWorldPanelOpen()"
+                aria-label="Toggle World Notes">
+             @if(isWorldPanelOpen()) {
+                <app-icon name="outline-chevron-double-right-24" class="w-5 h-5 transition-transform duration-300"></app-icon>
+             } @else {
+                <app-icon name="outline-chevron-double-left-24" class="w-5 h-5 transition-transform duration-300"></app-icon>
+             }
         </button>
         
-        <div class="border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0 relative 
-                    transition-all duration-300 ease-in-out overflow-hidden shadow-2xl"
-             [class.w-80]="isWorldPanelOpen()"
+        <!-- Panel Dunia (Responsif) -->
+        <div class="fixed top-0 bottom-0 right-0 z-40 bg-white dark:bg-gray-800
+                    shadow-2xl transition-transform duration-300 ease-in-out
+                    lg:relative lg:z-auto lg:shadow-none lg:translate-x-0"
+             [class.translate-x-0]="isWorldPanelOpen()"
+             [class.translate-x-full]="!isWorldPanelOpen()"
+             [class.w-64]="isWorldPanelOpen()"
+             [class.lg:w-80]="isWorldPanelOpen()"
              [class.w-0]="!isWorldPanelOpen()">
 
-          @if (isWorldPanelOpen()) {
-              <button (click)="isWorldPanelOpen.set(false)" 
-                      class="absolute top-2 left-2 z-40 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition focus:outline-none focus:ring-2 focus:ring-accent-500 rounded-full"
-                      aria-label="Close World Notes">
-                  <app-icon name="outline-chevron-double-right-24" class="w-5 h-5"></app-icon>
-              </button>
-          }
-
           <div class="h-full overflow-y-auto"
-               [class.p-4]="isWorldPanelOpen()"
-               [class.p-0]="!isWorldPanelOpen()">
+               [class.opacity-100]="isWorldPanelOpen()"
+               [class.opacity-0]="!isWorldPanelOpen()">
              @if (isWorldPanelOpen()) {
-                <app-world-detail></app-world-detail>
+                <div class="px-4 pb-4 h-full pt-14">
+                    <app-world-detail></app-world-detail>
+                </div>
              }
           </div>
         </div>
+
+        <!-- Backdrop untuk Mobile/Tablet -->
+        @if ((isChapterPanelOpen() || isWorldPanelOpen()) && isMobileView()) {
+          <div (click)="closePanels()"
+               class="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden">
+          </div>
+        }
 
       </main>
       
@@ -118,43 +140,70 @@ export class WritePageComponent implements OnInit, OnDestroy {
   isChapterPanelOpen = signal(true); 
   isWorldPanelOpen = signal(false);
   
+  // State untuk mendeteksi viewport mobile/tablet
+  private mediaQuery = window.matchMedia('(max-width: 1023px)'); // lg breakpoint
+  isMobileView = signal(this.mediaQuery.matches);
+  private mediaQueryListener = (e: MediaQueryListEvent) => this.isMobileView.set(e.matches);
+
   ngOnInit(): void {
+    // Di layar besar, defaultnya buka panel bab. Di mobile/tablet, defaultnya fokus.
+    if (!this.isMobileView()) {
+        this.isChapterPanelOpen.set(true);
+        this.isWorldPanelOpen.set(false);
+    } else {
+        this.isChapterPanelOpen.set(false);
+        this.isWorldPanelOpen.set(false);
+    }
+
     this.routeSub = this.route.params.subscribe(params => {
       const bookId = Number(params['id']); 
       if (!isNaN(bookId)) {
         this.bookState.loadBookData(bookId);
         this.bookState.loadWritingLogs(bookId);
-        this.bookState.loadCharacters(bookId);
-        this.bookState.loadLocations(bookId);
-        this.bookState.loadPlotEvents(bookId);
-        this.bookState.loadChapters(bookId);
+        // Data dunia (karakter, dll.) akan dimuat secara lazy oleh komponennya
+        this.bookState.loadChapters(bookId); // Tetap muat bab untuk navigasi
       } else {
         console.error("Book ID not valid:", params['id']);
       }
     });
+
+    this.mediaQuery.addEventListener('change', this.mediaQueryListener);
   }
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.bookState.clearBookData();
-  }
-
-  openChapterPanel(): void {
-    this.isChapterPanelOpen.set(true);
-  }
-
-  openWorldPanel(): void {
-    this.isWorldPanelOpen.set(true);
+    this.mediaQuery.removeEventListener('change', this.mediaQueryListener);
   }
   
+  closePanels(): void {
+    this.isChapterPanelOpen.set(false);
+    this.isWorldPanelOpen.set(false);
+  }
+
   toggleFocusMode(): void {
     const isCurrentlyFocus = !this.isChapterPanelOpen() && !this.isWorldPanelOpen();
     if (isCurrentlyFocus) {
       this.isChapterPanelOpen.set(true);
       this.isWorldPanelOpen.set(false);
     } else {
-      this.isChapterPanelOpen.set(false);
+      this.closePanels();
+    }
+  }
+
+  toggleChapterPanel(): void {
+    const opening = !this.isChapterPanelOpen();
+    this.isChapterPanelOpen.set(opening);
+    if (opening) {
       this.isWorldPanelOpen.set(false);
+    }
+  }
+
+  toggleWorldPanel(): void {
+    const opening = !this.isWorldPanelOpen();
+    this.isWorldPanelOpen.set(opening);
+    if (opening) {
+      this.isChapterPanelOpen.set(false);
     }
   }
 }

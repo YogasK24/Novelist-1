@@ -8,6 +8,7 @@ import { SettingsService } from '../../state/settings.service';
 import type { IChapter } from '../../../types/data';
 import { IconComponent } from '../../components/shared/icon/icon.component';
 import { EditorStatusBarComponent } from '../../components/write-page/editor-status-bar/editor-status-bar.component';
+import { NotificationService } from '../../state/notification.service';
 
 declare var Quill: any;
 
@@ -237,6 +238,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   public bookState = inject(CurrentBookStateService);
   public settingsService = inject(SettingsService);
+  private notificationService = inject(NotificationService);
 
   editorRef = viewChild<ElementRef>('editor');
 
@@ -269,7 +271,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
           this.setupQuill();
         }
       }
-    }, { allowSignalWrites: true });
+    });
 
     effect(() => {
         // This effect will run when editorRef becomes available
@@ -437,6 +439,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
 
     } catch (error) {
       console.error("Failed to save content:", error);
+      this.notificationService.error("Gagal menyimpan. Periksa koneksi Anda dan coba lagi.");
       this.isDirty.set(true); // Re-set dirty flag if save failed
     } finally {
       this.isSaving.set(false);

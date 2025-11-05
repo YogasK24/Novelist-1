@@ -20,7 +20,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
     } @else if (bookState.sortedBooks(); as books) {
         @if (books.length > 0) {
           @if (viewMode() === 'grid') {
-            <div #listContainer class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+            <div #listContainer class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]"
                  tabindex="0" (focus)="initFocus()" (blur)="activeIndex.set(null)" (keydown)="handleKeydown($event)">
               
               <!-- Pinned and Draggable Books -->
