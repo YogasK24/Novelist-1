@@ -1,5 +1,5 @@
 // src/app/components/book-view/prop-list/prop-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { IProp } from '../../../../types/data';
@@ -16,7 +16,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
       <!-- Tombol Tambah -->
       <button 
         (click)="openAddModal()"
-        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
+        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
         + Tambah Properti
       </button>
 
@@ -30,7 +30,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
             <!-- Daftar Properti -->
             <div class="space-y-3">
               @for (prop of props; track prop.id) {
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start hover:bg-gray-100 dark:hover:bg-gray-700/80 transition duration-150">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-all duration-150 hover:scale-102">
                   <!-- Info Properti -->
                   <div class="mr-4">
                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ prop.name }}</h3>
@@ -77,6 +77,26 @@ export class PropListComponent {
   
   showModal: WritableSignal<boolean> = signal(false);
   editingProp: WritableSignal<IProp | null> = signal(null);
+
+  // --- NEW: For deep linking ---
+  entityToEditId = input<number | undefined>();
+  editHandled = output<void>();
+
+  constructor() {
+    effect(() => {
+      const idToEdit = this.entityToEditId();
+      const props = this.bookState.props();
+      if (idToEdit !== undefined && props.length > 0) {
+        Promise.resolve().then(() => {
+          const prop = props.find(p => p.id === idToEdit);
+          if (prop) {
+            this.openEditModal(prop);
+            this.editHandled.emit();
+          }
+        });
+      }
+    });
+  }
 
   openAddModal(): void {
     this.editingProp.set(null);

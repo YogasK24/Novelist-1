@@ -1,7 +1,8 @@
 // src/app/components/book-view/book-view-tabs/book-view-tabs.component.ts
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, input, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; 
+import { Router } from '@angular/router';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import { IconComponent } from '../../shared/icon/icon.component';
 // Import komponen list
@@ -95,12 +96,12 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
 
       @switch (activeTab) {
          @case ('connections') { <app-character-map></app-character-map> }
-         @case ('characters') { <app-character-list></app-character-list> }
-         @case ('locations') { <app-location-list></app-location-list> }
-         @case ('chapters') { <app-chapter-list-tab></app-chapter-list-tab> }
-         @case ('events') { <app-plot-event-list></app-plot-event-list> }
-         @case ('themes') { <app-theme-list></app-theme-list> }
-         @case ('props') { <app-prop-list></app-prop-list> }
+         @case ('characters') { <app-character-list [entityToEditId]="getEntityIdForTab('characters')" (editHandled)="onEditHandled()"></app-character-list> }
+         @case ('locations') { <app-location-list [entityToEditId]="getEntityIdForTab('locations')" (editHandled)="onEditHandled()"></app-location-list> }
+         @case ('chapters') { <app-chapter-list-tab [entityToEditId]="getEntityIdForTab('chapters')" (editHandled)="onEditHandled()"></app-chapter-list-tab> }
+         @case ('events') { <app-plot-event-list [entityToEditId]="getEntityIdForTab('events')" (editHandled)="onEditHandled()"></app-plot-event-list> }
+         @case ('themes') { <app-theme-list [entityToEditId]="getEntityIdForTab('themes')" (editHandled)="onEditHandled()"></app-theme-list> }
+         @case ('props') { <app-prop-list [entityToEditId]="getEntityIdForTab('props')" (editHandled)="onEditHandled()"></app-prop-list> }
          @default { <div class="p-4 text-gray-500">Pilih tab</div> }
       }
     </div>
@@ -108,6 +109,11 @@ import { CharacterMapComponent } from '../character-map/character-map.component'
 })
 export class BookViewTabsComponent implements OnInit {
   public bookState = inject(CurrentBookStateService);
+  private router = inject(Router);
+
+  // --- NEW: Input for initial action ---
+  initialAction = input<{ openTab?: string; editId?: number } | null>(null);
+  private actionToProcess = signal<{ openTab?: string; editId?: number } | null>(null);
 
   tabs = [
     { key: 'connections', label: 'Connections', iconName: 'solid-globe-alt-20' }, 
@@ -141,8 +147,36 @@ export class BookViewTabsComponent implements OnInit {
     }
   });
 
+  constructor() {
+    // Effect to process the initial action once
+    effect(() => {
+        const action = this.initialAction();
+        if (action) {
+            this.actionToProcess.set(action);
+            if (action.openTab && this.tabs.some(t => t.key === action.openTab)) {
+                this.setActiveTab(action.openTab);
+            }
+        }
+    }, { allowSignalWrites: true });
+  }
+
   ngOnInit(): void {
-    this.loadTabData(this.activeTab);
+    if (!this.actionToProcess()) {
+        this.loadTabData(this.activeTab);
+    }
+  }
+
+  // --- NEW: Method to handle when child component has processed the edit action ---
+  onEditHandled(): void {
+    this.actionToProcess.set(null);
+    // Hapus query params dari URL untuk mencegah modal terbuka lagi saat refresh
+    this.router.navigate([], { queryParams: {} });
+  }
+
+  // --- NEW: Helper to pass the correct ID to the correct tab ---
+  getEntityIdForTab(tabKey: string): number | undefined {
+    const action = this.actionToProcess();
+    return action?.openTab === tabKey ? action.editId : undefined;
   }
 
   setActiveTab(key: string): void {

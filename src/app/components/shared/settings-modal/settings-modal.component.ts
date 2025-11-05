@@ -6,6 +6,7 @@ import { SettingsService, type AutoSaveInterval } from '../../../state/settings.
 import { IconComponent } from '../icon/icon.component';
 import { ConfirmationService } from '../../../state/confirmation.service';
 import { BackupService } from '../../../state/backup.service';
+import { NotificationService } from '../../../state/notification.service'; // <-- 1. IMPORT
 import { 
   TAB_OPTIONS, 
   THEME_OPTIONS, 
@@ -16,11 +17,12 @@ import {
   DASHBOARD_VIEW_OPTIONS,
   DASHBOARD_SORT_OPTIONS
 } from '../../../core/settings.constants';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-settings-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, FocusTrapDirective],
   template: `
     @if (settingsService.isModalOpen(); as isOpen) {
       <div 
@@ -33,6 +35,7 @@ import {
         aria-modal="true" role="dialog"
       >
         <div 
+          appFocusTrap
           class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl 
                  ring-1 ring-black/5 dark:ring-white/10
                  transform transition-all duration-300 flex flex-col overflow-hidden"
@@ -44,7 +47,7 @@ import {
             <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
               Kustomisasi Editor & Tampilan
             </h2>
-            <button (click)="settingsService.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-500">
+            <button (click)="settingsService.closeModal()" aria-label="Tutup Pengaturan" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-500">
               <app-icon name="outline-x-mark-24" class="w-6 h-6"></app-icon>
             </button>
           </div>
@@ -57,7 +60,7 @@ import {
                   <li>
                     <button 
                       (click)="activeTab.set(tab.id)"
-                      class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-colors"
+                      class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-colors focus:outline-none"
                       [class.bg-accent-100]="activeTab() === tab.id"
                       [class.dark:bg-accent-900/30]="activeTab() === tab.id"
                       [class.text-accent-700]="activeTab() === tab.id"
@@ -67,6 +70,8 @@ import {
                       [class.dark:text-gray-400]="activeTab() !== tab.id"
                       [class.hover:bg-gray-200]="activeTab() !== tab.id"
                       [class.dark:hover:bg-gray-700]="activeTab() !== tab.id"
+                      [class.focus-visible:bg-gray-200]="activeTab() !== tab.id"
+                      [class.dark:focus-visible:bg-gray-700]="activeTab() !== tab.id"
                     >
                       <app-icon [name]="tab.iconName" class="w-5 h-5"></app-icon>
                       <span>{{ tab.label }}</span>
@@ -427,6 +432,7 @@ export class SettingsModalComponent {
   readonly settingsService = inject(SettingsService);
   readonly confirmationService = inject(ConfirmationService);
   private readonly backupService = inject(BackupService);
+  private readonly notificationService = inject(NotificationService); // <-- 2. INJECT
   
   activeTab = signal<'tampilan' | 'editor' | 'aksesibilitas' | 'data'>('tampilan');
 
@@ -447,6 +453,8 @@ export class SettingsModalComponent {
       confirmButtonText: 'Ya, Reset',
       onConfirm: () => {
         this.settingsService.resetToDefaults();
+        // 3. TAMPILKAN NOTIFIKASI SETELAH RESET
+        this.notificationService.success('Semua pengaturan telah berhasil direset.');
       }
     });
   }

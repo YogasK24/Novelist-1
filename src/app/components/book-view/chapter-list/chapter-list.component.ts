@@ -1,5 +1,5 @@
 // src/app/components/book-view/chapter-list/chapter-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, ViewChild } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, ViewChild, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray, CdkDropList } from '@angular/cdk/drag-drop';
@@ -21,7 +21,7 @@ import { NotificationService } from '../../../state/notification.service';
           <p class="text-sm text-slate-500 dark:text-slate-400">Manage your chapters here, or click 'Write' in the bottom navigation to enter editor mode.</p>
           <button 
             (click)="openAddModal()"
-            class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
+            class="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition-all duration-150 hover:scale-105 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
             + Add Chapter
           </button>
       </div>
@@ -46,7 +46,7 @@ import { NotificationService } from '../../../state/notification.service';
                      [cdkDragData]="chap" 
                      tabindex="0" 
                      (keydown)="onMoveItem(chap, $event)"
-                     class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex items-start group hover:bg-slate-100 dark:hover:bg-slate-700/80 transition focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-accent-500"
+                     class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex items-start group hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all duration-150 hover:scale-102 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-accent-500"
                      [class.cursor-grab]="!isReordering() && bookState.contextualSearchTerm().length === 0"
                      [class.cursor-not-allowed]="isReordering() || bookState.contextualSearchTerm().length > 0"
                      [class.opacity-50]="isReordering()"
@@ -79,7 +79,7 @@ import { NotificationService } from '../../../state/notification.service';
                        <app-icon name="solid-arrow-down-circle-20" class="w-5 h-5"></app-icon>
                      </button>
                      <button [disabled]="isReordering()" (click)="openEditModal(chap); $event.stopPropagation()" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Edit Chapter Title">
-                       <app-icon name="solid-pencil-20" class="w-5 h-5"></app-icon>
+                       <app-icon name="solid-pencil-20" class="w-5 h-5" />
                      </button>
                      <button [disabled]="isReordering()" (click)="deleteChapter(chap.id!, chap.title); $event.stopPropagation()" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Delete Chapter">
                         <app-icon name="solid-trash-20" class="w-5 h-5"></app-icon>
@@ -122,6 +122,26 @@ export class ChapterListComponent {
   showModal: WritableSignal<boolean> = signal(false);
   editingChapter: WritableSignal<IChapter | null> = signal(null);
   isReordering: WritableSignal<boolean> = signal(false);
+
+  // --- NEW: For deep linking ---
+  entityToEditId = input<number | undefined>();
+  editHandled = output<void>();
+
+  constructor() {
+    effect(() => {
+      const idToEdit = this.entityToEditId();
+      const chapters = this.bookState.chapters();
+      if (idToEdit !== undefined && chapters.length > 0) {
+        Promise.resolve().then(() => {
+          const chapter = chapters.find(c => c.id === idToEdit);
+          if (chapter) {
+            this.openEditModal(chapter);
+            this.editHandled.emit();
+          }
+        });
+      }
+    });
+  }
 
   openAddModal(): void {
     this.editingChapter.set(null); 

@@ -1,8 +1,7 @@
 // src/app/components/dashboard/options-menu/options-menu.component.ts
-import { Component, ChangeDetectionStrategy, input, inject, OnDestroy, Renderer2, ElementRef, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/icon/icon.component';
-import { BookStateService } from '../../../state/book-state.service';
 import { SettingsService } from '../../../state/settings.service';
 import { UiStateService } from '../../../state/ui-state.service';
 import { NotificationService } from '../../../state/notification.service';
@@ -21,13 +20,13 @@ import { NotificationService } from '../../../state/notification.service';
            style="opacity: 1; transform: scale(1);">
         <div class="py-1" role="menu" aria-orientation="vertical" (click)="$event.stopPropagation()">
           
-          <button (click)="onToggleArchived()"
+          <button (click)="onOpenStatistics()"
                   class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm 
                          text-gray-700 dark:text-gray-200 
                          hover:bg-gray-100 dark:hover:bg-gray-600" 
                   role="menuitem">
-            <app-icon name="outline-archive-box-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <span>{{ bookState.showArchived() ? 'Hide Archived' : 'Show Archived' }}</span>
+            <app-icon name="outline-chart-bar-24" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span>Statistik</span>
           </button>
 
           <button (click)="onOpenSettings()"
@@ -54,46 +53,15 @@ import { NotificationService } from '../../../state/notification.service';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OptionsMenuComponent implements OnDestroy {
+export class OptionsMenuComponent {
   show = input.required<boolean>();
-  triggerElement = input<HTMLElement | undefined>();
 
-  bookState = inject(BookStateService);
   settingsService = inject(SettingsService);
   private uiState = inject(UiStateService);
-  private renderer = inject(Renderer2);
-  private elementRef = inject(ElementRef);
   private notificationService = inject(NotificationService);
-  
-  private unlisten: (() => void) | null = null;
 
-  constructor() {
-    effect((onCleanup) => {
-      if (this.show()) {
-        // Tunda pemasangan listener untuk menghindari event klik yang sama yang membuka menu
-        // agar tidak langsung menutupnya kembali.
-        const timerId = setTimeout(() => {
-          if (!this.unlisten) {
-            this.unlisten = this.renderer.listen('document', 'click', this.handleGlobalClick);
-          }
-        }, 0);
-        
-        onCleanup(() => {
-            clearTimeout(timerId);
-        });
-
-      } else {
-        this.removeGlobalListener();
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.removeGlobalListener();
-  }
-
-  onToggleArchived(): void {
-    this.bookState.toggleShowArchived();
+  onOpenStatistics(): void {
+    this.uiState.openStatisticsModal();
     this.uiState.closeAllMenus();
   }
 
@@ -107,27 +75,4 @@ export class OptionsMenuComponent implements OnDestroy {
     this.notificationService.info('Fitur ini akan segera tersedia!');
     this.uiState.closeAllMenus();
   }
-
-  private removeGlobalListener(): void {
-    if (this.unlisten) {
-      this.unlisten();
-      this.unlisten = null;
-    }
-  }
-  
-  // Menggunakan arrow function untuk menjaga konteks `this` untuk listener
-  private handleGlobalClick = (event: MouseEvent): void => {
-    const trigger = this.triggerElement();
-    const menu = this.elementRef.nativeElement;
-
-    // Jika klik terjadi di luar trigger DAN di luar menu, itu adalah "klik di luar"
-    const wasClickOutside = trigger 
-      && menu
-      && !trigger.contains(event.target as Node) 
-      && !menu.contains(event.target as Node);
-
-    if (wasClickOutside) {
-      this.uiState.closeAllMenus();
-    }
-  };
 }

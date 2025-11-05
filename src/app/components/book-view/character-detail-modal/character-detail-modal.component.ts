@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import type { ICharacter } from '../../../../types/data';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-character-detail-modal',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, FocusTrapDirective],
   template: `
     <div 
       class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 transition-opacity duration-300"
@@ -18,6 +19,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
       role="dialog"
     >
       <div 
+        appFocusTrap
         class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"

@@ -10,13 +10,14 @@ export interface IBook {
   dailyWordTarget: number;   // <-- NEW: Daily word target (e.g., 500)
   isArchived?: boolean;      // <-- NEW: To hide book from main view
   isPinned?: boolean;        // <-- NEW: To keep book at the top
+  pinOrder?: number;         // <-- NEW: For custom ordering of pinned books
+  chapterCount: number;      // <-- NEW (Denormalized)
+  characterCount: number;    // <-- NEW (Denormalized)
 }
 
 // --- TAMBAHKAN INTERFACE BARU DI SINI ---
 // (Ini adalah tipe yang kita pindahkan)
 export interface IBookWithStats extends IBook {
-  chapterCount?: number;
-  characterCount?: number;
   dailyProgressPercentage?: number;
 }
 // --- AKHIR TAMBAHAN ---

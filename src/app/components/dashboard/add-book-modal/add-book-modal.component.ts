@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BookStateService } from '../../../state/book-state.service';
 import type { IBook } from '../../../../types/data';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-add-book-modal',
   standalone: true,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, IconComponent, FocusTrapDirective],
   template: `
     <div 
       class="fixed inset-0 bg-black/70 flex justify-center items-center z-50 
@@ -21,6 +22,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
       role="dialog"
     >
       <div 
+        appFocusTrap
         class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md ring-1 ring-black/5 dark:ring-white/10
                transform transition-all duration-300 ease-in-out"
         [class.opacity-100]="isShown()" [class.translate-y-0]="isShown()" [class.scale-100]="isShown()"
@@ -29,9 +31,9 @@ import { IconComponent } from '../../shared/icon/icon.component';
       >
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200">
-            {{ isEditing() ? 'Edit Book Title' : 'Create a New Book' }}
+            {{ isEditing() ? 'Edit Judul Novel' : 'Buat Novel Baru' }}
           </h2>
-          <button (click)="close()" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
+          <button (click)="close()" aria-label="Tutup modal" class="text-gray-400 hover:text-gray-200 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-accent-500 rounded">
             <app-icon name="outline-x-mark-24" class="w-6 h-6" />
           </button>
         </div>
@@ -39,18 +41,18 @@ import { IconComponent } from '../../shared/icon/icon.component';
         <form [formGroup]="bookForm" (ngSubmit)="onSubmit()">
           <div class="mb-6">
             <label for="bookTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Book Title
+              Judul Novel
             </label>
             <input
               type="text"
               id="bookTitle"
               formControlName="title"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-600 dark:focus:ring-accent-500"
-              placeholder="Enter the novel's title..."
+              placeholder="Masukkan judul novel..."
             />
              @if (bookForm.get('title')?.invalid && bookForm.get('title')?.touched) {
               <div class="text-red-400 text-sm mt-1">
-               Title is required.
+               Judul harus diisi.
              </div>
             }
           </div>
@@ -60,7 +62,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
               (click)="close()"
               class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded-md font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-gray-500"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
@@ -118,15 +120,18 @@ export class AddBookModalComponent {
 
     this.isLoading.set(true);
     try {
+      let success = false;
       if (book && book.id) {
-        await this.bookState.updateBookTitle(book.id, title);
+        success = await this.bookState.updateBookTitle(book.id, title);
       } else {
-        await this.bookState.addNewBook(title);
+        success = await this.bookState.addNewBook(title);
       }
-      this.close();
+      
+      if (success) {
+        this.close();
+      }
     } catch (e) {
       console.error("Failed to save book:", e);
-      this.isLoading.set(false); // Pastikan loading di-reset jika ada error
     } finally {
        this.isLoading.set(false);
     }

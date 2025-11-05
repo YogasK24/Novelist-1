@@ -1,5 +1,5 @@
 // src/app/components/book-view/location-list/location-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import type { ILocation } from '../../../../types/data';
@@ -16,7 +16,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
       <!-- Tombol Tambah -->
       <button 
         (click)="openAddModal()"
-        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition duration-150">
+        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition-all duration-150 hover:scale-105">
         + Tambah Lokasi
       </button>
 
@@ -30,7 +30,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
             <!-- Daftar Lokasi -->
             <div class="space-y-3">
               @for (loc of locations; track loc.id) {
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-start hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-all duration-150 hover:scale-102">
                   <!-- Info Lokasi -->
                   <div class="mr-4">
                      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-200">{{ loc.name }}</h3>
@@ -76,6 +76,26 @@ export class LocationListComponent {
   
   showModal: WritableSignal<boolean> = signal(false);
   editingLocation: WritableSignal<ILocation | null> = signal(null);
+
+  // --- NEW: For deep linking ---
+  entityToEditId = input<number | undefined>();
+  editHandled = output<void>();
+
+  constructor() {
+    effect(() => {
+      const idToEdit = this.entityToEditId();
+      const locations = this.bookState.locations();
+      if (idToEdit !== undefined && locations.length > 0) {
+        Promise.resolve().then(() => {
+          const location = locations.find(l => l.id === idToEdit);
+          if (location) {
+            this.openEditModal(location);
+            this.editHandled.emit();
+          }
+        });
+      }
+    });
+  }
 
   openAddModal(): void {
     this.editingLocation.set(null);

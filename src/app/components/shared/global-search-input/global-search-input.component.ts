@@ -23,8 +23,7 @@ import { SearchService } from '../../../state/search.service';
         placeholder="Cari novel, karakter, bab, lokasi..."
         [ngModel]="searchService.searchTerm()"
         (ngModelChange)="onSearchChange($event)"
-        (focus)="onSearchChange(searchService.searchTerm())"
-        (keydown.escape)="searchService.closeSearch()"
+        (keydown)="onKeydown($event)"
         class="w-full pl-10 pr-4 py-2 rounded-md 
                bg-gray-200 dark:bg-gray-700 
                text-gray-800 dark:text-gray-200
@@ -38,16 +37,52 @@ import { SearchService } from '../../../state/search.service';
 })
 export class GlobalSearchInputComponent {
   public searchService = inject(SearchService);
-  private searchInput = viewChild.required<ElementRef<HTMLInputElement>>('searchInput');
+  private searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   constructor() {
     effect(() => {
-      // Secara otomatis fokus pada input saat komponen ini muncul
-      this.searchInput().nativeElement.focus();
+      // FIX: Fokus pada input hanya saat search bar diaktifkan.
+      // Tambahkan penundaan kecil untuk memastikan elemen dapat difokuskan setelah transisi CSS.
+      if (this.searchService.isSearchActive()) {
+        setTimeout(() => {
+            this.searchInput()?.nativeElement.focus();
+        }, 50);
+      }
     });
   }
 
   onSearchChange(query: string) {
     this.searchService.search(query);
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    const activeKeys = ['ArrowUp', 'ArrowDown', 'Enter', 'Escape'];
+    if (!activeKeys.includes(event.key)) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.searchService.closeSearch();
+      return;
+    }
+    
+    // Hanya cegah perilaku default jika ada hasil untuk dinavigasi
+    if (this.searchService.searchResults().length > 0) {
+      event.preventDefault();
+    } else {
+      return; // Jangan lakukan apa-apa jika tidak ada hasil
+    }
+
+    switch (event.key) {
+      case 'ArrowUp':
+        this.searchService.navigateUp();
+        break;
+      case 'ArrowDown':
+        this.searchService.navigateDown();
+        break;
+      case 'Enter':
+        this.searchService.navigateToActiveResult();
+        break;
+    }
   }
 }

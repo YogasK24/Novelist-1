@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink, Router, RouterOutlet } from '@angular/route
 import { CommonModule, DecimalPipe } from '@angular/common'; 
 import { Subscription } from 'rxjs'; 
 import { CurrentBookStateService } from '../../state/current-book-state.service';
-import { ChapterListComponent } from '../../components/book-view/chapter-list/chapter-list.component'; 
+import { ChapterListComponent } from '../../components/write-page/chapter-list/chapter-list.component'; 
 import { WorldDetailComponent } from '../../components/world-detail/world-detail.component'; 
 import { WritePageHeaderComponent } from '../../components/write-page/write-page-header/write-page-header.component'; 
 import { IconComponent } from '../../components/shared/icon/icon.component';
@@ -60,7 +60,7 @@ import { IconComponent } from '../../components/shared/icon/icon.component';
                [class.p-4]="isChapterPanelOpen()"
                [class.p-0]="!isChapterPanelOpen()">
              @if (isChapterPanelOpen()) { 
-                 <app-chapter-list-tab></app-chapter-list-tab>
+                 <app-write-chapter-list></app-write-chapter-list>
              }
           </div>
         </div>
@@ -127,6 +127,7 @@ export class WritePageComponent implements OnInit, OnDestroy {
         this.bookState.loadCharacters(bookId);
         this.bookState.loadLocations(bookId);
         this.bookState.loadPlotEvents(bookId);
+        this.bookState.loadChapters(bookId);
       } else {
         console.error("Book ID not valid:", params['id']);
       }
@@ -140,12 +141,10 @@ export class WritePageComponent implements OnInit, OnDestroy {
 
   openChapterPanel(): void {
     this.isChapterPanelOpen.set(true);
-    this.isWorldPanelOpen.set(false);
   }
 
   openWorldPanel(): void {
     this.isWorldPanelOpen.set(true);
-    this.isChapterPanelOpen.set(false);
   }
   
   toggleFocusMode(): void {

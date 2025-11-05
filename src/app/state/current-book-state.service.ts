@@ -2,7 +2,7 @@
 
 import { Injectable, inject, signal, effect, WritableSignal, computed } from '@angular/core';
 import { DatabaseService } from './database.service';
-import { BookStateService } from './book-state.service';
+import { BookDataSyncService } from './book-data-sync.service';
 import type { IBook, ICharacter, ILocation, IPlotEvent, IChapter, ITheme, IProp, IRelationship, IWritingLog } from '../../types/data';
 import { NotificationService } from './notification.service'; 
 
@@ -11,7 +11,7 @@ import { NotificationService } from './notification.service';
 })
 export class CurrentBookStateService {
   private readonly dbService = inject(DatabaseService);
-  private readonly bookStateService = inject(BookStateService);
+  private readonly bookDataSyncService = inject(BookDataSyncService);
   private readonly notificationService = inject(NotificationService); 
 
   // --- STATE PRIMER (Writable Signals) ---
@@ -335,9 +335,9 @@ export class CurrentBookStateService {
     action: () => Promise<any>,
     refresh: { fetchFn: (bookId: number) => Promise<T[]>, targetSignal: WritableSignal<T[]> },
     messages: { success: string, error: string }
-  ): Promise<void> {
+  ): Promise<boolean> {
     const bookId = this.currentBookId();
-    if (!bookId) return;
+    if (!bookId) return false;
     
     try {
       await action();
@@ -346,9 +346,11 @@ export class CurrentBookStateService {
       refresh.targetSignal.set(updatedList ?? []);
 
       this.notificationService.success(messages.success);
+      return true;
     } catch (error) {
       console.error(messages.error, error);
       this.notificationService.error(messages.error);
+      return false;
     }
   }
 
@@ -358,11 +360,14 @@ export class CurrentBookStateService {
   async addCharacter(name: string, description: string, relationships: IRelationship[]): Promise<void> {
     const bookId = this.currentBookId();
     if (!bookId) return;
-    await this._handleCrud(
+    const success = await this._handleCrud(
       () => this.dbService.addCharacter({ bookId, name, description, relationships }),
       { fetchFn: this.dbService.getCharactersByBookId.bind(this.dbService), targetSignal: this.characters },
       { success: `Character "${name}" was added successfully.`, error: `Failed to add character "${name}".` }
     );
+    if (success) {
+      this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', 1);
+    }
   }
   async updateCharacter(id: number, data: { name: string, description: string, relationships: IRelationship[] }): Promise<void> {
     await this._handleCrud(
@@ -372,12 +377,17 @@ export class CurrentBookStateService {
     );
   }
   async deleteCharacter(id: number): Promise<void> {
+     const bookId = this.currentBookId();
+     if (!bookId) return;
      const charName = this.characters().find(c => c.id === id)?.name ?? 'Character';
-     await this._handleCrud(
+     const success = await this._handleCrud(
        () => this.dbService.deleteCharacter(id),
        { fetchFn: this.dbService.getCharactersByBookId.bind(this.dbService), targetSignal: this.characters },
        { success: `Character "${charName}" was deleted successfully.`, error: `Failed to delete character "${charName}".` }
      );
+     if (success) {
+      this.bookDataSyncService.notifyCountChange(bookId, 'characterCount', -1);
+     }
   }
 
   // Location Actions
@@ -459,11 +469,14 @@ export class CurrentBookStateService {
     const maxOrder = currentChapters.reduce((max, chap) => Math.max(max, chap.order), 0);
     const newOrder = maxOrder + 1;
 
-    await this._handleCrud(
+    const success = await this._handleCrud(
       () => this.dbService.addChapter({ bookId, title, content: "", order: newOrder, characterIds }),
       { fetchFn: this.dbService.getChaptersByBookId.bind(this.dbService), targetSignal: this.chapters },
       { success: `Chapter "${title}" was created successfully.`, error: `Failed to create chapter "${title}".` }
     );
+    if (success) {
+      this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', 1);
+    }
   }
   async updateChapterTitle(id: number, title: string, characterIds: number[]): Promise<void> {
     await this._handleCrud(
@@ -490,13 +503,18 @@ export class CurrentBookStateService {
     }
   }
   async deleteChapter(id: number): Promise<void> {
+     const bookId = this.currentBookId();
+     if (!bookId) return;
      const chapTitle = this.chapters().find(c => c.id === id)?.title ?? 'Chapter';
-     await this._handleCrud(
+     const success = await this._handleCrud(
        () => this.dbService.deleteChapter(id),
        { fetchFn: this.dbService.getChaptersByBookId.bind(this.dbService), targetSignal: this.chapters },
        { success: `Chapter "${chapTitle}" was deleted successfully.`, error: `Failed to delete chapter "${chapTitle}".` }
      );
-     await this._recalculateAndUpdateWordCount();
+     if (success) {
+        this.bookDataSyncService.notifyCountChange(bookId, 'chapterCount', -1);
+        await this._recalculateAndUpdateWordCount();
+     }
   }
   
   // ACTIONS REORDER CHAPTERS
@@ -611,10 +629,10 @@ export class CurrentBookStateService {
         await this.loadWritingLogs(bookId); // Reload logs
       }
       
-      // 4. Update current book state & in the global book list
+      // 4. Update current book state & notify the global book list
       if (totalWordCount !== previousTotalWordCount) {
           this.currentBook.update(book => book ? { ...book, wordCount: totalWordCount } : null);
-          this.bookStateService.updateBookInList(bookId, { wordCount: totalWordCount });
+          this.bookDataSyncService.notifyStatsUpdate(bookId, { wordCount: totalWordCount });
           // Save to DB
           await this.dbService.updateBookStats(bookId, { wordCount: totalWordCount });
       }

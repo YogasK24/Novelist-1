@@ -17,11 +17,13 @@ export class ConfirmationService {
   
   // Ini adalah state globalnya!
   readonly request = signal<ConfirmationRequest | null>(null);
+  private elementToRestoreFocus: HTMLElement | null = null;
 
   /**
    * Dipanggil oleh komponen (cth: character-list) untuk MEMINTA konfirmasi.
    */
   requestConfirmation(options: Partial<ConfirmationRequest> & { message: string; onConfirm: () => void; }): void {
+    this.elementToRestoreFocus = document.activeElement as HTMLElement;
     const defaults = {
       confirmButtonText: 'Hapus',
       cancelButtonText: 'Batal',
@@ -36,5 +38,9 @@ export class ConfirmationService {
    */
   closeConfirmation(): void {
     this.request.set(null);
+    setTimeout(() => {
+      this.elementToRestoreFocus?.focus?.();
+      this.elementToRestoreFocus = null;
+    }, 300);
   }
 }

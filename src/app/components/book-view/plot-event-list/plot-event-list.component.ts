@@ -1,5 +1,5 @@
 // src/app/components/book-view/plot-event-list/plot-event-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, ViewChild } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, ViewChild, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { CdkDragDrop, DragDropModule, moveItemInArray, CdkDropList } from '@angular/cdk/drag-drop';
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
@@ -18,7 +18,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
     <div>
       <button 
         (click)="openAddModal()"
-        class="mb-6 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
+        class="mb-6 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 dark:focus:ring-offset-gray-900">
         + Add Plot Event
       </button>
 
@@ -57,7 +57,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
                   <!-- Timeline Content (card) -->
                   <div 
                     (click)="viewPlotEventDetails(event)"
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md hover:shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all duration-200 cursor-pointer">
+                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md hover:shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all duration-200 cursor-pointer hover:scale-[1.02]">
                     
                     <div class="flex justify-between items-start">
                         <div class="flex-grow">
@@ -152,6 +152,26 @@ export class PlotEventListComponent {
   
   // State BARU: Reordering
   isReordering: WritableSignal<boolean> = signal(false);
+
+  // --- NEW: For deep linking ---
+  entityToEditId = input<number | undefined>();
+  editHandled = output<void>();
+
+  constructor() {
+    effect(() => {
+      const idToEdit = this.entityToEditId();
+      const events = this.bookState.plotEvents();
+      if (idToEdit !== undefined && events.length > 0) {
+        Promise.resolve().then(() => {
+          const event = events.find(e => e.id === idToEdit);
+          if (event) {
+            this.openEditModal(event);
+            this.editHandled.emit();
+          }
+        });
+      }
+    });
+  }
 
   // --- Logika Modal Edit/Tambah (sudah ada) ---
   openAddModal(): void {

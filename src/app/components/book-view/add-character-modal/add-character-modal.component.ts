@@ -5,11 +5,12 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } fr
 import type { ICharacter, IRelationship } from '../../../../types/data';
 import { CurrentBookStateService } from '../../../state/current-book-state.service';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-add-character-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FocusTrapDirective],
   template: `
     <div 
       class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 transition-opacity duration-300"
@@ -21,6 +22,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
       role="dialog"
     >
       <div 
+        appFocusTrap
         class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300"
         [class.opacity-100]="show()" [class.translate-y-0]="show()" [class.scale-100]="show()"
         [class.opacity-0]="!show()" [class.-translate-y-10]="!show()" [class.scale-95]="!show()"

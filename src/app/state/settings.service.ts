@@ -47,6 +47,7 @@ export class SettingsService {
 
   // --- State Modal ---
   readonly isModalOpen = signal(false);
+  private elementToRestoreFocus: HTMLElement | null = null;
 
   // --- State Pengaturan Tampilan ---
   readonly theme = signal<ThemeSetting>(this.loadSetting('settings_theme', this.defaults.theme));
@@ -124,11 +125,16 @@ export class SettingsService {
 
   // --- API untuk Modal ---
   openModal(): void {
+    this.elementToRestoreFocus = document.activeElement as HTMLElement;
     this.isModalOpen.set(true);
   }
 
   closeModal(): void {
     this.isModalOpen.set(false);
+    setTimeout(() => {
+      this.elementToRestoreFocus?.focus?.();
+      this.elementToRestoreFocus = null;
+    }, 300);
   }
 
   // --- 2. TAMBAHKAN FUNGSI RESET BARU ---

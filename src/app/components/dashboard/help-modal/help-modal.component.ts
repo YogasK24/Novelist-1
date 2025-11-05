@@ -2,11 +2,12 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-help-modal',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, FocusTrapDirective],
   template: `
     <div 
       class="fixed inset-0 bg-black/70 flex justify-center items-center z-50
@@ -19,6 +20,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
       role="dialog"
     >
       <div 
+        appFocusTrap
         class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg 
                ring-1 ring-black/5 dark:ring-white/10
                transform transition-all duration-300 ease-in-out"

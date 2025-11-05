@@ -238,7 +238,7 @@ export class EditorPageComponent implements OnInit, OnDestroy {
   public bookState = inject(CurrentBookStateService);
   public settingsService = inject(SettingsService);
 
-  editorRef = viewChild.required<ElementRef>('editor');
+  editorRef = viewChild<ElementRef>('editor');
 
   chapter = signal<IChapter | null>(null);
   isLoading = signal(true);

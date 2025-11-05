@@ -4,11 +4,12 @@ import { BookStateService } from '../../../state/book-state.service';
 import type { IBook } from '../../../../types/data';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { FocusTrapDirective } from '../../../directives/focus-trap.directive';
 
 @Component({
   selector: 'app-set-target-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FocusTrapDirective],
   template: `
     <div 
       class="fixed inset-0 bg-black/70 flex justify-center items-center z-50
@@ -21,6 +22,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
       role="dialog"
     >
       <div 
+        appFocusTrap
         class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md ring-1 ring-black/5 dark:ring-white/10
                transform transition-all duration-300 ease-in-out"
         [class.opacity-100]="isShown()" [class.translate-y-0]="isShown()" [class.scale-100]="isShown()"

@@ -3,9 +3,9 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NotificationContainerComponent } from './app/components/notification-container/notification-container.component';
 import { ThemeService } from './app/state/theme.service';
-import { GlobalSearchResultsComponent } from './app/components/shared/global-search-results/global-search-results.component';
 import { ConfirmationModalComponent } from './app/components/shared/confirmation-modal/confirmation-modal.component';
 import { SettingsModalComponent } from './app/components/shared/settings-modal/settings-modal.component';
+import { StatisticsDashboardModalComponent } from './app/components/statistics/statistics-dashboard-modal/statistics-dashboard-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -13,16 +13,16 @@ import { SettingsModalComponent } from './app/components/shared/settings-modal/s
   imports: [
     RouterOutlet, 
     NotificationContainerComponent,
-    GlobalSearchResultsComponent,
     ConfirmationModalComponent,
-    SettingsModalComponent
+    SettingsModalComponent,
+    StatisticsDashboardModalComponent
   ],
   template: `
     <router-outlet></router-outlet>
     <app-notification-container></app-notification-container>
-    <app-global-search-results></app-global-search-results>
     <app-confirmation-modal></app-confirmation-modal>
     <app-settings-modal></app-settings-modal>
+    <app-statistics-dashboard-modal></app-statistics-dashboard-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

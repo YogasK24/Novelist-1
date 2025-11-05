@@ -1,5 +1,5 @@
 // src/app/components/book-view/character-list/character-list.component.ts
-import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, WritableSignal, ChangeDetectionStrategy, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { CurrentBookStateService } from '../../../state/current-book-state.service'; 
 import type { ICharacter } from '../../../../types/data';
@@ -16,7 +16,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
     <div>
       <button 
         (click)="openAddModal()"
-        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition duration-150">
+        class="mb-4 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md transition-all duration-150 hover:scale-105">
         + Tambah Karakter
       </button>
 
@@ -29,7 +29,7 @@ import { ConfirmationService } from '../../../state/confirmation.service';
             <div class="space-y-3">
               @for (char of characters; track char.id) {
                 <div (click)="viewCharacterDetails(char)"
-                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-start cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition duration-150">
+                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-start cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-all duration-150 hover:scale-102">
                   
                   <div class="flex-shrink-0 mr-4 mt-1">
                       <div [style.background-color]="getAvatarColor(char.name)" 
@@ -105,19 +105,46 @@ export class CharacterListComponent {
     editingCharacter: WritableSignal<ICharacter | null> = signal(null);
     showDetailModal: WritableSignal<boolean> = signal(false);
     viewingCharacter: WritableSignal<ICharacter | null> = signal(null);
+    private elementToRestoreFocus: HTMLElement | null = null;
+    
+    // --- NEW: For deep linking ---
+    entityToEditId = input<number | undefined>();
+    editHandled = output<void>();
+
+    constructor() {
+      effect(() => {
+        const idToEdit = this.entityToEditId();
+        const characters = this.bookState.characters();
+        if (idToEdit !== undefined && characters.length > 0) {
+          Promise.resolve().then(() => {
+            const character = characters.find(c => c.id === idToEdit);
+            if (character) {
+              this.openEditModal(character);
+              this.editHandled.emit();
+            }
+          });
+        }
+      });
+    }
 
     openAddModal(): void {
+        this.elementToRestoreFocus = document.activeElement as HTMLElement;
         this.editingCharacter.set(null);
         this.showModal.set(true);
     }
 
     openEditModal(character: ICharacter): void {
+        this.elementToRestoreFocus = document.activeElement as HTMLElement;
         this.editingCharacter.set(character);
         this.showModal.set(true);
     }
 
     closeModal(): void {
         this.showModal.set(false);
+        setTimeout(() => {
+            this.elementToRestoreFocus?.focus?.();
+            this.elementToRestoreFocus = null;
+        }, 300);
     }
 
     onDeleteCharacter(character: ICharacter): void {
@@ -132,12 +159,17 @@ export class CharacterListComponent {
     }
 
     viewCharacterDetails(character: ICharacter): void {
+        this.elementToRestoreFocus = document.activeElement as HTMLElement;
         this.viewingCharacter.set(character);
         this.showDetailModal.set(true);
     }
 
     closeDetailModal(): void {
         this.showDetailModal.set(false);
+        setTimeout(() => {
+            this.elementToRestoreFocus?.focus?.();
+            this.elementToRestoreFocus = null;
+        }, 300);
     }
 
     getInitials(name: string): string {
